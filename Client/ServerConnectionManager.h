@@ -67,7 +67,7 @@ public:
     SymmetricEncryptionManager* symmetricEncryptionManager;
     CertificateManager* certificateManager;
 
-    ServerConnectionManager(const char *, int, string*);
+    ServerConnectionManager(unsigned char *, int, string*);
     bool sendServerNonce(const char*, size_t);
     bool establishConnectionToServer();
     bool secureTheConnection();
