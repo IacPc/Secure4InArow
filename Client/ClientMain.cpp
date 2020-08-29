@@ -3,6 +3,7 @@
 //
 #include "Client.h"
 
+
 int main(int argc, char*argv[]){
     //Client need server addr, server port and client username
 
@@ -13,10 +14,12 @@ int main(int argc, char*argv[]){
 
     if(argc != 4)
         return -1;
+
     else{
         server_addr = new std::string(argv[1]);
         port = atoi(argv[2]);
-
+        if((port > 65535) || (port < 2000))
+            return -1;
         username = new std::string((argv[3]));
     }
 

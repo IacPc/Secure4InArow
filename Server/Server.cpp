@@ -7,7 +7,6 @@
 Server::Server(int port) {
 
     certificatePath = "Server_Keys";
-    usersKeysPath = "Users_Public_Keys";
     portNo = port;
     listenFd = socket(AF_INET, SOCK_STREAM, 0);
     srvAddr.sin_family = AF_INET;
@@ -149,7 +148,8 @@ unsigned char* Server::geti2dCertificate(int &len) {
     //serialize the certificate to be sent to a client
     unsigned char *buffer = NULL;
     int cert_size = i2d_X509(cacert, &buffer);
-    cout<<"Server:Certificate length: "<<cert_size<<endl;
+    X509_free(cacert);
+    cout<<"Server: Certificate length: "<<cert_size<<endl;
     len = cert_size;
     if(cert_size < 0){
         cerr<<"Error during certificate serialization\n";

@@ -37,10 +37,11 @@ private:
     struct sockaddr_in srvAddr;
     string certificatePath;
     std::mutex mapMutex;
+
+
     bool checkUserPresence(string);
 
 public:
-    string usersKeysPath;
 
     Server(int);
     UserConnectionManager* getUserConnection(string);

@@ -80,6 +80,7 @@ public:
     int getPort();
     void sendEndOfGame();
     ~ServerConnectionManager();
+    bool createConnectionWithServer();
 
 };
 
