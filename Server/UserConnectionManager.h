@@ -13,6 +13,7 @@
 #include <thread>
 #include <string.h>
 #include "../Libraries/SymmetricEncryptionManager.h"
+#include "../Libraries/DiffieHellamnnManager"
 #include "../Libraries/Constant.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -33,41 +34,36 @@ private:
     Server* server;
     struct sockaddr_in clAdd;
     string *userName;
-    SymmetricEncryptionManager *symmetricEncryptionManager;
-    RSAManager *rsaManager;
     int userSocket;
 
+    SymmetricEncryptionManager *symmetricEncryptionManager;
+    SignatureManaegr *signatureManager;
+    DiffieHellmannManager *diffieHellmannManager;
+
+    unsigned char* clientNonce;
+    unsigned char* myNonce;
+
+
+    bool establishSecureConnection();
     bool waitForHelloMessage();
     bool sendCertificate(unsigned char*, size_t);
-    bool waitForClientBeReady();
-    bool sendSymmetricKeys(unsigned char*, size_t);
-    bool sendServerNonce(unsigned char*, size_t&, unsigned char*, size_t&);
-    bool verifyNonce(unsigned char*, unsigned char*);
-    bool establishSecureConnection();
+    bool waitForClientPubKey();
+    bool sendMyPubKey();
+
+
     bool sendChallengeMessage(string*);
     bool sendOpponentKey(string*);
     bool sendMyKeyToChallenger(string*, int);
     bool waitForOpponentReady(unsigned int&);
 
-    unsigned char* createPlayerListMsg(vector<string>, size_t&);
-    unsigned char* createKeyMessage(size_t&);
-    unsigned char* waitForClientNonce(size_t&);
     unsigned char* createCertificateMessage(size_t&);
-    unsigned char* createServerNonceMessage(unsigned char*, size_t&, unsigned char*, size_t&, size_t&);
-    unsigned char* waitForMyNonce();
-    unsigned char* getKeyPlainMgs(size_t&);
 
-    EVP_PKEY* getUserPubKey(string*);
-
-    string *waitForChoice(bool&);
-    string* waitForResponse();
-
-    void waitForEndOfGame();
 
 public:
     UserConnectionManager(Server*, sockaddr_in, int);
     void openNewconnectionwithClient();
-    bool sendPlayerList(size_t&);
+
+    bool sharePlayersList();
     ~UserConnectionManager();
 };
 

@@ -1,0 +1,4 @@
+/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Client.dir
+/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Server.dir

@@ -15,8 +15,7 @@
 
 class SymmetricEncryptionManager {
 private:
-    HMACManager* hmacManager;
-    AESManager* aesManager;
+
 public:
     SymmetricEncryptionManager(unsigned char*, unsigned char*, unsigned char*);
     SymmetricEncryptionManager();
