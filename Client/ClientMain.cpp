@@ -14,7 +14,6 @@ int main(int argc, char*argv[]){
 
     if(argc != 4)
         return -1;
-
     else{
         server_addr = new std::string(argv[1]);
         port = atoi(argv[2]);

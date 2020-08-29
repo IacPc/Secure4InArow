@@ -28,5 +28,5 @@ string* Client::getUsername() {
 Client::~Client() {
 
     delete userName;
-    delete []serverConnectionManager;
+    delete [] serverConnectionManager;
 }
