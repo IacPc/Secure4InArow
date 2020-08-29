@@ -12,23 +12,22 @@
 #include<openssl/evp.h>
 #include<openssl/rand.h>
 #include<openssl/err.h>
+#include "Constant.h"
 
 class SymmetricEncryptionManager {
 private:
-
+    const EVP_CIPHER* cipher = EVP_aes_128_gcm();
+    unsigned char* aesKey;
+    size_t aesKeyLen;
 public:
-    SymmetricEncryptionManager(unsigned char*, unsigned char*, unsigned char*);
-    SymmetricEncryptionManager();
-    unsigned char* computeMac(unsigned char*, size_t &);
-    bool verifyMac(unsigned char*,unsigned char*, size_t &);
-    unsigned char* decryptNVerifyMACThisMessage(unsigned char*, size_t &);
-    unsigned char* encryptNMACThisMessage(unsigned char*, size_t&);
-    unsigned char* getAESKey();
-    unsigned char* getHMacKey();
-    unsigned char* getIV();
-    void setAESKey(unsigned char *k);
-    void setAESIV(unsigned char *k);
-    void sethmacKey(unsigned char*);
+    SymmetricEncryptionManager(unsigned char*, size_t);
+    ~SymmetricEncryptionManager();
+    unsigned char* encryptThisMessage(unsigned char *, size_t& ,unsigned char *, size_t ,
+                                      unsigned char*& ,size_t& ,unsigned char*& );
+    unsigned char* decryptThisMessage(unsigned char *ciphertext, size_t &ciphertext_len,
+                                      unsigned char *aad, size_t aad_len,
+                                      unsigned char *tag, unsigned char *iv);
+
 
 };
 
