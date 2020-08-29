@@ -13,7 +13,7 @@
 #include <thread>
 #include <string.h>
 #include "../Libraries/SymmetricEncryptionManager.h"
-#include "../Libraries/DiffieHellamnnManager"
+#include "../Libraries/DiffieHellmannManager.h"
 #include "../Libraries/Constant.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -35,6 +35,7 @@ private:
     struct sockaddr_in clAdd;
     string *userName;
     int userSocket;
+    int counter;
 
     SymmetricEncryptionManager *symmetricEncryptionManager;
     SignatureManaegr *signatureManager;
@@ -48,14 +49,16 @@ private:
     bool waitForHelloMessage();
     bool sendCertificate(unsigned char*, size_t);
     bool waitForClientPubKey();
+    bool verifyNonce(unsigned char*, unsigned char*);
     bool sendMyPubKey();
+    void createSessionKey();
 
-
+/*
     bool sendChallengeMessage(string*);
     bool sendOpponentKey(string*);
     bool sendMyKeyToChallenger(string*, int);
     bool waitForOpponentReady(unsigned int&);
-
+*/
     unsigned char* createCertificateMessage(size_t&);
 
 
