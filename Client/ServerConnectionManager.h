@@ -1,10 +1,8 @@
 //
 // Created by iacopo on 14/08/20.
 //
-#include "../Libraries/RSAManager.h"
 #include "../Libraries/SymmetricEncryptionManager.h"
 #include "CertificateManager.h"
-#include "P2PConnectionManager.h"
 #include <string>
 #include <vector>
 #include <thread>

@@ -4,8 +4,6 @@
 
 #ifndef PROGETTO_SYMMETRICENCRYPTIONMANAGER_H
 #define PROGETTO_SYMMETRICENCRYPTIONMANAGER_H
-#include "HMACManager.h"
-#include "AESManager.h"
 #include<iostream>
 #include<string>
 #include<cstdio>

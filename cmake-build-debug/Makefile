@@ -59,19 +59,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /snap/clion/124/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake
 
 # The command to remove a file.
-RM = /snap/clion/124/bin/cmake/linux/bin/cmake -E rm -f
+RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/iacopo/Scrivania/FOC/secure_for_in_a_row
+CMAKE_SOURCE_DIR = "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug
+CMAKE_BINARY_DIR = "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -79,7 +79,7 @@ CMAKE_BINARY_DIR = /home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-de
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/snap/clion/124/bin/cmake/linux/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -90,7 +90,7 @@ rebuild_cache/fast: rebuild_cache
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/snap/clion/124/bin/cmake/linux/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+	/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -100,9 +100,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/CMakeFiles /home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/progress.marks"
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" 0
 .PHONY : all
 
 # The main clean target
@@ -237,33 +237,6 @@ Client/ClientMain.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Client/ClientMain.cpp.s
 .PHONY : Client/ClientMain.cpp.s
 
-Client/P2PConnectionManager.o: Client/P2PConnectionManager.cpp.o
-
-.PHONY : Client/P2PConnectionManager.o
-
-# target to build an object file
-Client/P2PConnectionManager.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Client/P2PConnectionManager.cpp.o
-.PHONY : Client/P2PConnectionManager.cpp.o
-
-Client/P2PConnectionManager.i: Client/P2PConnectionManager.cpp.i
-
-.PHONY : Client/P2PConnectionManager.i
-
-# target to preprocess a source file
-Client/P2PConnectionManager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Client/P2PConnectionManager.cpp.i
-.PHONY : Client/P2PConnectionManager.cpp.i
-
-Client/P2PConnectionManager.s: Client/P2PConnectionManager.cpp.s
-
-.PHONY : Client/P2PConnectionManager.s
-
-# target to generate assembly for a file
-Client/P2PConnectionManager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Client/P2PConnectionManager.cpp.s
-.PHONY : Client/P2PConnectionManager.cpp.s
-
 Client/ServerConnectionManager.o: Client/ServerConnectionManager.cpp.o
 
 .PHONY : Client/ServerConnectionManager.o
@@ -291,125 +264,35 @@ Client/ServerConnectionManager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.s
 .PHONY : Client/ServerConnectionManager.cpp.s
 
-Libraries/AESManager.o: Libraries/AESManager.cpp.o
+Libraries/DiffieHellamnnManager.o: Libraries/DiffieHellamnnManager.cpp.o
 
-.PHONY : Libraries/AESManager.o
-
-# target to build an object file
-Libraries/AESManager.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/AESManager.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/AESManager.cpp.o
-.PHONY : Libraries/AESManager.cpp.o
-
-Libraries/AESManager.i: Libraries/AESManager.cpp.i
-
-.PHONY : Libraries/AESManager.i
-
-# target to preprocess a source file
-Libraries/AESManager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/AESManager.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/AESManager.cpp.i
-.PHONY : Libraries/AESManager.cpp.i
-
-Libraries/AESManager.s: Libraries/AESManager.cpp.s
-
-.PHONY : Libraries/AESManager.s
-
-# target to generate assembly for a file
-Libraries/AESManager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/AESManager.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/AESManager.cpp.s
-.PHONY : Libraries/AESManager.cpp.s
-
-Libraries/AsymmetricEncryptionManager.o: Libraries/AsymmetricEncryptionManager.cpp.o
-
-.PHONY : Libraries/AsymmetricEncryptionManager.o
+.PHONY : Libraries/DiffieHellamnnManager.o
 
 # target to build an object file
-Libraries/AsymmetricEncryptionManager.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/AsymmetricEncryptionManager.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/AsymmetricEncryptionManager.cpp.o
-.PHONY : Libraries/AsymmetricEncryptionManager.cpp.o
+Libraries/DiffieHellamnnManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/DiffieHellamnnManager.cpp.o
+.PHONY : Libraries/DiffieHellamnnManager.cpp.o
 
-Libraries/AsymmetricEncryptionManager.i: Libraries/AsymmetricEncryptionManager.cpp.i
+Libraries/DiffieHellamnnManager.i: Libraries/DiffieHellamnnManager.cpp.i
 
-.PHONY : Libraries/AsymmetricEncryptionManager.i
-
-# target to preprocess a source file
-Libraries/AsymmetricEncryptionManager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/AsymmetricEncryptionManager.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/AsymmetricEncryptionManager.cpp.i
-.PHONY : Libraries/AsymmetricEncryptionManager.cpp.i
-
-Libraries/AsymmetricEncryptionManager.s: Libraries/AsymmetricEncryptionManager.cpp.s
-
-.PHONY : Libraries/AsymmetricEncryptionManager.s
-
-# target to generate assembly for a file
-Libraries/AsymmetricEncryptionManager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/AsymmetricEncryptionManager.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/AsymmetricEncryptionManager.cpp.s
-.PHONY : Libraries/AsymmetricEncryptionManager.cpp.s
-
-Libraries/HMACManager.o: Libraries/HMACManager.cpp.o
-
-.PHONY : Libraries/HMACManager.o
-
-# target to build an object file
-Libraries/HMACManager.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/HMACManager.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/HMACManager.cpp.o
-.PHONY : Libraries/HMACManager.cpp.o
-
-Libraries/HMACManager.i: Libraries/HMACManager.cpp.i
-
-.PHONY : Libraries/HMACManager.i
+.PHONY : Libraries/DiffieHellamnnManager.i
 
 # target to preprocess a source file
-Libraries/HMACManager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/HMACManager.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/HMACManager.cpp.i
-.PHONY : Libraries/HMACManager.cpp.i
+Libraries/DiffieHellamnnManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/DiffieHellamnnManager.cpp.i
+.PHONY : Libraries/DiffieHellamnnManager.cpp.i
 
-Libraries/HMACManager.s: Libraries/HMACManager.cpp.s
+Libraries/DiffieHellamnnManager.s: Libraries/DiffieHellamnnManager.cpp.s
 
-.PHONY : Libraries/HMACManager.s
-
-# target to generate assembly for a file
-Libraries/HMACManager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/HMACManager.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/HMACManager.cpp.s
-.PHONY : Libraries/HMACManager.cpp.s
-
-Libraries/RSAManager.o: Libraries/RSAManager.cpp.o
-
-.PHONY : Libraries/RSAManager.o
-
-# target to build an object file
-Libraries/RSAManager.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/RSAManager.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/RSAManager.cpp.o
-.PHONY : Libraries/RSAManager.cpp.o
-
-Libraries/RSAManager.i: Libraries/RSAManager.cpp.i
-
-.PHONY : Libraries/RSAManager.i
-
-# target to preprocess a source file
-Libraries/RSAManager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/RSAManager.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/RSAManager.cpp.i
-.PHONY : Libraries/RSAManager.cpp.i
-
-Libraries/RSAManager.s: Libraries/RSAManager.cpp.s
-
-.PHONY : Libraries/RSAManager.s
+.PHONY : Libraries/DiffieHellamnnManager.s
 
 # target to generate assembly for a file
-Libraries/RSAManager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/RSAManager.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/RSAManager.cpp.s
-.PHONY : Libraries/RSAManager.cpp.s
+Libraries/DiffieHellamnnManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Client.dir/build.make CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Libraries/DiffieHellamnnManager.cpp.s
+.PHONY : Libraries/DiffieHellamnnManager.cpp.s
 
 Libraries/SignatureManager.o: Libraries/SignatureManager.cpp.o
 
@@ -571,24 +454,12 @@ help:
 	@echo "... Client/ClientMain.o"
 	@echo "... Client/ClientMain.i"
 	@echo "... Client/ClientMain.s"
-	@echo "... Client/P2PConnectionManager.o"
-	@echo "... Client/P2PConnectionManager.i"
-	@echo "... Client/P2PConnectionManager.s"
 	@echo "... Client/ServerConnectionManager.o"
 	@echo "... Client/ServerConnectionManager.i"
 	@echo "... Client/ServerConnectionManager.s"
-	@echo "... Libraries/AESManager.o"
-	@echo "... Libraries/AESManager.i"
-	@echo "... Libraries/AESManager.s"
-	@echo "... Libraries/AsymmetricEncryptionManager.o"
-	@echo "... Libraries/AsymmetricEncryptionManager.i"
-	@echo "... Libraries/AsymmetricEncryptionManager.s"
-	@echo "... Libraries/HMACManager.o"
-	@echo "... Libraries/HMACManager.i"
-	@echo "... Libraries/HMACManager.s"
-	@echo "... Libraries/RSAManager.o"
-	@echo "... Libraries/RSAManager.i"
-	@echo "... Libraries/RSAManager.s"
+	@echo "... Libraries/DiffieHellamnnManager.o"
+	@echo "... Libraries/DiffieHellamnnManager.i"
+	@echo "... Libraries/DiffieHellamnnManager.s"
 	@echo "... Libraries/SignatureManager.o"
 	@echo "... Libraries/SignatureManager.i"
 	@echo "... Libraries/SignatureManager.s"

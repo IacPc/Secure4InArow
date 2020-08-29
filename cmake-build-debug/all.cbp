@@ -8,227 +8,193 @@
 		<Option virtualFolders="CMake Files\;"/>
 		<Build>
 			<Target title="all">
-				<Option working_dir="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug"/>
+				<Option working_dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
-				<Option working_dir="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug"/>
+				<Option working_dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="Client">
-				<Option output="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Client" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="gcc"/>
-				<Compiler>
-					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
-					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
-					<Add directory="/usr/include/c++/9"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
-					<Add directory="/usr/include/c++/9/backward"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
-					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/include/x86_64-linux-gnu"/>
-					<Add directory="/usr/include"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 Client"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="Client/fast">
-				<Option output="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Client" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="gcc"/>
-				<Compiler>
-					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
-					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
-					<Add directory="/usr/include/c++/9"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
-					<Add directory="/usr/include/c++/9/backward"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
-					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/include/x86_64-linux-gnu"/>
-					<Add directory="/usr/include"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 Client/fast"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="edit_cache">
-				<Option working_dir="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug"/>
+				<Option working_dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Client">
+				<Option output="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Client" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
+					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 Client"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Client/fast">
+				<Option output="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Client" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
+					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 Client/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="Server">
-				<Option output="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Server" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug"/>
+				<Option output="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Server" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
 					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
-					<Add directory="/usr/include/c++/9"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
-					<Add directory="/usr/include/c++/9/backward"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/include/x86_64-linux-gnu"/>
-					<Add directory="/usr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 Server"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 Server"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="Server/fast">
-				<Option output="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Server" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug"/>
+				<Option output="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Server" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
 					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
-					<Add directory="/usr/include/c++/9"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
-					<Add directory="/usr/include/c++/9/backward"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/include/x86_64-linux-gnu"/>
-					<Add directory="/usr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 Server/fast"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/secure_for_in_a_row/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 Server/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/lauralemmi/Google\ Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/CertificateManager.cpp">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/CertificateManager.cpp">
 			<Option target="Client"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/CertificateManager.h">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/CertificateManager.h">
 			<Option target="Client"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/Client.cpp">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/Client.cpp">
 			<Option target="Client"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/Client.h">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/Client.h">
 			<Option target="Client"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/ClientMain.cpp">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ClientMain.cpp">
 			<Option target="Client"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/P2PConnectionManager.cpp">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ServerConnectionManager.cpp">
 			<Option target="Client"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/P2PConnectionManager.h">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ServerConnectionManager.h">
 			<Option target="Client"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/ServerConnectionManager.cpp">
-			<Option target="Client"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Client/ServerConnectionManager.h">
-			<Option target="Client"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/AESManager.cpp">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/Constant.h">
 			<Option target="Client"/>
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/AESManager.h">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/DiffieHellamnnManager.cpp">
 			<Option target="Client"/>
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/AsymmetricEncryptionManager.cpp">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/DiffieHellamnnManager.h">
 			<Option target="Client"/>
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/AsymmetricEncryptionManager.h">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SignatureManager.cpp">
 			<Option target="Client"/>
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/Constant.h">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SignatureManager.h">
 			<Option target="Client"/>
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/HMACManager.cpp">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SymmetricEncryptionManager.cpp">
 			<Option target="Client"/>
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/HMACManager.h">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SymmetricEncryptionManager.h">
 			<Option target="Client"/>
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/RSAManager.cpp">
-			<Option target="Client"/>
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/Server.cpp">
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/RSAManager.h">
-			<Option target="Client"/>
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/Server.h">
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/SignatureManager.cpp">
-			<Option target="Client"/>
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/ServerMain.cpp">
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/SignatureManager.h">
-			<Option target="Client"/>
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/UserConnectionManager.cpp">
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/SymmetricEncryptionManager.cpp">
-			<Option target="Client"/>
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/UserConnectionManager.h">
 			<Option target="Server"/>
 		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Libraries/SymmetricEncryptionManager.h">
-			<Option target="Client"/>
-			<Option target="Server"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Server/Server.cpp">
-			<Option target="Server"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Server/Server.h">
-			<Option target="Server"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Server/ServerMain.cpp">
-			<Option target="Server"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Server/UserConnectionManager.cpp">
-			<Option target="Server"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/Server/UserConnectionManager.h">
-			<Option target="Server"/>
-		</Unit>
-		<Unit filename="/home/iacopo/Scrivania/FOC/secure_for_in_a_row/CMakeLists.txt">
+		<Unit filename="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
 	</Project>

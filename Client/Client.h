@@ -6,7 +6,6 @@
 #include <climits>
 #include <cstring>
 #include <iostream>
-#include "P2PConnectionManager.h"
 
 #ifndef PROGETTO_CLIENT_H
 #define PROGETTO_CLIENT_H

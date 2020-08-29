@@ -13,7 +13,6 @@
 #include <thread>
 #include <string.h>
 #include "../Libraries/SymmetricEncryptionManager.h"
-#include "../Libraries/RSAManager.h"
 #include "../Libraries/Constant.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
