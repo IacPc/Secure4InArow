@@ -54,19 +54,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake
+CMAKE_COMMAND = /snap/clion/124/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E rm -f
+RM = /snap/clion/124/bin/cmake/linux/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto"
+CMAKE_SOURCE_DIR = /home/iacopo/Scrivania/FOC/Secure4InArow
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug"
+CMAKE_BINARY_DIR = /home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug
 
 # Include any dependencies generated for this target.
 include CMakeFiles/Client.dir/depend.make
@@ -79,94 +79,94 @@ include CMakeFiles/Client.dir/flags.make
 
 CMakeFiles/Client.dir/Client/Client.cpp.o: CMakeFiles/Client.dir/flags.make
 CMakeFiles/Client.dir/Client/Client.cpp.o: ../Client/Client.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Client.dir/Client/Client.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/Client.cpp.o -c "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/Client.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Client.dir/Client/Client.cpp.o"
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/Client.cpp.o -c /home/iacopo/Scrivania/FOC/Secure4InArow/Client/Client.cpp
 
 CMakeFiles/Client.dir/Client/Client.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Client.dir/Client/Client.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/Client.cpp" > CMakeFiles/Client.dir/Client/Client.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iacopo/Scrivania/FOC/Secure4InArow/Client/Client.cpp > CMakeFiles/Client.dir/Client/Client.cpp.i
 
 CMakeFiles/Client.dir/Client/Client.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Client.dir/Client/Client.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/Client.cpp" -o CMakeFiles/Client.dir/Client/Client.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iacopo/Scrivania/FOC/Secure4InArow/Client/Client.cpp -o CMakeFiles/Client.dir/Client/Client.cpp.s
 
 CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.o: CMakeFiles/Client.dir/flags.make
 CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.o: ../Libraries/SignatureManager.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.o -c "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SignatureManager.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.o"
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.o -c /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SignatureManager.cpp
 
 CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SignatureManager.cpp" > CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SignatureManager.cpp > CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.i
 
 CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SignatureManager.cpp" -o CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SignatureManager.cpp -o CMakeFiles/Client.dir/Libraries/SignatureManager.cpp.s
 
 CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.o: CMakeFiles/Client.dir/flags.make
 CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.o: ../Libraries/SymmetricEncryptionManager.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.o -c "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SymmetricEncryptionManager.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.o"
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.o -c /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SymmetricEncryptionManager.cpp
 
 CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SymmetricEncryptionManager.cpp" > CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SymmetricEncryptionManager.cpp > CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.i
 
 CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SymmetricEncryptionManager.cpp" -o CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SymmetricEncryptionManager.cpp -o CMakeFiles/Client.dir/Libraries/SymmetricEncryptionManager.cpp.s
 
 CMakeFiles/Client.dir/Client/CertificateManager.cpp.o: CMakeFiles/Client.dir/flags.make
 CMakeFiles/Client.dir/Client/CertificateManager.cpp.o: ../Client/CertificateManager.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Client.dir/Client/CertificateManager.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/CertificateManager.cpp.o -c "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/CertificateManager.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Client.dir/Client/CertificateManager.cpp.o"
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/CertificateManager.cpp.o -c /home/iacopo/Scrivania/FOC/Secure4InArow/Client/CertificateManager.cpp
 
 CMakeFiles/Client.dir/Client/CertificateManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Client.dir/Client/CertificateManager.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/CertificateManager.cpp" > CMakeFiles/Client.dir/Client/CertificateManager.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iacopo/Scrivania/FOC/Secure4InArow/Client/CertificateManager.cpp > CMakeFiles/Client.dir/Client/CertificateManager.cpp.i
 
 CMakeFiles/Client.dir/Client/CertificateManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Client.dir/Client/CertificateManager.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/CertificateManager.cpp" -o CMakeFiles/Client.dir/Client/CertificateManager.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iacopo/Scrivania/FOC/Secure4InArow/Client/CertificateManager.cpp -o CMakeFiles/Client.dir/Client/CertificateManager.cpp.s
 
 CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.o: CMakeFiles/Client.dir/flags.make
 CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.o: ../Client/ServerConnectionManager.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.o -c "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ServerConnectionManager.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.o"
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.o -c /home/iacopo/Scrivania/FOC/Secure4InArow/Client/ServerConnectionManager.cpp
 
 CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ServerConnectionManager.cpp" > CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iacopo/Scrivania/FOC/Secure4InArow/Client/ServerConnectionManager.cpp > CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.i
 
 CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ServerConnectionManager.cpp" -o CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iacopo/Scrivania/FOC/Secure4InArow/Client/ServerConnectionManager.cpp -o CMakeFiles/Client.dir/Client/ServerConnectionManager.cpp.s
 
 CMakeFiles/Client.dir/Client/ClientMain.cpp.o: CMakeFiles/Client.dir/flags.make
 CMakeFiles/Client.dir/Client/ClientMain.cpp.o: ../Client/ClientMain.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/Client.dir/Client/ClientMain.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/ClientMain.cpp.o -c "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ClientMain.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/Client.dir/Client/ClientMain.cpp.o"
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Client/ClientMain.cpp.o -c /home/iacopo/Scrivania/FOC/Secure4InArow/Client/ClientMain.cpp
 
 CMakeFiles/Client.dir/Client/ClientMain.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Client.dir/Client/ClientMain.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ClientMain.cpp" > CMakeFiles/Client.dir/Client/ClientMain.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iacopo/Scrivania/FOC/Secure4InArow/Client/ClientMain.cpp > CMakeFiles/Client.dir/Client/ClientMain.cpp.i
 
 CMakeFiles/Client.dir/Client/ClientMain.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Client.dir/Client/ClientMain.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Client/ClientMain.cpp" -o CMakeFiles/Client.dir/Client/ClientMain.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iacopo/Scrivania/FOC/Secure4InArow/Client/ClientMain.cpp -o CMakeFiles/Client.dir/Client/ClientMain.cpp.s
 
 CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o: CMakeFiles/Client.dir/flags.make
 CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o: ../Libraries/DiffieHellamnnManager.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o -c "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/DiffieHellamnnManager.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o"
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o -c /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/DiffieHellamnnManager.cpp
 
 CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/DiffieHellamnnManager.cpp" > CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/DiffieHellamnnManager.cpp > CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.i
 
 CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/DiffieHellamnnManager.cpp" -o CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/DiffieHellamnnManager.cpp -o CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.s
 
 # Object files for target Client
 Client_OBJECTS = \
@@ -190,7 +190,7 @@ Client: CMakeFiles/Client.dir/Client/ClientMain.cpp.o
 Client: CMakeFiles/Client.dir/Libraries/DiffieHellamnnManager.cpp.o
 Client: CMakeFiles/Client.dir/build.make
 Client: CMakeFiles/Client.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable Client"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable Client"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Client.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -203,6 +203,6 @@ CMakeFiles/Client.dir/clean:
 .PHONY : CMakeFiles/Client.dir/clean
 
 CMakeFiles/Client.dir/depend:
-	cd "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug" && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Client.dir/DependInfo.cmake" --color=$(COLOR)
+	cd /home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/iacopo/Scrivania/FOC/Secure4InArow /home/iacopo/Scrivania/FOC/Secure4InArow /home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug /home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug /home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Client.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/Client.dir/depend
 

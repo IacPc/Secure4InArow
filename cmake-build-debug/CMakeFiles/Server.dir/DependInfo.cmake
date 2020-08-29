@@ -4,14 +4,14 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/DiffieHellamnnManager.cpp" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Server.dir/Libraries/DiffieHellamnnManager.cpp.o"
-  "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SignatureManager.cpp" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Server.dir/Libraries/SignatureManager.cpp.o"
-  "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Libraries/SymmetricEncryptionManager.cpp" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Server.dir/Libraries/SymmetricEncryptionManager.cpp.o"
-  "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/Server.cpp" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Server.dir/Server/Server.cpp.o"
-  "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/ServerMain.cpp" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Server.dir/Server/ServerMain.cpp.o"
-  "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/Server/UserConnectionManager.cpp" "/Users/lauralemmi/Google Drive/università/CE/Cybersecurity/Progetto/cmake-build-debug/CMakeFiles/Server.dir/Server/UserConnectionManager.cpp.o"
+  "/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/DiffieHellamnnManager.cpp" "/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Server.dir/Libraries/DiffieHellamnnManager.cpp.o"
+  "/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SignatureManager.cpp" "/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Server.dir/Libraries/SignatureManager.cpp.o"
+  "/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SymmetricEncryptionManager.cpp" "/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Server.dir/Libraries/SymmetricEncryptionManager.cpp.o"
+  "/home/iacopo/Scrivania/FOC/Secure4InArow/Server/Server.cpp" "/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Server.dir/Server/Server.cpp.o"
+  "/home/iacopo/Scrivania/FOC/Secure4InArow/Server/ServerMain.cpp" "/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Server.dir/Server/ServerMain.cpp.o"
+  "/home/iacopo/Scrivania/FOC/Secure4InArow/Server/UserConnectionManager.cpp" "/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Server.dir/Server/UserConnectionManager.cpp.o"
   )
-set(CMAKE_CXX_COMPILER_ID "AppleClang")
+set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
