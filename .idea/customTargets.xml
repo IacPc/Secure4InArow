@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CLionExternalBuildManager">
+    <target id="ef6da9e4-4316-4ae5-8af2-a01c4d077da8" name="Server" defaultType="TOOL">
+      <configuration id="e1e91272-3d9d-4c63-a173-8dde2712d4b1" name="Server" toolchainName="Default" />
+    </target>
+    <target id="5e51f8a5-71a3-461f-a973-1cef37d84d20" name="Client" defaultType="TOOL">
+      <configuration id="c08054c5-e9c3-4817-9a3d-1030a1a4d176" name="Client" toolchainName="Default" />
+    </target>
+  </component>
+</project>
