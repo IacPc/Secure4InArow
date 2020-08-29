@@ -12,11 +12,14 @@ UserConnectionManager::UserConnectionManager(Server *srv, sockaddr_in client_add
     userSocket = clSocket;
 
     RAND_poll();
-    cout<<"UserConnectionManager created successfully\n";
+
+    diffieHellmannManager = new DiffieHellmannManager();
+    cout<<"UserConnectionManager created successfully"<<endl;
 
 }
 
 void UserConnectionManager::openNewconnectionwithClient() {
+
     if(!this->establishSecureConnection()){
         server->removeUser(this->userName);
         delete this;
@@ -24,60 +27,6 @@ void UserConnectionManager::openNewconnectionwithClient() {
     }else
         cout<<"Secure connection established"<<std::endl;
 
-    size_t players_num;
-
-    if(!sendPlayerList(players_num)){
-        cerr<<"Error in sending players list\n";
-        delete this;
-    }
-
-
-    string *choice;
-    bool isWaiting = false;
-    choice = waitForChoice(isWaiting);
-    if((choice == NULL) && isWaiting == true){
-        //è lo sfidato
-        string *opponent = waitForResponse();
-        if(opponent == NULL){
-            cerr << "The challenge cannot start \n";
-            delete choice;
-            delete opponent;
-            delete this;
-        }
-
-        if(!sendOpponentKey(opponent)){
-            cerr << "Error sending the opponent key to myClient \n";
-            delete choice;
-            delete opponent;
-            delete this;
-        }
-
-        unsigned int port;
-        if(!waitForOpponentReady(port)){
-            cerr << "Error in receiving clientReady for challenge \n";
-            delete choice;
-            delete opponent;
-            delete this;
-        }
-        if(!sendMyKeyToChallenger(opponent, port)) {
-            cerr << "Error sending myClient key to the challenger \n";
-            delete choice;
-            delete opponent;
-            delete this;
-        }
-
-    }else{
-        if(choice  == NULL) {
-            cerr << "Error in receiving the chosen player\n";
-            delete choice;
-            delete this;
-        }else{
-            //è lo sfidante
-            sendChallengeMessage(choice);
-
-            }
-        }
-    waitForEndOfGame();
 }
 
 
@@ -86,7 +35,7 @@ bool UserConnectionManager::establishSecureConnection() {
 
     //wait for hello message
     if(!waitForHelloMessage()){
-        cerr<<"Error in receiving Hello Message\n";
+        cerr<<"Error in receiving Hello Message"<<endl;
         delete this;
         return false;
     }
@@ -99,58 +48,32 @@ bool UserConnectionManager::establishSecureConnection() {
 
     //sending certificate message
     if(!sendCertificate(certificateMsg, cert_msg_len)){
-        cerr<<"Error in sending certificate\n";
+        cerr<<"Error in sending certificate"<<endl;
         delete this;
         return false;
     }else{
-        cout<<"Certificate sent succesfully"<<endl;
+        cout<<"Certificate sent successfully"<<endl;
     }
 
-    //waiting for client
-    if(!waitForClientBeReady()){
-        cerr<<"Error in receiving Client Ready Message\n";
+    if(!waitForClientPubKey()){
+        cerr<<"Error in receiving client pubkey"<<endl;
         delete this;
         return false;
+    }else{
+        cout<<"PubKey received successfully"<<endl;
     }
 
-    //creating Symmetric Keys Message
-    unsigned char *keysMsg;
-    size_t keys_len;
-    keysMsg = createKeyMessage(keys_len);
-
-    //sending KeysMessage
-    if(!sendSymmetricKeys(keysMsg, keys_len)){
-        cerr<<"Error in sending keys\n";
+    if(!sendMyPubKey()){
+        cerr<<"Error in sending my pubkey"<<endl;
         delete this;
         return false;
+    }else{
+        cout<<"PubKey sent successfully"<<endl;
     }
 
-    delete []keysMsg;
-    //receiving client nonce
-    unsigned char * client_nonce;
-    size_t cl_nonce_len = CLIENTNONCEMSGLENGTH;
-    client_nonce = waitForClientNonce(cl_nonce_len);
-    if(client_nonce == NULL){
-        cerr<<"Error in receiving Client Nonce\n";
-        delete this;
-        return false;
-    }else
-        std::cout<<"Client nonce created correctly"<<std::endl;
 
 
-    //creating server nonce
-    unsigned char* mynonce = new unsigned char[NONCELENGTH];
-    size_t mynonce_len = NONCELENGTH;
-    RAND_bytes((unsigned char*)&mynonce[0], mynonce_len);
-
-    std::cout<<"Server nonce created correctly"<<std::endl;
-     //sending server nonce
-    if(!sendServerNonce(mynonce, mynonce_len, client_nonce, cl_nonce_len)){
-        cerr<<"Error in sending server nonce\n";
-        delete this;
-        return false;
-    }
-
+/*
     //waiting for my nonce
     unsigned char* receivedNonce;
     receivedNonce = waitForMyNonce();
@@ -159,7 +82,7 @@ bool UserConnectionManager::establishSecureConnection() {
         delete this;
         return false;
     }
-
+*/
     server->insertUserConnectionInMap(*userName, this);
 
 
@@ -167,403 +90,274 @@ bool UserConnectionManager::establishSecureConnection() {
 }
 
 bool UserConnectionManager::waitForHelloMessage(){
-    cout<<"waitForHelloMessage\n";
 
-    unsigned char*buffer;
+    auto *buffer = new unsigned char[HELLOMESSAGELENGTH];
     size_t ret;
 
-    size_t bytes_max = MAXUSERNAMELENGTH+1;
-    buffer = new unsigned char[bytes_max];
-    ret = recv(userSocket, (void*)buffer, bytes_max, 0);
+    ret = recv(userSocket, buffer, HELLOMESSAGELENGTH, 0);
     if(ret <= 0){
         cout<<"Error in receiving HelloMessage\n";
         return false;
     }
 
     cout<<"Dimensione HelloMessage: "<<ret<<endl;
-    if(buffer[0] == HELLOMSGCODE){
-        cout<<"HelloMessage opcode verified\n";
-        buffer[ret-1] = '\0';
-        this->userName = new string((const char*)&buffer[1]);
-
-        cout<<"THE RECEIVED USERNAME IS: "<<userName->c_str()<<endl;
-        delete []buffer;
-        return true;
-    }else {
+    if(buffer[0] == HELLOMSGCODE) {
+        cout << "HelloMessage opcode verified\n";
+    }
+    else{
         cerr<<"Wrong message!\n";
         delete []buffer;
         return false;
     }
 
+    clientNonce = new unsigned char[NONCELENGTH];
+    memcpy(clientNonce, &buffer[1], NONCELENGTH);
+
+    buffer[ret-1] = '\0';
+    this->userName = new string((const char*)&buffer[1 + NONCELENGTH]);
+
+    cout<<"THE RECEIVED USERNAME IS: "<<userName->c_str()<<endl;
+    delete []buffer;
+    return true;
 
 }
-
 bool UserConnectionManager::sendCertificate(unsigned char* msg, size_t msg_len){
     cout<<"sendCertificate\n";
 
     size_t ret;
-    ret = send(userSocket, (void*)msg, msg_len, 0);
+    ret = send(userSocket, msg, msg_len, 0);
     if(ret < msg_len){
         cout<<"Error in sending certificate\n";
         return false;
     }else
         return true;
 }
-
 unsigned char* UserConnectionManager::createCertificateMessage(size_t& msg_len){
     unsigned char *cert;
     int cert_len;
+    int pos = 0;
     cert = server->geti2dCertificate(cert_len);
-    unsigned char *buffer  = new unsigned char[cert_len + 1];
-    buffer[0] = CERTIFICATEMSGCODE;
-    msg_len = (size_t)(cert_len+1);
-    memcpy((buffer + 1), cert,(cert_len));
+
+    //creo il buffer e copio opcode
+    msg_len = (size_t)cert_len + NONCELENGTH + 1;
+    unsigned char *buffer  = new unsigned char[msg_len];
+    buffer[pos] = CERTIFICATEMSGCODE;
+    pos++;
+
+    //creo nonce e lo copio nel buffer
+    myNonce = new unsigned char[NONCELENGTH];
+    RAND_bytes(&myNonce[0], NONCELENGTH);
+    memcpy((buffer+pos), myNonce, NONCELENGTH);
+    pos += NONCELENGTH;
+
+    //copio certificato nel buffer
+    memcpy((buffer + pos), cert, (size_t)(cert_len));
+    pos += (size_t)(cert_len);
     cout<<"Certificate message created succesfully "<<endl;
 
     return buffer;
 }
+bool UserConnectionManager::waitForClientPubKey() {
 
-bool UserConnectionManager::waitForClientBeReady(){
-
-    unsigned char *buffer;
-    size_t ret;
-
-    size_t bytes_max = userName->length()+1;
-    buffer = new unsigned char[bytes_max];
-    ret = recv(userSocket, buffer, bytes_max, 0);
-    if(ret < 0){
-        cout<<"Error in receiving Readiness Message\n";
+    auto* buffer = new unsigned char[MAXPUBKEYMESSAGELENGTH];
+    size_t ret = recv(userSocket ,buffer, MAXPUBKEYMESSAGELENGTH, MSG_WAITALL);
+    if(ret <= 0){
+        cout<<"Error receiving the public key message"<<endl;
+        delete [] buffer;
         return false;
     }
-
-    //Check the opcode
-    if(buffer[0] == CLIENTREADYCODE){
-        cout<<"Readiness opcode verified\n";
-        return true;
-    }else {
-        cerr<<"Wrong message, expected Client ready message!\n";
-        return false;
-    }
-}
-
-bool UserConnectionManager::sendSymmetricKeys(unsigned char* keysMsg, size_t keysMsg_len){
-    cout<<"sendSymmetricKeys\n";
-
-    size_t ret;
-    ret = send(userSocket, keysMsg, keysMsg_len, 0);
-    if(ret < keysMsg_len){
-        cout<<"Error in sending symmetric keys\n";
-        return false;
-    }else
-        cout<<"Key establishment message has been sent\n";
-    cout<<"SEND KEYS ret= "<<ret<<endl;
-    return true;
-
-}
-
-unsigned char* UserConnectionManager::createKeyMessage(size_t& keys_len){
-
-    size_t clearOpcodePlusSimKeysLen = KEYSLENGTH + 1;
-
-    //keys takes the plain msg containing mac key, aes key and iv
-    unsigned char *keys;
-    keys = getKeyPlainMgs(clearOpcodePlusSimKeysLen);
-
-    unsigned char* encryptedSimmetricKeys, *signedMsg, *ivEnvelope, *keyEnvelope;
-
-    //passare mia chiave priv e key pub del client
-
-    string *server_key = new string("../Server/Server_Keys/4InARowServerPrvkey.pem");
-    string* path = new string("../Server/Users_Public_Keys/");
-    path->append(userName->c_str());
-    path->append("_pubkey.pem");
-
-    this->rsaManager = new RSAManager(server_key, path);
-    delete path;
-
-    size_t encriptedKeyPlusOpcodeLen, textToBesignedLen, ivSize, keyEnvSize;
-    encriptedKeyPlusOpcodeLen = clearOpcodePlusSimKeysLen;
-
-    encryptedSimmetricKeys = rsaManager->encryptThisMessage(keys, encriptedKeyPlusOpcodeLen, keyEnvelope,
-                                                            keyEnvSize,ivEnvelope, ivSize);
-
-    std::cout<<"encriptedKeyPlusOpcodeLen = "<< encriptedKeyPlusOpcodeLen <<",keyEnvSize = "<<keyEnvSize <<",ivSize = "<<ivSize<<endl;
-
-    textToBesignedLen = encriptedKeyPlusOpcodeLen + ivSize + keyEnvSize;
-    auto* textToBesigned = new unsigned char[textToBesignedLen];
-    int step =0;
-
-    memcpy(&textToBesigned[step],encryptedSimmetricKeys,encriptedKeyPlusOpcodeLen);
-    step += encriptedKeyPlusOpcodeLen;
-    memcpy(&textToBesigned[step],ivEnvelope, ivSize);
-    step += ivSize;
-    memcpy(&textToBesigned[step],keyEnvelope, keyEnvSize);
-
-    signedMsg = rsaManager->signThisMessage(textToBesigned, textToBesignedLen);
-    std::cout<<"rsaManager->signThisMessage() returned "<<textToBesignedLen<<endl;
-    int textSignedLen = textToBesignedLen;
-
-    unsigned char *encrKeyMessagebuffer = new unsigned char[encriptedKeyPlusOpcodeLen + ivSize + keyEnvSize + textSignedLen];
-
-    step = 0;
-    memcpy(&encrKeyMessagebuffer[step], encryptedSimmetricKeys, encriptedKeyPlusOpcodeLen);
-    step += encriptedKeyPlusOpcodeLen;
-    memcpy(&encrKeyMessagebuffer[step], ivEnvelope, ivSize);
-    step += ivSize;
-    memcpy(&encrKeyMessagebuffer[step], keyEnvelope, keyEnvSize);
-    step += keyEnvSize;
-    memcpy(&encrKeyMessagebuffer[step], signedMsg, textSignedLen);
-    step += textSignedLen;
-
-    keys_len = step;
-    cout<<"Key establishment message has been created, its legth is:"<<keys_len<<endl;
-
-    delete [] textToBesigned;
-    delete [] keys;
-    delete [] encryptedSimmetricKeys;
-    delete [] signedMsg;
-    delete [] ivEnvelope;
-    delete [] keyEnvelope;
-    delete server_key;
-
-    return encrKeyMessagebuffer;
-}
-
-unsigned char* UserConnectionManager::getKeyPlainMgs(size_t &keys_len){
-    cout<<"createKeyMessage\n";
-
-    unsigned char* key = new unsigned char[AESKEYLENGTH];
-    RAND_bytes((unsigned char*)&key[0], AESKEYLENGTH);
-
-    unsigned char *iv = new unsigned char[AESIVLENGTH];
-    RAND_bytes((unsigned char*)&iv[0], AESIVLENGTH);
-
-    unsigned char* hmac = new unsigned char[HMACKEYLENGTH];;
-    RAND_bytes((unsigned char*)&hmac[0], HMACKEYLENGTH);
-    //Inizializing symmetricEncryptionManager
-    symmetricEncryptionManager = new SymmetricEncryptionManager(key, iv, hmac);
-
-
-    unsigned char* symmComunicationkeyBuffer = new unsigned char[KEYSLENGTH];
-    size_t hmac_len= HMACKEYLENGTH;
-    memcpy(symmComunicationkeyBuffer, hmac, hmac_len);
-    int pos = hmac_len;
-    size_t aes_len= AESKEYLENGTH;
-    memcpy((symmComunicationkeyBuffer + pos), key, aes_len);
-    pos += aes_len;
-    size_t iv_len= AESIVLENGTH;
-    memcpy((symmComunicationkeyBuffer + pos), iv, iv_len);
-    pos += iv_len;
-    keys_len = pos;
-
-    unsigned char *opcodePlusCommKeysBuffer = new unsigned char[KEYSLENGTH + 1];
-    opcodePlusCommKeysBuffer[0] = KEYESTABLISHMENTCODE;
-    memcpy(opcodePlusCommKeysBuffer + 1, symmComunicationkeyBuffer, KEYSLENGTH);
-    delete [] symmComunicationkeyBuffer;
-
-    cout<<"HMAC KEY, AES KEY and IV have been created succesfully\n";
-
-    keys_len++;
-
-    return opcodePlusCommKeysBuffer; //opcode + simmetric keys,this is what it will be sent (encrypted) trough the socket
-}
-
-unsigned char* UserConnectionManager::waitForClientNonce(size_t& clientNonceMsg_len){
-    cout<<"waitForClientNonce\n";
-    unsigned char *nonce;
-    cout << "Expected clientNonceMsg_len: " << clientNonceMsg_len << endl;
-    unsigned char* buffer = new unsigned char[clientNonceMsg_len + 1];
-    //unsigned char* buffer = new unsigned char[clientNonceMsg_len];
-
-    //Receive the client nonce msg
-    size_t ret = 0;
-
-    ret = recv(userSocket, buffer, clientNonceMsg_len + 1, MSG_WAITALL);
-   // ret = recv(userSocket, buffer, clientNonceMsg_len, MSG_WAITALL);
-    /*if(ret != clientNonceMsg_len + 1) {
-        cout << "Error in receiving client nonce " << ret << "\n";
-        return NULL;
-    }*/
-    cout<<"RET = "<<ret<<endl;
-
-    unsigned char *plainMsg = new unsigned char[NONCELENGTH+1];
-    memcpy(plainMsg, buffer+1, NONCELENGTH+1);
-
-    unsigned char *macToVerify = new unsigned char[SHA256DIGESTLENGTH];
-    memcpy(macToVerify, &buffer[NONCELENGTH+2], SHA256DIGESTLENGTH);
-/*
-    unsigned char *plainMsg = new unsigned char[NONCELENGTH+1];
-    memcpy(plainMsg, buffer, NONCELENGTH+1);
-
-    unsigned char *macToVerify = new unsigned char[SHA256DIGESTLENGTH];
-    memcpy(macToVerify, &buffer[NONCELENGTH+1], SHA256DIGESTLENGTH);
-    */
-    //decripto e verifico
-    size_t plain_len = NONCELENGTH+1;
-    if(!symmetricEncryptionManager->verifyMac(macToVerify, plainMsg, plain_len)){
-        cout<<"MAC has not been verified\n";
-        return NULL;
-    }
-
-
-    if (plainMsg[0] == CLIENTNONCECODE) {
-        nonce = new unsigned char[NONCELENGTH];
-        cout << "ClientNonce opcode verified\n";
-        memcpy(nonce, &plainMsg[1], NONCELENGTH);
-        clientNonceMsg_len = NONCELENGTH;
-        delete []plainMsg;
-        delete []buffer;
-        return nonce;
-    } else {
-        cerr << "Wrong message!\n";
-        delete []plainMsg,
-        delete []buffer,
-        delete []nonce;
-        return NULL;
-    }
-}
-
-bool UserConnectionManager::sendServerNonce(unsigned char* serverNonce, size_t& server_len, unsigned char* clientNonce, size_t& client_len){
-    cout<<"sendServerNonce\n";
-
-    size_t ret, message_len;
-    message_len = SERVERNONCEMSGLENGTH;
-
-    unsigned char* buffer;
-    buffer = createServerNonceMessage(serverNonce, server_len, clientNonce, client_len, message_len);
-
-    ret = send(userSocket, buffer, message_len, 0);
-    if(ret != message_len){
-        cout<<"Error in sending symmetric keys,ret = "<< ret<<"\n";
-        return false;
-    }
-    cout<<"Server nonce message has been sent, RET= "<<ret<<endl;
-
-    for(int i = 0; i < server_len; i++)
-        cout<<serverNonce[i];
-    cout<<endl;
-
-    return true;
-}
-
-unsigned char* UserConnectionManager::createServerNonceMessage(unsigned char *serverNonce, size_t& server_len, unsigned char *clientNonce, size_t& cl_len, size_t& message_len) {
-
-    unsigned char *plainMsg, *hMacMsg;
-    plainMsg = new unsigned char[2*NONCELENGTH+1];
-    size_t pos = 0;
-    plainMsg[0] = SERVERNONCECODE;
-    pos++;
-    cl_len = NONCELENGTH;
-    memcpy((plainMsg+pos), clientNonce, cl_len);
-    pos += cl_len;
-
-    server_len = NONCELENGTH;
-    memcpy((plainMsg+pos), serverNonce, server_len);
-    pos += server_len;
-
-    size_t hmac_len = pos;
-    hMacMsg = symmetricEncryptionManager->computeMac(plainMsg, hmac_len);
-
-
-    unsigned char *buffer = new unsigned char[pos+hmac_len];
-    memcpy(buffer, plainMsg, pos);
-    memcpy(buffer+pos, hMacMsg, hmac_len);
-    message_len = hmac_len + pos;
-    return buffer;
-
-}
-
-unsigned char* UserConnectionManager::waitForMyNonce(){
-    cout<<"waitForMyNonce\n";
-
-    unsigned char* buffer = new unsigned char[VERIFICATIONNONCEMSGLENGTH];
-    size_t ret;
-
-
-    //Receive the client nonce msg
-    ret = recv(userSocket, buffer, VERIFICATIONNONCEMSGLENGTH, 0);
-    if(ret != VERIFICATIONNONCEMSGLENGTH){
-        cout<<"Error in receiving my nonce\n";
-        return NULL;
-    }
-
-    auto *plainMsg = new unsigned char[NONCELENGTH + 1];
-    auto *hmac = new unsigned char[SHA256DIGESTLENGTH];
 
     size_t pos = 0;
-    memcpy(plainMsg, buffer+pos, NONCELENGTH+1);
-
-    pos+= NONCELENGTH+1;
-    memcpy(hmac, (buffer+pos), SHA256DIGESTLENGTH);
-
-    delete []buffer;
-
-    pos += SHA256DIGESTLENGTH;
-
-    size_t toVerify = pos-SHA256DIGESTLENGTH;
-
-    //verifico
-    if(!symmetricEncryptionManager->verifyMac(hmac, plainMsg, toVerify)){
-        cout<<"HMAC not verified\n";
-        delete []hmac;
-        delete []plainMsg;
-        return NULL;
-    }else
-        cout<<"HMAC verified\n";
-
-    delete []hmac;
-
-    if (plainMsg[0] == SERVERNONCEVERIFICATIONCODE) {
-        cout << "Server Nonce message opcode verified\n";
-        auto *nonce = new unsigned char[NONCELENGTH];
-        memcpy(nonce, plainMsg+1, NONCELENGTH);
-
-        delete []plainMsg;
-
-        return nonce;
-
-    } else {
-        cerr << "Wrong message!\n";
-        delete []plainMsg;
-        return NULL;
+    if(buffer[pos] == PUBKEYMESSAGECODE) {
+        cout << "Pubkey message opcode verified" << endl;
+        pos++;
     }
-}
+    else{
+        cout<<"Wrong message. Expected pubkey message."<<endl;
+        delete [] buffer;
+        return false;
+    }
 
-bool UserConnectionManager::verifyNonce(unsigned char* myNonce, unsigned char* receivedNonce){
+    //copio client nonce
+    auto* receivedClientNonce = new unsigned char[NONCELENGTH];
+    memcpy(receivedClientNonce, (buffer+pos), NONCELENGTH);
+    pos += NONCELENGTH;
+
+    //copio il mio nonce
+    auto* myReceivedNonce = new unsigned char[NONCELENGTH];
+    memcpy(myReceivedNonce, (buffer+pos), NONCELENGTH);
+    pos += NONCELENGTH;
+
+    //copio lo username
+    string *username= new string((const char*)&buffer[pos]);
+    pos += username->length()+1;
+
+    //prelevo la pubkey
+    auto *clientPubKey = new unsigned char[PUBKEYLENGTH];
+    memcpy(clientPubKey, (buffer+pos), PUBKEYLENGTH);
+    pos += PUBKEYLENGTH;
+
+
+    auto *signature = new unsigned char[SIGNATURELENGTH];
+    auto *messageToVerify = new unsigned char[pos];
+    memcpy(messageToVerify, buffer, pos);
+    memcpy(signature, buffer+pos, ret-pos);
+
+    //verifico la firma
+    if(!signatureManager->verifyThisSignature(signature, ret-pos, messageToVerify, pos)) {
+        cout<<"Signature not verified"<<endl;
+        delete [] buffer;
+        delete [] signature;
+        delete [] messageToVerify;
+        return false;
+    }
+
+    delete [] signature;
+    delete [] messageToVerify;
+
+
+
+    //verifico client nonce
+    if(!verifyNonce(clientNonce, receivedClientNonce)){
+        cout<<"The client sent a different nonce"<<endl;
+        delete [] buffer;
+        delete [] receivedClientNonce;
+        return false;
+    }
+
+    delete [] receivedClientNonce;
+
+    //verifico il mio nonce
+    if(!verifyNonce(myNonce, myReceivedNonce)){
+        cout<<"My nonce is not verified"<<endl;
+        delete [] buffer;
+        delete [] myReceivedNonce;
+        return false;
+    }
+
+    delete [] myReceivedNonce;
+
+    //verifico lo username
+     if(strcmp(username->c_str(), this->userName->c_str()) != 0 || (username->length() != this->userName->length())){
+            cout<<"The username is different from the one sent in the Hello Message."<<endl;
+            delete [] buffer;
+            delete username;
+            return false;
+     }
+
+     delete username;
+
+
+    //chiamo DH
+    diffieHellmannManager->setPeerPubKey(clientPubKey, PUBKEYLENGTH);
+    delete []clientPubKey;
+
+
+    return true;
+
+
+}
+bool UserConnectionManager::verifyNonce(unsigned char* knownNonce, unsigned char* receivedNonce){
     //comparison between the two nonces
 
-    cout<<"receivedNonce "<<endl;
-    for(int i = 0; i < NONCELENGTH; i++)
-        cout<<receivedNonce[i];
-    cout<<endl;
-
-    cout<<"myNonce "<<endl;
-    for(int i = 0; i < NONCELENGTH; i++)
-        cout<<myNonce[i];
-    cout<<endl;
-
-    if(CRYPTO_memcmp(myNonce, receivedNonce, NONCELENGTH) == 0) {
-        cout<<"Nonce verified\n";
+    if(memcmp(knownNonce, receivedNonce, NONCELENGTH) == 0) {
+        cout<<"Nonce verified"<<endl;
         return true;
     }
     else {
-        cout<<"Nonce has not been verified\n";
+        cout<<"Nonce has not been verified"<<endl;
         return false;
     }
 }
+bool UserConnectionManager::sendMyPubKey() {
+    auto *buffer = new unsigned char[MAXPUBKEYMESSAGELENGTH];
 
+    //inserisco opcode
+    size_t pos = 0;
+    buffer[pos] = PUBKEYMESSAGECODE;
+    pos++;
+
+    //inserisco client nonce
+    memcpy((buffer+pos), clientNonce, NONCELENGTH);
+    pos += NONCELENGTH;
+
+    //inserisco myNonce
+    memcpy((buffer+pos), myNonce, NONCELENGTH);
+    pos += NONCELENGTH;
+
+    //inserisco '\0' al posto dello username
+    buffer[pos] = '\0';
+    pos++;
+
+    //inserisco la chiave
+    size_t myKey_len = PUBKEYLENGTH;
+    unsigned char* myKey = diffieHellmannManager->getMyPubKey(myKey_len);
+    memcpy((buffer+pos), myKey, myKey_len);
+    pos += myKey_len;
+
+    delete [] myKey;
+
+    //firmo il messaggio
+    size_t signature_len = pos;
+    unsigned char* signedMessage = signatureManager->signTHisMessage(buffer, signature_len);
+
+    //copio la firma nel buffer
+    memcpy((buffer+pos), signedMessage, signature_len);
+    pos += signature_len;
+
+    //invio
+    size_t ret = send(userSocket, buffer, pos, 0);
+    if(ret != pos){
+        cout<<"Error in sending my pubkey"<<endl;
+        delete [] buffer;
+        return false;
+    }
+
+    delete [] buffer;
+    return true;
+
+
+}
+bool UserConnectionManager::createSessionKey() {
+
+    size_t sharedSecret_len;
+    unsigned char*sharedSecret = diffieHellmannManager->getSharedSecret(sharedSecret_len);
+    auto* usefulSecret = new unsigned char[USEFULSECRETLENGTH];
+
+    //copio i 16 byte meno significati
+    memcpy(usefulSecret, sharedSecret, USEFULSECRETLENGTH);
+    delete [] sharedSecret;
+
+    unsigned char*digest;
+    unsigned int digest_len;
+
+    EVP_MD_CTX *Hctx;
+    Hctx = EVP_MD_CTX_new();
+
+    digest = (unsigned char*)malloc(EVP_MD_size(EVP_sha256()));
+
+    EVP_DigestInit(Hctx, EVP_sha256());
+    EVP_DigestUpdate(Hctx, (unsigned char*)sharedSecret, USEFULSECRETLENGTH);
+    EVP_DigestFinal(Hctx, digest, &digest_len);
+
+    EVP_MD_CTX_free(Hctx);
+
+    delete [] usefulSecret;
+
+}
+/*
 bool UserConnectionManager::sendPlayerList(size_t& players_num) {
 
     vector<string> list;
 
     list = server->getUserList(userName);
 
-   /* if(list.size() > 0) {
+   if(list.size() > 0) {
         for(auto& v: list)
             cout<<v.c_str()<<" ";
         cout<<endl;
       }
-*/
+
    size_t msg_len;
    unsigned char *buffer = createPlayerListMsg(list, msg_len);
 
@@ -609,9 +403,9 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
     memcpy(plainMsg+1, &(num_players), sizeof(size_t));
 
     memcpy(plainMsg+1+sizeof(size_t), buffer, pos);
-/*    for(int i =1+sizeof(num_players); i < 1+sizeof(num_players)+pos; i++)
+//    for(int i =1+sizeof(num_players); i < 1+sizeof(num_players)+pos; i++)
         cout<<plainMsg[i];
-    cout<<endl; */
+    cout<<endl;
 
     size_t len = 1+sizeof(size_t)+pos;
     unsigned char *encrypted = symmetricEncryptionManager->encryptNMACThisMessage(plainMsg, len);
@@ -666,14 +460,6 @@ string *UserConnectionManager::waitForChoice(bool& waiting) {
 
 }
 
-UserConnectionManager::~UserConnectionManager() {
-
-    close(userSocket);
-    delete []server;
-    delete userName;
-    delete []symmetricEncryptionManager;
-    delete []rsaManager;
-}
 
 EVP_PKEY *UserConnectionManager::getUserPubKey(string* opponent) {
 
@@ -871,10 +657,16 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, int port) 
     return true;
 }
 
-void UserConnectionManager::waitForEndOfGame() {
+*/
 
-    auto *buffer = new unsigned char [MAXMSGLENGTH];
+UserConnectionManager::~UserConnectionManager() {
 
-    size_t ret = recv(userSocket, buffer, MAXMSGLENGTH, 0);
-
+    close(userSocket);
+    delete [] server;
+    delete userName;
+    delete [] symmetricEncryptionManager;
+    delete [] signatureManager;
+    delete diffieHellmannManager;
+    delete [] clientNonce;
+    delete [] myNonce;
 }

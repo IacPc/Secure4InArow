@@ -6,6 +6,11 @@
 #define PROGETTO_CONSTANT_H
 
 #endif //PROGETTO_CONSTANT_H
+#define OPCODELENGTH 1
+#define PUBKEYLENGTH 72
+#define SIGNATURELENGTH 256
+#define USEFULSECRETLENGTH 16
+
 
 #define AESKEYLENGTH 16
 #define AESBLOCKLENGTH 16
@@ -19,7 +24,6 @@
 #define ENCRYPTEDKEYLENGTH AESBLOCKLENGTH * 5
 #define IVENVELOPELENGTH 16
 #define KEYENVELOPELENGTH 256
-#define SIGNEDMESSAGELENGTH 256
 #define MSGTOSIGNLENGTH ENCRYPTEDKEYLENGTH + IVENVELOPELENGTH + KEYENVELOPELENGTH
 #define MAXCERTIFICATELENGTH 4096
 #define SIZETLENGTH 2
@@ -30,12 +34,12 @@
 ////////////////////////////////////////////////////////////////////
 //                      MESSAGE LENGTH                          ////
 ////////////////////////////////////////////////////////////////////
-
-#define CLIENTNONCEMSGLENGTH NONCELENGTH + SHA256DIGESTLENGTH + 1
-#define VERIFICATIONNONCEMSGLENGTH NONCELENGTH + SHA256DIGESTLENGTH + 1
-#define SERVERNONCEMSGLENGTH 2*NONCELENGTH + SHA256DIGESTLENGTH + 1
-#define RESPONSEENCRYPTEDLENGTH 32
+#define HELLOMESSAGELENGTH MAXUSERNAMELENGTH + NONCELENGTH + 1
+#define MAXPUBKEYMESSAGELENGTH OPCODELENGTH + 2*NONCELENGTH + MAXUSERNAMELENGTH + PUBKEYLENGTH + SIGNATURELENGTH
 
 ////////////////////////////////////////////////////////////////////
 //                      MESSAGE OPCODE                          ////
 ////////////////////////////////////////////////////////////////////
+#define HELLOMSGCODE 0x01
+#define CERTIFICATEMSGCODE 0x02
+#define PUBKEYMESSAGECODE 0x03

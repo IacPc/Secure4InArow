@@ -62,7 +62,6 @@ private:
     unsigned char *obtainHMAC(unsigned char*);
 
 public:
-    RSAManager *rsaManager;
 
     SymmetricEncryptionManager* symmetricEncryptionManager;
     CertificateManager* certificateManager;
