@@ -18,10 +18,12 @@ class DiffieHellmannManager {
 private:
     EVP_PKEY* peerPubKey;
     EVP_PKEY* myPubKey;
-    unsigned char sharedSecret;
-    unsigned char* computeSharedSecret();
+    size_t secret_len;
+    unsigned char* sharedSecret;
+    void computeSharedSecret();
 public:
     DiffieHellmannManager();
+    ~DiffieHellmannManager();
     void setPeerPubKey(unsigned char*,size_t);
     unsigned char* getMyPubKey(size_t & );
     unsigned char* getSharedSecret(size_t&);
