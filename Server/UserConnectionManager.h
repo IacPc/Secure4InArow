@@ -51,7 +51,13 @@ private:
     bool waitForClientPubKey();
     bool verifyNonce(unsigned char*, unsigned char*);
     bool sendMyPubKey();
+
+    bool sharePlayersList();
+    bool waitForPlayersRequest();
+    bool sendPlayersList();
+
     void createSessionKey();
+
 
 /*
     bool sendChallengeMessage(string*);
@@ -60,13 +66,14 @@ private:
     bool waitForOpponentReady(unsigned int&);
 */
     unsigned char* createCertificateMessage(size_t&);
+    unsigned char* waitForClientChoice();
 
 
 public:
     UserConnectionManager(Server*, sockaddr_in, int);
     void openNewconnectionwithClient();
 
-    bool sharePlayersList();
+
     ~UserConnectionManager();
 };
 

@@ -27,6 +27,12 @@ void UserConnectionManager::openNewconnectionwithClient() {
     }else
         cout<<"Secure connection established"<<std::endl;
 
+    if(!sharePlayersList()){
+        cout<<"The game cannot start. Failed the players credential sharing"<<endl;
+        delete this;
+        return;
+    }
+
 }
 
 
@@ -72,18 +78,6 @@ bool UserConnectionManager::establishSecureConnection() {
     }
 
     createSessionKey();
-
-
-/*
-    //waiting for my nonce
-    unsigned char* receivedNonce;
-    receivedNonce = waitForMyNonce();
-    if(!verifyNonce(mynonce, receivedNonce)){
-        cerr<<"Error in nonce received\n";
-        delete this;
-        return false;
-    }
-*/
     server->insertUserConnectionInMap(*userName, this);
 
 
@@ -354,6 +348,86 @@ void UserConnectionManager::createSessionKey() {
 
     symmetricEncryptionManager = new SymmetricEncryptionManager(digest, digest_len);
     delete [] digest;
+}
+bool UserConnectionManager::sharePlayersList() {
+
+    if(!waitForPlayersRequest()){
+        cout<<"Error in players list request"<<endl;
+        return false;
+    }
+
+    if(!sendPlayersList()){
+        cout<<"Error in sending players list"<<endl;
+        return false;
+    }
+
+    if(waitForClientChoice() == NULL){
+        cout<<"Error in receiving player choice"<<endl;
+        return false;
+    }
+
+}
+bool UserConnectionManager::waitForPlayersRequest() {
+
+    auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
+    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, MSG_WAITALL);
+    if(ret < 0){
+        cout<<"Error receiving Players Request Message"<<endl;
+        delete []buffer;
+        return false;
+    }
+
+    if(buffer[0] == LISTREQUESTMESSAGE){
+        cout<<"Players list request message verified"<<endl;
+    }else{
+        cout<<"Wrong message"<<endl;
+        delete [] buffer;
+        return false;
+    }
+
+    size_t pos = 0;
+    //copio AAD
+    size_t aad_len = OPCODELENGTH+IVLENGTH+COUNTERLENGTH;
+    auto* AAD = new unsigned char[aad_len];
+    memcpy(AAD, buffer, aad_len);
+    pos += aad_len;
+
+    //prelevo IV
+    auto *iv = new unsigned char[IVLENGTH];
+    memcpy(iv, &AAD[1], IVLENGTH);
+
+    int cont;
+    memcpy(&cont, &AAD[1+IVLENGTH], COUNTERLENGTH);
+    this->counter = ntohs(cont);
+
+
+    //copio dati criptati
+    size_t encrypted_len = ret - TAGLENGTH;
+    auto* encryptedData = new unsigned char[encrypted_len];
+    memcpy(encryptedData, buffer+pos, encrypted_len);
+    pos += encrypted_len;
+
+    //copio il tag
+    size_t tag_len = TAGLENGTH;
+    auto *tag = new unsigned char[tag_len];
+    memcpy(tag, buffer+pos, tag_len);
+    pos += tag_len;
+
+    delete [] buffer;
+
+    unsigned char* plaintext = symmetricEncryptionManager->decryptThisMessage(encryptedData, encrypted_len, AAD, aad_len, tag, iv);
+
+    delete [] AAD;
+    delete [] iv;
+    delete [] encryptedData;
+    delete [] tag;
+
+    if(strcmp((const char*)plaintext, userName->c_str())!= 0){
+        cout<<"Error! Unexpected username"<<endl;
+        return false;
+    }
+    return true;
+
 }
 /*
 bool UserConnectionManager::sendPlayerList(size_t& players_num) {
