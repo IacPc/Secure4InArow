@@ -51,7 +51,7 @@ private:
     bool waitForClientPubKey();
     bool verifyNonce(unsigned char*, unsigned char*);
     bool sendMyPubKey();
-    bool createSessionKey();
+    void createSessionKey();
 
 /*
     bool sendChallengeMessage(string*);

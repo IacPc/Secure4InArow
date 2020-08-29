@@ -71,6 +71,7 @@ bool UserConnectionManager::establishSecureConnection() {
         cout<<"PubKey sent successfully"<<endl;
     }
 
+    createSessionKey();
 
 
 /*
@@ -209,6 +210,10 @@ bool UserConnectionManager::waitForClientPubKey() {
         delete [] buffer;
         delete [] signature;
         delete [] messageToVerify;
+        delete [] receivedClientNonce;
+        delete [] myReceivedNonce;
+        delete username;
+        delete [] clientPubKey;
         return false;
     }
 
@@ -222,6 +227,8 @@ bool UserConnectionManager::waitForClientPubKey() {
         cout<<"The client sent a different nonce"<<endl;
         delete [] buffer;
         delete [] receivedClientNonce;
+        delete [] myReceivedNonce;
+        delete username;
         return false;
     }
 
@@ -232,6 +239,7 @@ bool UserConnectionManager::waitForClientPubKey() {
         cout<<"My nonce is not verified"<<endl;
         delete [] buffer;
         delete [] myReceivedNonce;
+        delete username;
         return false;
     }
 
@@ -318,7 +326,7 @@ bool UserConnectionManager::sendMyPubKey() {
 
 
 }
-bool UserConnectionManager::createSessionKey() {
+void UserConnectionManager::createSessionKey() {
 
     size_t sharedSecret_len;
     unsigned char*sharedSecret = diffieHellmannManager->getSharedSecret(sharedSecret_len);
@@ -344,6 +352,8 @@ bool UserConnectionManager::createSessionKey() {
 
     delete [] usefulSecret;
 
+    symmetricEncryptionManager = new SymmetricEncryptionManager(digest, digest_len);
+    delete [] digest;
 }
 /*
 bool UserConnectionManager::sendPlayerList(size_t& players_num) {
