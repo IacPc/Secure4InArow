@@ -54,7 +54,7 @@ private:
 
     bool sharePlayersList();
     bool waitForPlayersRequest();
-    bool sendPlayersList();
+    bool sendPlayerList();
 
     void createSessionKey();
 
@@ -66,6 +66,7 @@ private:
     bool waitForOpponentReady(unsigned int&);
 */
     unsigned char* createCertificateMessage(size_t&);
+    unsigned char* createPlayerListMsg(vector<string>, size_t&);
     unsigned char* waitForClientChoice();
 
 
