@@ -57,19 +57,19 @@ private:
     bool waitForPlayersRequest();
     bool sendPlayerList();
     bool sendChallengerRequest(string*);
+    bool sendOpponentKeyToChallenged(string *opponent, uint32_t opponentPort);
+    bool waitForChallengedReady(uint32_t&, string*);
+    bool sendMyKeyToChallenger(string*, uint32_t);
 
     void createSessionKey();
 
 
-    bool sendOpponentKeyToChallenger(string*);
-//    bool sendMyKeyToChallenger(string*, int);
-//    bool waitForOpponentReady(unsigned int&);
-
     unsigned char* createCertificateMessage(size_t&);
     unsigned char* createPlayerListMsg(vector<string>, size_t&);
+    unsigned char *getUserPubKey(string*, size_t&);
     string* waitForClientChoice(bool&);
     string* waitForChallengedResponse(bool&);
-    unsigned char *getUserPubKey(string*, size_t&);
+
 
 public:
     UserConnectionManager(Server*, sockaddr_in, int);

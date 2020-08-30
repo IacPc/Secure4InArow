@@ -382,6 +382,15 @@ bool UserConnectionManager::sharePlayersList() {
                     else{
                         //invio la chiave di opponent al challenged
                         waiting = false;
+                        if(!sendOpponentKeyToChallenged(opponent, 0))
+                            return false;
+                        //aspetto la risposta del challenged
+                        uint32_t challenged_port;
+                        if(!waitForChallengedReady(challenged_port, opponent))
+                            return false;
+                        //invio la mia chiave al challenger
+                        if(!sendMyKeyToChallenger(opponent, challenged_port))
+                            return false;
                     }
                 }
 
@@ -663,7 +672,7 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
     UserConnectionManager * challengedUCM = server->getUserConnection(challenged->c_str());
     //AAD
-    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    size_t aad_len = AADLENGTH;
     auto *AAD = new unsigned char[aad_len];
 
     //copio opcode
@@ -726,7 +735,7 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
     auto *buffer = new unsigned char[MAXCHALLENGEDRESPONSEMESSAGELENGTH];
     size_t ret = recv(userSocket, buffer, MAXCHALLENGEDRESPONSEMESSAGELENGTH, MSG_WAITALL);
 
-    if(ret < OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH + AESBLOCKLENGTH + AESGCMTAGLENGTH){
+    if(ret < AADLENGTH + AESBLOCKLENGTH + AESGCMTAGLENGTH){
         cerr<<"Error receiving the challenge response message\n";
         stillWaiting = false;
         return NULL;
@@ -734,7 +743,7 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
 
     //copio aad
     size_t pos = 0;
-    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    size_t aad_len = AADLENGTH;
     auto *aad = new unsigned char[aad_len];
     memcpy(aad, buffer, aad_len);
     pos += aad_len;
@@ -759,7 +768,8 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
         delete [] aad;
         delete [] buffer;
         return nullptr;
-    }
+    }else
+        cout<<"WaitForChallengedResponse message opcode verified"<<endl;
 
     size_t iv_len = AESGCMIVLENGTH;
     auto *iv = new unsigned char[iv_len];
@@ -800,7 +810,7 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
         return opponent;
     }
 }
-bool UserConnectionManager::sendOpponentKeyToChallenger(string *opponent) {
+bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32_t opponentPort) {
 
     size_t key_len;
     unsigned char *opponentPubKey = getUserPubKey(opponent, key_len);
@@ -812,7 +822,6 @@ bool UserConnectionManager::sendOpponentKeyToChallenger(string *opponent) {
 
 
     struct in_addr ipOpponent = server->getUserConnection(opponent->c_str())->clAdd.sin_addr;
-    uint32_t opponentPort = 0;
     size_t port_len = sizeof(uint32_t);
 
 
@@ -844,7 +853,7 @@ bool UserConnectionManager::sendOpponentKeyToChallenger(string *opponent) {
     this->counter++;
 
     //preparo aad
-    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    size_t aad_len = AADLENGTH;
     auto *aad = new unsigned char[aad_len];
     aad[0] = OPPONENTKEYMESSAGECODE;
     memcpy(aad+1, iv, iv_len);
@@ -887,89 +896,173 @@ unsigned char *UserConnectionManager::getUserPubKey(string* opponent, size_t& pu
     UserConnectionManager *opponentUCM = server->getUserConnection(opponent->c_str());
     return opponentUCM->signatureManager->getPubkey(pubkey_len);
 }
-/*
-bool UserConnectionManager::waitForOpponentReady(unsigned int& port) {
+bool UserConnectionManager::waitForChallengedReady(uint32_t& port, string* opponent) {
 
-    auto *buffer = new unsigned char[MAXENCRYPTEDUSERLENGTH+HMACLENGTH];
-    size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, 0);
+    size_t msg_len = MAXREADYFORCHALLENGEMESSAGELENGTH;
+    auto *buffer = new unsigned char[msg_len];
+    size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, MSG_WAITALL);
 
-    if(ret < AESBLOCKLENGTH+HMACLENGTH){
-        cerr<<"Error in receving waitForOpponentReady message,received "<<ret<<" bytes"<<endl;
+    if(ret < AADLENGTH + AESGCMTAGLENGTH + AESBLOCKLENGTH){
+        cerr<<"Error in receving Challenged Ready message,received "<<ret<<" bytes"<<endl;
+        delete [] buffer;
         return false;
     }
 
-    unsigned char *plainMsg = symmetricEncryptionManager->decryptNVerifyMACThisMessage(buffer, ret);
-
-    size_t plain_len = ret;
-
-    if(plainMsg[0] == CLIENTREADY4CHALLENGECODE){
-        cout<<"waitForOpponentReady message opcode has been verified\n";
-    }else{
-        cerr<<"Wrong message: waitForOpponentReady message was expected\n";
+    uint32_t cont;
+    memcpy(&cont, &buffer[1+AESGCMIVLENGTH], COUNTERLENGTH);
+    if(cont != this->counter+1){
+        cout<<"Different counter value expected"<<endl;
+        delete [] buffer;
         return false;
     }
+    this->counter++;
 
-    unsigned int port_received;
+    if(buffer[0] != CLIENTREADYFORCHALLENGEMESSAGECODE){
+        cout<<"Wrong message"<<endl;
+        delete [] buffer;
+        return false;
+    }else
+        cout<<"Challenged readiness message opcode verified"<<endl;
+
+    //copio iv
+    size_t iv_len = AESGCMIVLENGTH;
+    auto *iv = new unsigned char[iv_len];
+    memcpy(iv, (buffer+1), iv_len);
+
+    //copio aad
+    size_t aad_len = AADLENGTH;
+    auto *aad = new unsigned char[aad_len];
+    memcpy(aad, buffer, aad_len);
+
+    //copio encrypted message
+    size_t encrypted_len = ret-aad_len-AESGCMTAGLENGTH;
+    auto *encrypted = new unsigned char[encrypted_len];
+    memcpy(encrypted, (buffer+aad_len), encrypted_len);
+
+    //copio tag
+    auto *tag = new unsigned char[AESGCMTAGLENGTH];
+    memcpy(tag, (buffer+aad_len+encrypted_len), AESGCMTAGLENGTH);
+
+    delete [] buffer;
+
+    unsigned char *plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
+
+    delete [] encrypted;
+    delete [] iv;
+    delete [] aad;
+    delete [] tag;
+
     size_t port_len = sizeof(port);
-    memcpy(&port_received, plainMsg+1, port_len);
 
-    port = port_received;
+    if(encrypted_len != port_len + opponent->length()+1){
 
-    string *user = new string(reinterpret_cast<const char *>(&plainMsg[port_len+1]));
+        cout<<"Decrypt returned a wrong value"<<endl;
+        delete [] plainMessage;
+        return false;
+    }
 
+    uint32_t port_received;
+    memcpy(&port_received, plainMessage, port_len);
+
+    port = ntohs(port_received);
+
+    plainMessage[encrypted_len-1] = '\0';
+    string *user = new string(reinterpret_cast<const char *>(&plainMessage[port_len]));
+
+    delete [] plainMessage;
+    if(strcmp(user->c_str(), opponent->c_str()) != 0){
+        delete user;
+        cout<<"Received username was not expected"<<endl;
+        return false;
+    }
+
+    delete user;
     return true;
 }
+bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t port) {
 
-bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, int port) {
+    size_t key_len;
+    unsigned char *myPubKey = getUserPubKey(this->userName, key_len);
+    if(myPubKey == nullptr){
+        cout<<"Error retrieving the opponent pubkey"<<endl;
+        delete [] myPubKey;
+        return false;
+    }
 
-    EVP_PKEY *myClientPubKey = getUserPubKey(userName);
+    UserConnectionManager *challengerUCM = server->getUserConnection(challenger->c_str());
 
-    struct in_addr myClientIP = this->clAdd.sin_addr;
-    //uint32_t myClientIP = this->clAdd.sin_addr.s_addr;
-    size_t myClientPort = this->clAdd.sin_port;
+    struct in_addr myIP = this->clAdd.sin_addr;
+    size_t port_len = sizeof(uint32_t);
 
 
-    char *IPbuffer = inet_ntoa(this->clAdd.sin_addr);
-    printf("Host IP: %s", IPbuffer);
+    //Preparo messaggio in chiaro.
+    auto *plainMsg = new unsigned char[key_len + IPLENGTH + port_len];
 
-    BIO *mbio = BIO_new(BIO_s_mem());
-    PEM_write_bio_PUBKEY(mbio, myClientPubKey);
-    unsigned char* pubkey_buf;
-    long pubkey_size = BIO_get_mem_data(mbio, &pubkey_buf);
 
-    auto *plainMsg = new unsigned char[pubkey_size + IPLENGTH + SIZETLENGTH + 1];
-    plainMsg[0] = OPPONENTKEYCODE;
+    uint32_t htons_port = htons(port);
 
-    size_t htons_port = port;
-
-    int pos = 1;
-    memcpy(plainMsg+pos, &myClientIP, IPLENGTH);
+    int pos = 0;
+    memcpy(plainMsg+pos, (void*)&myIP, IPLENGTH);
     pos += IPLENGTH;
 
-    memcpy(plainMsg+pos, &htons_port, SIZETLENGTH);
-    pos += SIZETLENGTH;
+    memcpy(plainMsg+pos, &htons_port, port_len);
+    pos += port_len;
 
-    memcpy(plainMsg + pos, pubkey_buf, pubkey_size);
-    pos+= pubkey_size;
+    memcpy(plainMsg + pos, myPubKey, key_len);
+    delete [] myPubKey;
+    pos+= key_len;
 
-    size_t toEncrypt_len = pos;
+    size_t plain_len = pos;
 
-    UserConnectionManager *challengerUCM = this->server->getUserConnection(challenger->c_str());
-    unsigned char* buffer = challengerUCM->symmetricEncryptionManager->encryptNMACThisMessage(plainMsg, toEncrypt_len);
+    //iv
+    size_t iv_len = AESGCMIVLENGTH;
+    auto *iv = new unsigned char[iv_len];
+    RAND_bytes(iv, iv_len);
 
-    delete []plainMsg;
-    BIO_free(mbio);
+    //counter
+    challengerUCM->counter++;
 
-    size_t ret = send(challengerUCM->userSocket, buffer, toEncrypt_len, 0);
-    if(ret != toEncrypt_len){
+    //preparo aad
+    size_t aad_len = AADLENGTH;
+    auto *aad = new unsigned char[aad_len];
+    aad[0] = OPPONENTKEYMESSAGECODE;
+    memcpy(aad+1, iv, iv_len);
+    memcpy((aad+1+iv_len), &challengerUCM->counter, COUNTERLENGTH);
+
+    auto* tag = new unsigned char[AESGCMTAGLENGTH];
+
+    unsigned char *encrypted = challengerUCM->symmetricEncryptionManager->encryptThisMessage(plainMsg, plain_len, aad, aad_len, iv, iv_len, tag);
+    delete [] iv;
+    delete [] plainMsg;
+
+    size_t msg_len = aad_len + plain_len + AESGCMTAGLENGTH;
+    auto* buffer = new unsigned char[msg_len];
+    pos = 0;
+
+    memcpy(buffer+pos, aad, aad_len);
+    delete [] aad;
+    pos += aad_len;
+
+    memcpy((buffer+pos), encrypted, plain_len);
+    delete [] encrypted;
+    pos += plain_len;
+
+    memcpy((buffer+pos), tag, AESGCMTAGLENGTH);
+    delete [] tag;
+
+
+    size_t ret = send(challengerUCM->userSocket, buffer, msg_len, 0);
+    delete [] buffer;
+
+    if(ret != msg_len){
         cerr<<"Error sending opponent key\n";
         return false;
     }
-
+    cout<<"Adversary key and address sent correctly\n";
     return true;
 }
 
-*/
+
 
 UserConnectionManager::~UserConnectionManager() {
 
