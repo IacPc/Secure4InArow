@@ -655,14 +655,6 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 
 
 }
-/*
-
-EVP_PKEY *UserConnectionManager::getUserPubKey(string* opponent) {
-
-    return server->getUserConnection(opponent->c_str())->signatureManager->
-}
-
-*/
 bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
     size_t plain_len = userName->length()+1;
@@ -729,7 +721,6 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     cout<<"Challenger request message has been sent\n";
     return true;
 }
-
 string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
 
     auto *buffer = new unsigned char[MAXCHALLENGEDRESPONSEMESSAGELENGTH];
@@ -809,49 +800,94 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
         return opponent;
     }
 }
-/*
-bool UserConnectionManager::sendOpponentKey(string *opponent) {
+bool UserConnectionManager::sendOpponentKeyToChallenger(string *opponent) {
 
-    EVP_PKEY *opponentPubKey = getUserPubKey(opponent);
+    size_t key_len;
+    unsigned char *opponentPubKey = getUserPubKey(opponent, key_len);
+    if(opponentPubKey == nullptr){
+        cout<<"Error retrieving the opponent pubkey"<<endl;
+        delete [] opponentPubKey;
+        return false;
+    }
+
 
     struct in_addr ipOpponent = server->getUserConnection(opponent->c_str())->clAdd.sin_addr;
-    size_t opponentPort = server->getUserConnection(opponent->c_str())->clAdd.sin_port;
+    uint32_t opponentPort = 0;
+    size_t port_len = sizeof(uint32_t);
 
-    BIO *mbio = BIO_new(BIO_s_mem());
-    PEM_write_bio_PUBKEY(mbio, opponentPubKey);
-    unsigned char* pubkey_buf;
-    long pubkey_size = BIO_get_mem_data(mbio, &pubkey_buf);
 
-    auto *plainMsg = new unsigned char[pubkey_size + IPLENGTH + SIZETLENGTH + 1];
-    plainMsg[0] = OPPONENTKEYCODE;
+    //Preparo messaggio in chiaro.
+    auto *plainMsg = new unsigned char[key_len + IPLENGTH + port_len];
 
-    size_t htons_port = htons(opponentPort);
 
-    int pos = 1;
+    uint32_t htons_port = htons(opponentPort);
+
+    int pos = 0;
     memcpy(plainMsg+pos, (void*)&ipOpponent, IPLENGTH);
     pos += IPLENGTH;
 
-    memcpy(plainMsg+pos, &htons_port, SIZETLENGTH);
-    pos += SIZETLENGTH;
+    memcpy(plainMsg+pos, &htons_port, port_len);
+    pos += port_len;
 
-    memcpy(plainMsg + pos, pubkey_buf, pubkey_size);
-    pos+= pubkey_size;
+    memcpy(plainMsg + pos, opponentPubKey, key_len);
+    delete [] opponentPubKey;
+    pos+= key_len;
 
-    size_t toEncrypt_len = pos;
-    unsigned char* buffer = symmetricEncryptionManager->encryptNMACThisMessage(plainMsg, toEncrypt_len);
+    size_t plain_len = pos;
 
-    delete []plainMsg;
-    BIO_free(mbio);
+    //iv
+    size_t iv_len = AESGCMIVLENGTH;
+    auto *iv = new unsigned char[iv_len];
+    RAND_bytes(iv, iv_len);
 
-    size_t ret = send(userSocket, buffer, toEncrypt_len, 0);
-    if(ret != toEncrypt_len){
+    //counter
+    this->counter++;
+
+    //preparo aad
+    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    auto *aad = new unsigned char[aad_len];
+    aad[0] = OPPONENTKEYMESSAGECODE;
+    memcpy(aad+1, iv, iv_len);
+    memcpy((aad+1+iv_len), &this->counter, COUNTERLENGTH);
+
+    auto* tag = new unsigned char[AESGCMTAGLENGTH];
+
+    unsigned char *encrypted = symmetricEncryptionManager->encryptThisMessage(plainMsg, plain_len, aad, aad_len, iv, iv_len, tag);
+    delete [] iv;
+    delete [] plainMsg;
+
+    size_t msg_len = aad_len + plain_len + AESGCMTAGLENGTH;
+    auto* buffer = new unsigned char[msg_len];
+    pos = 0;
+
+    memcpy(buffer+pos, aad, aad_len);
+    delete [] aad;
+    pos += aad_len;
+
+    memcpy((buffer+pos), encrypted, plain_len);
+    delete [] encrypted;
+    pos += plain_len;
+
+    memcpy((buffer+pos), tag, AESGCMTAGLENGTH);
+    delete [] tag;
+
+
+    size_t ret = send(userSocket, buffer, msg_len, 0);
+    delete [] buffer;
+
+    if(ret != msg_len){
         cerr<<"Error sending opponent key\n";
         return false;
     }
     cout<<"Adversary key and address sent correctly\n";
     return true;
 }
+unsigned char *UserConnectionManager::getUserPubKey(string* opponent, size_t& pubkey_len){
 
+    UserConnectionManager *opponentUCM = server->getUserConnection(opponent->c_str());
+    return opponentUCM->signatureManager->getPubkey(pubkey_len);
+}
+/*
 bool UserConnectionManager::waitForOpponentReady(unsigned int& port) {
 
     auto *buffer = new unsigned char[MAXENCRYPTEDUSERLENGTH+HMACLENGTH];

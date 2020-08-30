@@ -61,15 +61,15 @@ private:
     void createSessionKey();
 
 
-/*    bool sendOpponentKey(string*);
-    bool sendMyKeyToChallenger(string*, int);
-    bool waitForOpponentReady(unsigned int&);
-*/
+    bool sendOpponentKeyToChallenger(string*);
+//    bool sendMyKeyToChallenger(string*, int);
+//    bool waitForOpponentReady(unsigned int&);
+
     unsigned char* createCertificateMessage(size_t&);
     unsigned char* createPlayerListMsg(vector<string>, size_t&);
     string* waitForClientChoice(bool&);
     string* waitForChallengedResponse(bool&);
-    EVP_PKEY *getUserPubKey(string*);
+    unsigned char *getUserPubKey(string*, size_t&);
 
 public:
     UserConnectionManager(Server*, sockaddr_in, int);
