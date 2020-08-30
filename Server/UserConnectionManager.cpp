@@ -83,13 +83,12 @@ bool UserConnectionManager::establishSecureConnection() {
 
     return true;
 }
-
 bool UserConnectionManager::waitForHelloMessage(){
 
     auto *buffer = new unsigned char[HELLOMESSAGELENGTH];
     size_t ret;
 
-    ret = recv(userSocket, buffer, HELLOMESSAGELENGTH, 0);
+    ret = recv(userSocket, buffer, HELLOMESSAGELENGTH, MSG_WAITALL);
     if(ret <= 0){
         cout<<"Error in receiving HelloMessage\n";
         return false;
@@ -350,22 +349,31 @@ void UserConnectionManager::createSessionKey() {
     delete [] digest;
 }
 bool UserConnectionManager::sharePlayersList() {
+    bool waiting = true;
+    while(waiting) {
+        if (!waitForPlayersRequest()) {
+            cout << "Error in players list request" << endl;
+            return false;
+        }
 
-    if(!waitForPlayersRequest()){
-        cout<<"Error in players list request"<<endl;
-        return false;
+        if (!sendPlayerList()) {
+            cout << "Error in sending players list" << endl;
+            return false;
+        }
+
+        string *choice = waitForClientChoice(waiting);
+        if (choice == nullptr && !waiting) {
+            cout << "Error in receiving player choice" << endl;
+            return false;
+        }else{
+            if(!waiting){
+                if(!sendChallengerRequest(choice)) {
+                    delete choice;
+                    return false;
+                }
+            }
+        }
     }
-
-    if(!sendPlayerList()){
-        cout<<"Error in sending players list"<<endl;
-        return false;
-    }
-
-    if(waitForClientChoice() == NULL){
-        cout<<"Error in receiving player choice"<<endl;
-        return false;
-    }
-
 }
 bool UserConnectionManager::waitForPlayersRequest() {
 
@@ -385,20 +393,24 @@ bool UserConnectionManager::waitForPlayersRequest() {
         return false;
     }
 
-    size_t pos = 0;
+    size_t pos = 1;
+
+    //prelevo IV
+    auto *iv = new unsigned char[AESGCMIVLENGTH];
+    memcpy(iv, &buffer[pos], AESGCMIVLENGTH);
+    pos += AESGCMIVLENGTH;
+
+    //prelevo counter
+    uint32_t cont;
+    memcpy(&cont, &buffer[pos], COUNTERLENGTH);
+    this->counter = cont;
+    pos+= COUNTERLENGTH;
+
     //copio AAD
     size_t aad_len = OPCODELENGTH+AESGCMIVLENGTH+COUNTERLENGTH;
     auto* AAD = new unsigned char[aad_len];
     memcpy(AAD, buffer, aad_len);
-    pos += aad_len;
 
-    //prelevo IV
-    auto *iv = new unsigned char[AESGCMIVLENGTH];
-    memcpy(iv, &AAD[1], AESGCMIVLENGTH);
-
-    int cont;
-    memcpy(&cont, &AAD[1+AESGCMIVLENGTH], COUNTERLENGTH);
-    this->counter = ntohs(cont);
 
 
     //copio dati criptati
@@ -429,7 +441,6 @@ bool UserConnectionManager::waitForPlayersRequest() {
     return true;
 
 }
-
 bool UserConnectionManager::sendPlayerList() {
 
     vector<string> list;
@@ -458,7 +469,6 @@ bool UserConnectionManager::sendPlayerList() {
    return true;
 
 }
-
 unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, size_t& msg_len) {
 
 
@@ -496,9 +506,8 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
     unsigned char *AAD = new unsigned char[OPCODELENGTH+AESGCMIVLENGTH+COUNTERLENGTH];
     AAD[0] = PLAYERSLISTMESSAGECODE;
 
-    auto *iv = new unsigned char[AESGCMIVLENGTH];
-    size_t iv_len = AESGCMIVLENGTH;
-    RAND_bytes(iv,iv_len);
+    unsigned char *iv = NULL;
+    size_t iv_len = 0;
 
     counter++;
     memcpy(&AAD[1], iv, iv_len);
@@ -524,8 +533,7 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
     delete [] iv;
 
     //copio counter
-    int h_counter = htons(counter);
-    memcpy((buffer+pos), &h_counter, COUNTERLENGTH);
+    memcpy((buffer+pos), &this->counter, COUNTERLENGTH);
     pos += COUNTERLENGTH;
 
     //copio encrypted
@@ -540,65 +548,104 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
 
     msg_len = pos;
 
-    h_counter = pos = iv_len = plainMsg_len = aad_len = num_players = 0;
+    pos = iv_len = plainMsg_len = aad_len = num_players = 0;
     return buffer;
 
 
 
 
 }
-/*
-string *UserConnectionManager::waitForChoice(bool& waiting) {
+string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 
-    unsigned char *buffer = new unsigned char[MAXENCRYPTEDUSERLENGTH+HMACLENGTH];
-    size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, 0);
 
+    auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
+    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, MSG_WAITALL);
     if(ret < 0){
-        cerr<<"Error receiving the choice message\n";
-        return NULL;
+        cout<<"Error receiving Players Request Message"<<endl;
+        delete []buffer;
+        waiting = false;
+        return nullptr;
     }
-    unsigned char *plainMsg = new unsigned char[MAXUSERNAMELENGTH + 2];
-    plainMsg = symmetricEncryptionManager->decryptNVerifyMACThisMessage(buffer, ret);
 
-    if(!plainMsg){
+    if(buffer[0] == PLAYERCHOSENMESSAGE){
+        cout<<"Players list request message verified"<<endl;
+    }else{
+        cout<<"Wrong message"<<endl;
         delete [] buffer;
         waiting = false;
         return nullptr;
     }
 
-    if(plainMsg[0] == PLAYERSELECTEDCODE)
-        cout<<"Player choice message opcode verified\n";
-    else{
-        cerr<<"Wrong message\n";
-        waiting = false;
-        return NULL;
-    }
+    size_t pos = 1;
 
-    cout<<"RET IS: "<<ret<<endl;
-    if(ret == 1){
-        cout<<"The player is waiting for a challenger\n";
-        waiting = true;
-        return NULL;
+    //prelevo IV
+    auto *iv = new unsigned char[AESGCMIVLENGTH];
+    memcpy(iv, &buffer[pos], AESGCMIVLENGTH);
+    pos += AESGCMIVLENGTH;
+
+    //prelevo counter
+    int cont;
+    memcpy(&cont, &buffer[pos], COUNTERLENGTH);
+    if(this->counter+1 != cont){
+        cout<<"The counter has a wrong value"<<endl;
+        delete [] iv;
+        delete [] buffer;
+        waiting = false;
+        return nullptr;
     }
+    counter++;
+    pos+= COUNTERLENGTH;
+
+    //copio AAD
+    size_t aad_len = OPCODELENGTH+AESGCMIVLENGTH+COUNTERLENGTH;
+    auto* AAD = new unsigned char[aad_len];
+    memcpy(AAD, buffer, aad_len);
+
+
+
+    //copio dati criptati
+    size_t encrypted_len = ret - AESGCMTAGLENGTH;
+    auto* encryptedData = new unsigned char[encrypted_len];
+    memcpy(encryptedData, buffer+pos, encrypted_len);
+    pos += encrypted_len;
+
+    //copio il tag
+    size_t tag_len = AESGCMTAGLENGTH;
+    auto *tag = new unsigned char[tag_len];
+    memcpy(tag, buffer+pos, tag_len);
+    pos += tag_len;
+
+    delete [] buffer;
+
+    unsigned char* plaintext = symmetricEncryptionManager->decryptThisMessage(encryptedData, encrypted_len, AAD, aad_len, tag, iv);
+
+    delete [] AAD;
+    delete [] iv;
+    delete [] encryptedData;
+    delete [] tag;
+
 
     string *player;
-    waiting = false;
-    plainMsg[ret-1] = '\0';
-    player = new string((const char*)&plainMsg[1]);
+    plaintext[encrypted_len-1] = '\0';
+    player = new string((const char*)&plaintext[1]);
     cout<<"The chosen player is: "<<player->c_str()<<endl;
 
-    delete []buffer;
+    if(player->length() < 1){
+        waiting = true;
+    }else
+        waiting = false;
     return player;
+
 
 }
 
-
+/*
 EVP_PKEY *UserConnectionManager::getUserPubKey(string* opponent) {
 
     return server->getUserConnection(opponent->c_str())->rsaManager->getPubkey();
 }
 
-bool UserConnectionManager::sendChallengeMessage(string *challenged) {
+bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
     unsigned char *buffer = new unsigned char[MAXENCRYPTEDUSERLENGTH + HMACLENGTH];
 

@@ -35,7 +35,7 @@ private:
     struct sockaddr_in clAdd;
     string *userName;
     int userSocket;
-    int counter;
+    uint32_t counter;
 
     SymmetricEncryptionManager *symmetricEncryptionManager;
     SignatureManaegr *signatureManager;
@@ -59,15 +59,15 @@ private:
     void createSessionKey();
 
 
-/*
-    bool sendChallengeMessage(string*);
-    bool sendOpponentKey(string*);
+
+    bool sendChallengerRequest(string*);
+/*    bool sendOpponentKey(string*);
     bool sendMyKeyToChallenger(string*, int);
     bool waitForOpponentReady(unsigned int&);
 */
     unsigned char* createCertificateMessage(size_t&);
     unsigned char* createPlayerListMsg(vector<string>, size_t&);
-    unsigned char* waitForClientChoice();
+    string* waitForClientChoice(bool&);
 
 
 public:
