@@ -30,7 +30,7 @@ public:
                              unsigned char* messageToVerify, size_t messageToVerifyLength);
     void setPubkey(EVP_PKEY*);
     void setPrvkey(EVP_PKEY*);
-    void setPubkey(std::string*);
+    unsigned char* getPubkey(size_t&);
     void setPrvkey(std::string*);
 
 };

@@ -194,24 +194,9 @@ void SignatureManager::setPrvkey(std::string* prvkey_file_name) {
     }
 }
 
-void SignatureManager::setPubkey(std::string * pubkey_file_name) {
-    if (pubkey_file_name) {
-        FILE *prvkey_file = fopen(pubkey_file_name->c_str(), "r");
-        if (!prvkey_file) {
-            std::cerr << "Error: cannot open file '" << pubkey_file_name->c_str() << "' (missing?)\n";
-        }
-
-        this->pubKey = PEM_read_PUBKEY(prvkey_file, nullptr, NULL, NULL);
-
-        fclose(prvkey_file);
-
-    }
-}
-
 
 void SignatureManager::setPubkey(EVP_PKEY* pb) {
     this->pubKey = pb;
-
 }
 
 void SignatureManager::setPrvkey(EVP_PKEY * pv) {
@@ -222,6 +207,17 @@ SignatureManager::~SignatureManager() {
     EVP_PKEY_free(this->pubKey);
     EVP_PKEY_free(this->prvKey);
 
+}
+
+unsigned char *SignatureManager::getPubkey(size_t& pblen) {
+    BIO *mbio = BIO_new(BIO_s_mem());
+    if(!mbio) return nullptr;
+    PEM_write_bio_PUBKEY(mbio, this->pubKey);
+    unsigned char* pubkey_buf;
+    long pubkey_size = BIO_get_mem_data(mbio, &pubkey_buf);
+    BIO_free(mbio);
+    pblen = pubkey_size;
+    return pubkey_buf;
 }
 
 

@@ -8,7 +8,7 @@ Client::Client(string* server_addr, int port, string* user){
     unsigned char* server_addr_cstr = new unsigned char[strlen(server_addr->c_str()) + 1];
     memcpy(server_addr_cstr, server_addr->c_str(), server_addr->length()+1);
     std::cout<<"Creating ServerConnectionManager"<<endl;
-    serverConnectionManager =  new ServerConnectionManager((unsigned char*)server_addr_cstr, port, user);
+    serverConnectionManager =  new ServerConnectionManager((const char*)server_addr_cstr, port, user);
     userName = new std::string(user->c_str());
 
     cout<<"Client created successfully\n";

@@ -23,9 +23,7 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
     int ciphertext_len;
     unsigned char* ciphertext = new unsigned char[plaintext_len + EVP_CIPHER_block_size(this->cipher)];
     iv_len = AESGCMIVLENGTH ;
-    iv = new unsigned char[iv_len];
     tag = new unsigned char[AESGCMTAGLENGTH];
-    RAND_bytes(iv,iv_len);
 
     // Create and initialise the context
     if(!(ctx = EVP_CIPHER_CTX_new())) {
@@ -42,6 +40,9 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
         std::cout<<" Error in providing AAD"<<std::endl;
         goto ENCRYPTIONERROR;
     }
+
+
+
     if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)){
         std::cout<<"Error in performing encryption"<<std::endl;
         goto ENCRYPTIONERROR;

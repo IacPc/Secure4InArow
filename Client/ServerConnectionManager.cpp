@@ -12,22 +12,13 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     //clean server address
-    memset(&serverAddr, 0, sizeof(serverAddr));
+    memset(&serverAddr, 0X00, sizeof(serverAddr));
     //inizialize the server address structure
     serverAddr.sin_family =  AF_INET;
     serverAddr.sin_port = htons(port);
 
     inet_pton(AF_INET, (const char*)&server_addr, &serverAddr.sin_addr);
 
-    string* pwd = new string;
-    cout<<"insert your pwd for your private key file"<<endl;
-    getline(cin,*pwd);
-    if(pwd->length()>0){
-        this->setPwd(pwd);
-    }else{
-        this->setPwd(nullptr);
-        delete pwd;
-    }
     RAND_poll();
 
     cout<<"ServerConnectionManager created successfully"<<endl;
@@ -80,22 +71,20 @@ bool ServerConnectionManager::secureTheConnection(){
 
     certificateManager = new CertificateManager();
     cout<<"The certificate has been received\n";
+    EVP_PKEY* serverPubkey;
+    if(certificateManager->verifyCertificate(serializedCertificate,certLen)){
+        cout<<"The certificate has been verified correcly\n";
+        serverPubkey = certificateManager->extractPubKey(serializedCertificate,certLen);
+    }else
+        return false;
 
-    //Inizializzo RSA
+    delete certificateManager;
+
     string* path = new string("../Client/Client_Key/");
     path->append(userName->c_str());
     path->append("_prvkey.pem");
     this->signatureManager = new SignatureManager(path);
-
-    std::cout<<"veryfing the certificate"<<endl;
-
-    //verify the server certificate
-    if(!verifyCertificate(serializedCertificate,certLen)){
-        cerr<<"The certificate has not been verified\n";
-        return false;
-    }
-
-    cout<<"The certificate has been verified\n";
+    this->signatureManager->setPubkey(serverPubkey);
 
     this->diffieHellmannManager = new DiffieHellmannManager();
 
@@ -112,38 +101,113 @@ bool ServerConnectionManager::secureTheConnection(){
         return false;
     }
 
-
     return true;
 }
 
-unsigned char *ServerConnectionManager::createHelloMessage(size_t &) {
-    return nullptr;
+unsigned char *ServerConnectionManager::createHelloMessage(size_t& helloMessageBufferLen) {
+
+    helloMessageBufferLen = 1 + sizeof(this->myNonce) + strlen(this->userName->c_str()) + 1;
+    auto* helloMessageBuffer = new unsigned  char[helloMessageBufferLen];
+    helloMessageBuffer[0] = HELLOMSGCODE;
+    RAND_bytes((unsigned char*)&this->myNonce,sizeof(this->myNonce));
+    strcpy((char*)&helloMessageBuffer[1 + sizeof(this->myNonce)], this->userName->c_str());
+
+    return helloMessageBuffer;
 }
 
-bool ServerConnectionManager::sendHelloMessage(unsigned char *, size_t &) {
-    return false;
+bool ServerConnectionManager::sendHelloMessage(unsigned char* helloMessageBuffer, size_t& helloMessageBufferLen) {
+    int ret = send(this->serverSocket,helloMessageBuffer, helloMessageBufferLen,0) ;
+    delete [] helloMessageBuffer;
+
+    if(ret != helloMessageBufferLen)
+        return false;
+    else
+        return true;
 }
 
-unsigned char *ServerConnectionManager::waitForCertificate(int &) {
-    return nullptr;
+unsigned char *ServerConnectionManager::waitForCertificate(int & len) {
+
+    size_t ret;
+    unsigned char* buffer = new unsigned char[MAXCERTIFICATELENGTH];
+
+    ret = recv(serverSocket, (void*)buffer, MAXCERTIFICATELENGTH, 0);
+
+    if(ret <= 0){
+        cout<<"Error in receiving certificate message\n";
+        return NULL;
+    }
+
+    if(buffer[0] != CERTIFICATEMSGCODE){
+        cout<<"Wrong message\n";
+        return NULL;
+    }else{
+        memcpy(&this->serverNonce,&buffer[1 + sizeof(this->serverNonce)],sizeof(this->serverNonce));
+        size_t certLen = ret-1 - sizeof(this->serverNonce);
+        auto* cert = new unsigned char[certLen];
+        memcpy(cert, buffer+1, certLen);
+
+        delete [] buffer;
+        len = certLen;
+        cout<<"Certificate has been received\n";
+        return cert;
+    }
+
 }
 
-bool ServerConnectionManager::verifyCertificate(unsigned char *, int) {
-    return false;
-}
+unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
+    size_t pubKeyLength = 0;
+    unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
 
-unsigned char *ServerConnectionManager::createPubKeyMessage() {
-    return nullptr;
+    size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + (1 + strlen(this->userName->c_str()))
+                                       + pubKeyLength;
+
+    auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength];
+    pubKeyMessageToSignBuffer[0] = PUBKEYMESSAGECODE;
+
+    size_t step = 1;
+    memcpy(&pubKeyMessageToSignBuffer[step],&this->myNonce,sizeof(this->myNonce));
+    step += sizeof(this->myNonce);
+    memcpy(&pubKeyMessageToSignBuffer[step],&this->serverNonce,sizeof(this->serverNonce));
+    step += sizeof(this->serverNonce);
+    strcpy((char*)&pubKeyMessageToSignBuffer[step],this->userName->c_str());
+    step += strlen(this->userName->c_str()) + 1;
+    memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,pubKeyLength);
+    step += pubKeyLength;
+
+    delete [] pubKeyBuf;
+
+    unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,pubKeyMessageToSignLength);
+    if(!signature) {
+        delete [] pubKeyMessageToSignBuffer;
+        return nullptr;
+    }
+
+    size_t pubKeyMessageLength = pubKeyMessageToSignLength + step;
+    auto* pubKeyMessageBuffer = new unsigned char[pubKeyMessageLength];
+
+    memcpy(pubKeyMessageBuffer,pubKeyMessageToSignBuffer,step);
+    memcpy(&pubKeyMessageBuffer[step],signature,pubKeyMessageToSignLength);
+
+    delete [] signature;
+    delete [] pubKeyMessageToSignBuffer;
+
+    len = pubKeyMessageLength;
+    return pubKeyMessageBuffer;
 }
 
 bool ServerConnectionManager::sendMyPubKey() {
-
-    unsigned char* pKeyMsg = createPubKeyMessage();
+    size_t len;
+    unsigned char* pKeyMsg = createPubKeyMessage(len);
     if(!pKeyMsg){
         cerr<<"Error during public key Message creation\n";
         return false;
     }
-    return false;
+    int ret = send(this->serverNonce,pKeyMsg,len,0);
+
+    if(ret!= len)
+        return false;
+
+    return true;
 }
 
 bool ServerConnectionManager::waitForPeerPubkey() {

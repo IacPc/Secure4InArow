@@ -59,8 +59,8 @@ private:
     string* selectPlayer(vector<string>);
     string* waitForChallenge();
 
-    unsigned char* createHelloMessage(size_t&);
-    unsigned char* createPubKeyMessage();
+    unsigned char* createHelloMessage(size_t& helloMessageBufferLen);
+    unsigned char* createPubKeyMessage(size_t&);
     unsigned char* waitForCertificate(int&);
     unsigned char* createPlayersListRequestMessage();
     unsigned char* createSelectedPlayerMessage();
