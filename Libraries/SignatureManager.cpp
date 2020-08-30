@@ -220,5 +220,9 @@ unsigned char *SignatureManager::getPubkey(size_t& pblen) {
     return pubkey_buf;
 }
 
+EVP_PKEY* SignatureManager::getPrvkey() {
+    return this->prvKey;
+}
+
 
 

@@ -100,7 +100,23 @@ bool ServerConnectionManager::secureTheConnection(){
         cerr<<"Error in receiving peer key\n";
         return false;
     }
+    auto* HashedSecret = new unsigned char[EVP_MD_size(EVP_sha256())];
+    size_t dhSecretLen = 0;
+    unsigned char* dhSecret = this->diffieHellmannManager->getSharedSecret(dhSecretLen);
 
+    SHA256(dhSecret,dhSecretLen,HashedSecret);
+
+    delete diffieHellmannManager;
+
+    auto* simmetricKeyBuffer = new unsigned char[EVP_CIPHER_key_length(EVP_aes_128_gcm())];
+    memcpy(simmetricKeyBuffer,HashedSecret,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+
+    memset(HashedSecret,0X00,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+    delete [] HashedSecret;
+
+    this->symmetricEncryptionManager = new SymmetricEncryptionManager(simmetricKeyBuffer,
+                                                                      EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+    delete [] simmetricKeyBuffer;
     return true;
 }
 
@@ -159,7 +175,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
 
     size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + (1 + strlen(this->userName->c_str()))
-                                       + pubKeyLength;
+                                       + pubKeyLength +2*sizeof(uint16_t);
 
     auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength];
     pubKeyMessageToSignBuffer[0] = PUBKEYMESSAGECODE;
@@ -169,23 +185,29 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     step += sizeof(this->myNonce);
     memcpy(&pubKeyMessageToSignBuffer[step],&this->serverNonce,sizeof(this->serverNonce));
     step += sizeof(this->serverNonce);
-    strcpy((char*)&pubKeyMessageToSignBuffer[step],this->userName->c_str());
-    step += strlen(this->userName->c_str()) + 1;
+    uint16_t len_16t = pubKeyLength;
+    memcpy(&pubKeyMessageToSignBuffer[step], &len_16t, sizeof(len_16t));
+    step += sizeof(len_16t);
     memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,pubKeyLength);
     step += pubKeyLength;
 
     delete [] pubKeyBuf;
 
     unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,pubKeyMessageToSignLength);
+
     if(!signature) {
         delete [] pubKeyMessageToSignBuffer;
         return nullptr;
     }
 
-    size_t pubKeyMessageLength = pubKeyMessageToSignLength + step;
+    size_t pubKeyMessageLength = pubKeyMessageToSignLength + step + sizeof(len_16t);
     auto* pubKeyMessageBuffer = new unsigned char[pubKeyMessageLength];
-
     memcpy(pubKeyMessageBuffer,pubKeyMessageToSignBuffer,step);
+
+    len_16t = pubKeyMessageToSignLength;
+    memcpy(&pubKeyMessageBuffer[step],&len_16t,sizeof(len_16t));
+
+    step += sizeof(len_16t);
     memcpy(&pubKeyMessageBuffer[step],signature,pubKeyMessageToSignLength);
 
     delete [] signature;
@@ -203,7 +225,7 @@ bool ServerConnectionManager::sendMyPubKey() {
         return false;
     }
     int ret = send(this->serverNonce,pKeyMsg,len,0);
-
+    delete [] pKeyMsg;
     if(ret!= len)
         return false;
 
@@ -211,7 +233,61 @@ bool ServerConnectionManager::sendMyPubKey() {
 }
 
 bool ServerConnectionManager::waitForPeerPubkey() {
-    return false;
+
+    size_t PeerPubKeyMessageLen =
+            1 + 2 * sizeof(this->serverNonce) + 2 * sizeof(uint16_t) + this->userName->length() + 1 +
+            EVP_PKEY_size(this->diffieHellmannManager->getMyPubKey_EVP()) +
+            EVP_PKEY_size(this->signatureManager->getPrvkey());
+
+    auto *peerPubKeyMessageBuffer = new unsigned char[PeerPubKeyMessageLen];
+    int ret = recv(this->serverSocket, peerPubKeyMessageBuffer, PeerPubKeyMessageLen, 0);
+
+    if (ret <= 0) {
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+
+    if(peerPubKeyMessageBuffer[0] != PUBKEYMESSAGECODE){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+    uint32_t nonceRecv = 0;
+    memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1],sizeof(nonceRecv));
+
+    if(nonceRecv != this->myNonce){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+
+    memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1 + sizeof(nonceRecv)],sizeof(nonceRecv));
+
+    if(nonceRecv != this->serverNonce){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+
+    uint16_t recvSignatureLen = 0;
+    uint16_t recvPubKeyLen = 0;
+    memcpy(&recvPubKeyLen,&peerPubKeyMessageBuffer[1 + 2*sizeof(nonceRecv)],sizeof(recvPubKeyLen));
+    size_t signaturePosition = 1 +2*sizeof(nonceRecv) +2*sizeof(recvPubKeyLen) + recvPubKeyLen;
+    memcpy(&recvSignatureLen,&peerPubKeyMessageBuffer[signaturePosition-2],sizeof(recvSignatureLen));
+
+    auto* recvSignatureBuffer = new unsigned char[recvSignatureLen];
+    memcpy(recvSignatureBuffer,&peerPubKeyMessageBuffer[signaturePosition],recvSignatureLen);
+    size_t messageToBeVErifiedLength = signaturePosition-2;
+    bool signCheck = signatureManager->verifyThisSignature(recvSignatureBuffer, recvSignatureLen,
+                                                           peerPubKeyMessageBuffer, messageToBeVErifiedLength);
+    delete [] recvSignatureBuffer;
+    if(!signCheck){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+    size_t pubKeyPosition = 1 +2*sizeof(this->serverNonce)+ sizeof(recvPubKeyLen);
+
+    this->diffieHellmannManager->setPeerPubKey(&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
+    delete [] peerPubKeyMessageBuffer;
+
+    return true;
 }
 
 unsigned char *ServerConnectionManager::createPlayersListRequestMessage() {
