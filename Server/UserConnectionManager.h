@@ -56,12 +56,11 @@ private:
     bool sharePlayersList();
     bool waitForPlayersRequest();
     bool sendPlayerList();
+    bool sendChallengerRequest(string*);
 
     void createSessionKey();
 
 
-
-    bool sendChallengerRequest(string*);
 /*    bool sendOpponentKey(string*);
     bool sendMyKeyToChallenger(string*, int);
     bool waitForOpponentReady(unsigned int&);
@@ -69,6 +68,7 @@ private:
     unsigned char* createCertificateMessage(size_t&);
     unsigned char* createPlayerListMsg(vector<string>, size_t&);
     string* waitForClientChoice(bool&);
+    string* waitForChallengedResponse(bool&);
     EVP_PKEY *getUserPubKey(string*);
 
 public:

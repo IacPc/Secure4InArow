@@ -371,6 +371,20 @@ bool UserConnectionManager::sharePlayersList() {
                     delete choice;
                     return false;
                 }
+            }else{
+                bool stillWait;
+                string *opponent = waitForChallengedResponse(stillWait);
+                if(opponent == nullptr) {
+                    return false;
+                }else{
+                    if(stillWait)
+                        waiting = true;
+                    else{
+                        //invio la chiave di opponent al challenged
+                        waiting = false;
+                    }
+                }
+
             }
         }
     }
@@ -655,6 +669,7 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     unsigned char* plainMsg = new unsigned char[plain_len];
     memcpy(plainMsg, userName->c_str(), plain_len);
 
+    UserConnectionManager * challengedUCM = server->getUserConnection(challenged->c_str());
     //AAD
     size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
     auto *AAD = new unsigned char[aad_len];
@@ -669,11 +684,11 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     memcpy(AAD+1, iv, iv_len);
 
     //copio counter
-    this->counter++;
-    memcpy(AAD+1+iv_len, &this->counter, COUNTERLENGTH);
+    challengedUCM->counter++;
+    memcpy(AAD+1+iv_len, &challengedUCM->counter, COUNTERLENGTH);
 
     auto*tag = new unsigned char[AESGCMTAGLENGTH];
-    unsigned char* encrypted = symmetricEncryptionManager->encryptThisMessage(plainMsg, plain_len, AAD, aad_len, iv, iv_len, tag);
+    unsigned char* encrypted = challengedUCM->symmetricEncryptionManager->encryptThisMessage(plainMsg, plain_len, AAD, aad_len, iv, iv_len, tag);
     delete [] plainMsg;
     delete [] iv;
 
@@ -684,8 +699,6 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
         delete [] AAD;
         return false;
     }
-
-    UserConnectionManager * challengedUCM = server->getUserConnection(challenged->c_str());
 
     size_t message_len = aad_len + plain_len + AESGCMTAGLENGTH;
     size_t pos = 0;
@@ -716,49 +729,87 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     cout<<"Challenger request message has been sent\n";
     return true;
 }
-/*
-string* UserConnectionManager::waitForResponse() {
 
-    auto *buffer = new unsigned char[RESPONSEENCRYPTEDLENGTH + HMACLENGTH];
-    size_t ret = recv(userSocket, buffer, RESPONSEENCRYPTEDLENGTH + HMACLENGTH, 0);
+string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
 
-    if(ret < AESBLOCKLENGTH + HMACLENGTH){
+    auto *buffer = new unsigned char[MAXCHALLENGEDRESPONSEMESSAGELENGTH];
+    size_t ret = recv(userSocket, buffer, MAXCHALLENGEDRESPONSEMESSAGELENGTH, MSG_WAITALL);
+
+    if(ret < OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH + AESBLOCKLENGTH + AESGCMTAGLENGTH){
         cerr<<"Error receiving the challenge response message\n";
+        stillWaiting = false;
         return NULL;
     }
 
-    unsigned char *plainMsg;
-    plainMsg = symmetricEncryptionManager->decryptNVerifyMACThisMessage(buffer, ret);
+    //copio aad
+    size_t pos = 0;
+    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    auto *aad = new unsigned char[aad_len];
+    memcpy(aad, buffer, aad_len);
+    pos += aad_len;
 
-    delete []buffer;
-    size_t plain_len = ret;
-    if(plainMsg[0] == CHALLENGEDRESPONSECODE){
-        cout<<"Response challenge message opcode verified\n";
-
-    }else{
-        cout<<"Wrong message. Response challenge message expected\n";
-        return NULL;
+    //controllo counter
+    uint32_t cont;
+    memcpy(&cont, aad + OPCODELENGTH + AESGCMIVLENGTH, COUNTERLENGTH);
+    if(cont != this->counter+1){
+        cout<<"The counter value was not the expencted one"<<endl;
+        delete [] buffer;
+        delete [] aad;
+        stillWaiting = false;
+        return nullptr;
     }
+
+    this->counter++;
+
+    //controllo opcode
+    if(aad[0] != CHALLENGEDRESPONSEMESSAGECODE){
+        cout<<"Wrong message"<<endl;
+        stillWaiting = false;
+        delete [] aad;
+        delete [] buffer;
+        return nullptr;
+    }
+
+    size_t iv_len = AESGCMIVLENGTH;
+    auto *iv = new unsigned char[iv_len];
+    memcpy(iv, aad+1, iv_len);
+
+    size_t encrypted_len = ret - AESGCMTAGLENGTH - pos;
+    auto* encrypted = new unsigned char[encrypted_len];
+    memcpy(encrypted, buffer+pos, encrypted_len);
+    pos += encrypted_len;
+
+    auto *tag = new unsigned char[AESGCMTAGLENGTH];
+    memcpy(tag, buffer+pos, AESGCMTAGLENGTH);
+
+    delete [] buffer;
+    unsigned char*plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
+
+    delete [] aad;
+    delete [] encrypted;
+    delete [] iv;
+    delete [] tag;
 
     char response;
     string *opponent = new string();
-    opponent->append((const char *)(plainMsg+1));
-    size_t pos = 1+opponent->length()+1;
-    response= plainMsg[pos];
+    opponent->append((const char *)(plainMessage+1));
+    response= plainMessage[0];
     cout<<"THE OPPONENT IS = "<<opponent->c_str()<<endl;
 
-    delete[] plainMsg;
+    delete[] plainMessage;
+    encrypted_len = iv_len = aad_len = pos = cont = 0;
 
     if(response == 'Y'){
         cout<<"The player accepted the challenge\n";
+        stillWaiting = false;
         return opponent;
     }else {
         cout<<"The player refused the challenge\n";
-        delete opponent;
-        return NULL;
+        stillWaiting = true;
+        return opponent;
     }
 }
-
+/*
 bool UserConnectionManager::sendOpponentKey(string *opponent) {
 
     EVP_PKEY *opponentPubKey = getUserPubKey(opponent);
