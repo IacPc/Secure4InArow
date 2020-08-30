@@ -29,11 +29,11 @@ int main(int argc, char*argv[]){
         return -1;
     }
 
-    if(!client->establishP2PCommunication()){
+/*    if(!client->establishP2PCommunication()){
         cerr<<"The players information exchange failed\n";
         return -1;
     }
-
+*/
     return 0;
 
 }

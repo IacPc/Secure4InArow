@@ -15,6 +15,7 @@
 #include "../Libraries/SymmetricEncryptionManager.h"
 #include "../Libraries/DiffieHellmannManager.h"
 #include "../Libraries/Constant.h"
+#include "../Libraries/SignatureManager.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -38,7 +39,7 @@ private:
     uint32_t counter;
 
     SymmetricEncryptionManager *symmetricEncryptionManager;
-    SignatureManaegr *signatureManager;
+    SignatureManager *signatureManager;
     DiffieHellmannManager *diffieHellmannManager;
 
     unsigned char* clientNonce;
@@ -68,7 +69,7 @@ private:
     unsigned char* createCertificateMessage(size_t&);
     unsigned char* createPlayerListMsg(vector<string>, size_t&);
     string* waitForClientChoice(bool&);
-
+    EVP_PKEY *getUserPubKey(string*);
 
 public:
     UserConnectionManager(Server*, sockaddr_in, int);
