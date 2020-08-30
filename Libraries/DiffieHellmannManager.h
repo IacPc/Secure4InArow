@@ -19,6 +19,7 @@ private:
     EVP_PKEY* peerPubKey;
     EVP_PKEY* myPubKey;
     size_t secret_len;
+    size_t myPubKEyLen;
     unsigned char* sharedSecret;
     void computeSharedSecret();
 public:
@@ -27,6 +28,7 @@ public:
     void setPeerPubKey(unsigned char*,size_t);
     unsigned char* getMyPubKey(size_t & );
     unsigned char* getSharedSecret(size_t&);
+    EVP_PKEY* getMyPubKey_EVP();
 };
 
 

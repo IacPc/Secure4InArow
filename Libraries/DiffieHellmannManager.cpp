@@ -125,3 +125,7 @@ DiffieHellmannManager::~DiffieHellmannManager() {
     EVP_PKEY_free(this->peerPubKey);
     EVP_PKEY_free(this->myPubKey);
 }
+
+EVP_PKEY *DiffieHellmannManager::getMyPubKey_EVP() {
+    return this->myPubKey;
+}

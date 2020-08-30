@@ -100,6 +100,21 @@ bool ServerConnectionManager::secureTheConnection(){
         cerr<<"Error in receiving peer key\n";
         return false;
     }
+    auto* HashedSecret = new unsigned char[EVP_MD_size(EVP_sha256())];
+    size_t dhSecretLen = 0;
+    unsigned char* dhSecret = this->diffieHellmannManager->getSharedSecret(dhSecretLen);
+
+    SHA256(dhSecret,dhSecretLen,HashedSecret);
+
+    delete diffieHellmannManager;
+
+    auto* simmetricKeyBuffer = new unsigned char[EVP_CIPHER_key_length(EVP_aes_128_gcm())];
+    memcpy(simmetricKeyBuffer,HashedSecret,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+
+    memset(HashedSecret,0X00,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+    delete [] HashedSecret;
+
+    this->symmetricEncryptionManager = new SymmetricEncryptionManager(simmetricKeyBuffer,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
 
     return true;
 }
@@ -203,7 +218,7 @@ bool ServerConnectionManager::sendMyPubKey() {
         return false;
     }
     int ret = send(this->serverNonce,pKeyMsg,len,0);
-
+    delete [] pKeyMsg;
     if(ret!= len)
         return false;
 
@@ -211,7 +226,40 @@ bool ServerConnectionManager::sendMyPubKey() {
 }
 
 bool ServerConnectionManager::waitForPeerPubkey() {
-    return false;
+
+    size_t PeerPubKeyMessageLen = 1 + 2 * sizeof(this->serverNonce) + this->userName->length() + 1 +
+                                  EVP_PKEY_size(this->diffieHellmannManager->getMyPubKey_EVP()) +
+                                  EVP_PKEY_size(this->signatureManager->getPrvkey());
+    auto* peerPubKeyMessageBuffer = new unsigned char[PeerPubKeyMessageLen];
+    int ret = recv(this->serverSocket, peerPubKeyMessageBuffer, PeerPubKeyMessageLen, 0);
+
+    if(ret != PeerPubKeyMessageLen){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+
+    if(peerPubKeyMessageBuffer[0] != PUBKEYMESSAGECODE){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+    uint32_t nonceRecv = 0;
+    memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1],sizeof(nonceRecv));
+
+    if(nonceRecv != this->myNonce){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+
+    memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1 + sizeof(nonceRecv)],sizeof(nonceRecv));
+
+    if(nonceRecv != this->serverNonce){
+        delete [] peerPubKeyMessageBuffer;
+        return false;
+    }
+
+    size_t dhPKeyLen = EVP_PKEY_size(this->diffieHellmannManager->getMyPubKey_EVP());
+    this->diffieHellmannManager->setPeerPubKey(&peerPubKeyMessageBuffer[5 + this->userName->length()],dhPKeyLen);
+    return true;
 }
 
 unsigned char *ServerConnectionManager::createPlayersListRequestMessage() {

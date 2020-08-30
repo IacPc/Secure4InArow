@@ -31,6 +31,8 @@ public:
     void setPubkey(EVP_PKEY*);
     void setPrvkey(EVP_PKEY*);
     unsigned char* getPubkey(size_t&);
+    EVP_PKEY* getPrvkey();
+
     void setPrvkey(std::string*);
 
 };
