@@ -35,6 +35,9 @@ void UserConnectionManager::openNewconnectionwithClient() {
 
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////                                         ESTABLISH SECURE CHANNEL                                         ////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool UserConnectionManager::establishSecureConnection() {
 
@@ -134,7 +137,7 @@ unsigned char* UserConnectionManager::createCertificateMessage(size_t& msg_len){
 
     //creo il buffer e copio opcode
     msg_len = (size_t)cert_len + NONCELENGTH + 1;
-    unsigned char *buffer  = new unsigned char[msg_len];
+    auto *buffer  = new unsigned char[msg_len];
     buffer[pos] = CERTIFICATEMSGCODE;
     pos++;
 
@@ -182,37 +185,45 @@ bool UserConnectionManager::waitForClientPubKey() {
     memcpy(myReceivedNonce, (buffer+pos), NONCELENGTH);
     pos += NONCELENGTH;
 
-    //copio lo username
-    string *username= new string((const char*)&buffer[pos]);
-    pos += username->length()+1;
+    //copio dimensione pubkey
+    size_t pubkey_len;
+    memcpy(&pubkey_len, (buffer+pos), SIZETLENGTH);
+    pos += SIZETLENGTH;
 
     //prelevo la pubkey
     auto *clientPubKey = new unsigned char[PUBKEYLENGTH];
     memcpy(clientPubKey, (buffer+pos), PUBKEYLENGTH);
     pos += PUBKEYLENGTH;
 
+    size_t messageToVerify_len = pos;
 
-    auto *signature = new unsigned char[SIGNATURELENGTH];
-    auto *messageToVerify = new unsigned char[pos];
-    memcpy(messageToVerify, buffer, pos);
-    memcpy(signature, buffer+pos, ret-pos);
+    //copio dimensione signature
+    size_t signature_len;
+    memcpy(&signature_len, (buffer+pos), SIZETLENGTH);
+    pos += SIZETLENGTH;
+
+    //pos contiene la lunghezza del buffer fino a Yc.
+    auto *signature = new unsigned char[signature_len];
+    auto *messageToVerify = new unsigned char[messageToVerify_len];
+    memcpy(messageToVerify, buffer, messageToVerify_len);
+    memcpy(signature, (buffer+pos), signature_len);
+
 
     //verifico la firma
-    if(!signatureManager->verifyThisSignature(signature, ret-pos, messageToVerify, pos)) {
+    if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, messageToVerify_len)) {
         cout<<"Signature not verified"<<endl;
         delete [] buffer;
         delete [] signature;
         delete [] messageToVerify;
         delete [] receivedClientNonce;
         delete [] myReceivedNonce;
-        delete username;
         delete [] clientPubKey;
         return false;
     }
 
     delete [] signature;
     delete [] messageToVerify;
-
+    messageToVerify_len = signature_len = pos = pubkey_len = 0;
 
 
     //verifico client nonce
@@ -221,7 +232,6 @@ bool UserConnectionManager::waitForClientPubKey() {
         delete [] buffer;
         delete [] receivedClientNonce;
         delete [] myReceivedNonce;
-        delete username;
         return false;
     }
 
@@ -232,21 +242,10 @@ bool UserConnectionManager::waitForClientPubKey() {
         cout<<"My nonce is not verified"<<endl;
         delete [] buffer;
         delete [] myReceivedNonce;
-        delete username;
         return false;
     }
 
     delete [] myReceivedNonce;
-
-    //verifico lo username
-     if(strcmp(username->c_str(), this->userName->c_str()) != 0 || (username->length() != this->userName->length())){
-            cout<<"The username is different from the one sent in the Hello Message."<<endl;
-            delete [] buffer;
-            delete username;
-            return false;
-     }
-
-     delete username;
 
 
     //chiamo DH
@@ -286,13 +285,12 @@ bool UserConnectionManager::sendMyPubKey() {
     memcpy((buffer+pos), myNonce, NONCELENGTH);
     pos += NONCELENGTH;
 
-    //inserisco '\0' al posto dello username
-    buffer[pos] = '\0';
-    pos++;
 
-    //inserisco la chiave
+    //inserisco la lunghezza e chiave
     size_t myKey_len = PUBKEYLENGTH;
     unsigned char* myKey = diffieHellmannManager->getMyPubKey(myKey_len);
+    memcpy((buffer+pos), &myKey_len, SIZETLENGTH);
+    pos += SIZETLENGTH;
     memcpy((buffer+pos), myKey, myKey_len);
     pos += myKey_len;
 
@@ -302,7 +300,9 @@ bool UserConnectionManager::sendMyPubKey() {
     size_t signature_len = pos;
     unsigned char* signedMessage = signatureManager->signTHisMessage(buffer, signature_len);
 
-    //copio la firma nel buffer
+    //copio la dimensione e la firma nel buffer
+    memcpy((buffer+pos), &signature_len, SIZETLENGTH);
+    pos += SIZETLENGTH;
     memcpy((buffer+pos), signedMessage, signature_len);
     pos += signature_len;
 
@@ -348,6 +348,18 @@ void UserConnectionManager::createSessionKey() {
     symmetricEncryptionManager = new SymmetricEncryptionManager(digest, digest_len);
     delete [] digest;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////                                         SECURE CHANNEL CREATED                                           ////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////                                         SHARE PEERS CREDENTIALS                                          ////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 bool UserConnectionManager::sharePlayersList() {
     bool waiting = true;
     while(waiting) {
@@ -486,7 +498,7 @@ bool UserConnectionManager::sendPlayerList() {
        cerr << "Error in sending players list\n";
        return false;
    }
-   if(list.size() == 0){
+   if(list.empty()){
         cout<<"No player available for the user\n";
     }
 
@@ -498,12 +510,12 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
 
 
     //prendo la lista dei giocatori e quanti e li metto nel buffer del messaggio in chiaro
-    unsigned char* playerList = (unsigned char*)malloc(MAXUSERNAMELENGTH * list.size());
+    auto* playerList = (unsigned char*)malloc(MAXUSERNAMELENGTH * list.size());
 
     size_t pos = 0;
-    for(auto i = list.begin(); i != list.end(); i++){
-        memcpy(playerList + pos, i->c_str(), strlen(i->c_str()) + 1);
-        pos += strlen(i->c_str())+1;
+    for(auto & i : list){
+        memcpy(playerList + pos, i.c_str(), strlen(i.c_str()) + 1);
+        pos += strlen(i.c_str())+1;
     }
 
     cout<<"Users in buffer: ";
@@ -519,7 +531,6 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
     auto* plainMessage = new unsigned char[pos + SIZETLENGTH];
     size_t num_players = list.size();
     cout<<"NUMERO GIOCATORI "<<num_players<<endl;
-    num_players = htons(num_players);
     memcpy(plainMessage, &(num_players), SIZETLENGTH);
     memcpy(plainMessage + SIZETLENGTH, playerList, pos);
 
@@ -528,7 +539,7 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
 
     //preparo AAD
 
-    unsigned char *AAD = new unsigned char[OPCODELENGTH+AESGCMIVLENGTH+COUNTERLENGTH];
+    auto *AAD = new unsigned char[OPCODELENGTH+AESGCMIVLENGTH+COUNTERLENGTH];
     AAD[0] = PLAYERSLISTMESSAGECODE;
 
     size_t iv_len = AESGCMIVLENGTH;
@@ -667,10 +678,10 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
     size_t plain_len = userName->length()+1;
-    unsigned char* plainMsg = new unsigned char[plain_len];
+    auto* plainMsg = new unsigned char[plain_len];
     memcpy(plainMsg, userName->c_str(), plain_len);
 
-    UserConnectionManager * challengedUCM = server->getUserConnection(challenged->c_str());
+    UserConnectionManager * challengedUCM = server->getUserConnection(*challenged);
     //AAD
     size_t aad_len = AADLENGTH;
     auto *AAD = new unsigned char[aad_len];
@@ -705,7 +716,7 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     size_t pos = 0;
 
     //copio aad
-    unsigned char *buffer = new unsigned char[message_len];
+    auto *buffer = new unsigned char[message_len];
     memcpy(buffer, AAD, aad_len);
     delete [] AAD;
     pos += aad_len;
@@ -738,7 +749,7 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
     if(ret < AADLENGTH + AESBLOCKLENGTH + AESGCMTAGLENGTH){
         cerr<<"Error receiving the challenge response message\n";
         stillWaiting = false;
-        return NULL;
+        return nullptr;
     }
 
     //copio aad
@@ -792,7 +803,7 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
     delete [] tag;
 
     char response;
-    string *opponent = new string();
+    auto *opponent = new string();
     opponent->append((const char *)(plainMessage+1));
     response= plainMessage[0];
     cout<<"THE OPPONENT IS = "<<opponent->c_str()<<endl;
@@ -829,13 +840,11 @@ bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32
     auto *plainMsg = new unsigned char[key_len + IPLENGTH + port_len];
 
 
-    uint32_t htons_port = htons(opponentPort);
-
     int pos = 0;
     memcpy(plainMsg+pos, (void*)&ipOpponent, IPLENGTH);
     pos += IPLENGTH;
 
-    memcpy(plainMsg+pos, &htons_port, port_len);
+    memcpy(plainMsg+pos, &opponentPort, port_len);
     pos += port_len;
 
     memcpy(plainMsg + pos, opponentPubKey, key_len);
@@ -964,10 +973,10 @@ bool UserConnectionManager::waitForChallengedReady(uint32_t& port, string* oppon
     uint32_t port_received;
     memcpy(&port_received, plainMessage, port_len);
 
-    port = ntohs(port_received);
+    port = port_received;
 
     plainMessage[encrypted_len-1] = '\0';
-    string *user = new string(reinterpret_cast<const char *>(&plainMessage[port_len]));
+    auto *user = new string(reinterpret_cast<const char *>(&plainMessage[port_len]));
 
     delete [] plainMessage;
     if(strcmp(user->c_str(), opponent->c_str()) != 0){
@@ -999,13 +1008,11 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
     auto *plainMsg = new unsigned char[key_len + IPLENGTH + port_len];
 
 
-    uint32_t htons_port = htons(port);
-
     int pos = 0;
     memcpy(plainMsg+pos, (void*)&myIP, IPLENGTH);
     pos += IPLENGTH;
 
-    memcpy(plainMsg+pos, &htons_port, port_len);
+    memcpy(plainMsg+pos, &port, port_len);
     pos += port_len;
 
     memcpy(plainMsg + pos, myPubKey, key_len);

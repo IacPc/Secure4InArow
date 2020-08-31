@@ -10,14 +10,15 @@ Client::Client(string* server_addr, int port, string* user){
     std::cout<<"Creating ServerConnectionManager"<<endl;
     serverConnectionManager =  new ServerConnectionManager((const char*)server_addr_cstr, port, user);
     userName = new std::string(user->c_str());
-    delete [] server_addr_cstr;
+
     cout<<"Client created successfully\n";
 
 }
 
 bool Client::establishConnection() {
+
     std::thread t(&ServerConnectionManager::createConnectionWithServer, serverConnectionManager);
-    t.join();
+    t.detach();
 }
 
 string* Client::getUsername() {
