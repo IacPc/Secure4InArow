@@ -109,8 +109,8 @@ bool UserConnectionManager::waitForHelloMessage(){
         return false;
     }
 
-    clientNonce = new unsigned char[NONCELENGTH];
-    memcpy(clientNonce, &buffer[1], NONCELENGTH);
+
+    memcpy((unsigned char*)&this->clientNonce, &buffer[1], NONCELENGTH);
 
     buffer[ret-1] = '\0';
     this->userName = new string((const char*)&buffer[1 + NONCELENGTH]);
@@ -144,9 +144,8 @@ unsigned char* UserConnectionManager::createCertificateMessage(size_t& msg_len){
     pos++;
 
     //creo nonce e lo copio nel buffer
-    myNonce = new unsigned char[NONCELENGTH];
-    RAND_bytes(&myNonce[0], NONCELENGTH);
-    memcpy((buffer+pos), myNonce, NONCELENGTH);
+    RAND_bytes((unsigned char*)&this->myNonce, NONCELENGTH);
+    memcpy((buffer+pos), &myNonce, NONCELENGTH);
     pos += NONCELENGTH;
 
     //copio certificato nel buffer
@@ -179,19 +178,28 @@ bool UserConnectionManager::waitForClientPubKey() {
     }
 
     //copio client nonce
-    auto* receivedClientNonce = new unsigned char[NONCELENGTH];
-    memcpy(receivedClientNonce, (buffer+pos), NONCELENGTH);
+    uint32_t receivedClientNonce;
+    memcpy(&receivedClientNonce, (buffer+pos), NONCELENGTH);
     pos += NONCELENGTH;
 
     //copio il mio nonce
-    auto* myReceivedNonce = new unsigned char[NONCELENGTH];
-    memcpy(myReceivedNonce, (buffer+pos), NONCELENGTH);
+    uint32_t myReceivedNonce;
+    memcpy(&myReceivedNonce, (buffer+pos), NONCELENGTH);
     pos += NONCELENGTH;
+
+    bool Noncesaredifferent = (this->myNonce != myReceivedNonce) || (this->clientNonce != receivedClientNonce);
+
+    if(Noncesaredifferent){
+        std::cout<<"Nonces does not match!"<<endl;
+        std::cout<<"Server Nonce is "<<this->myNonce<<",received "<<myReceivedNonce<<endl;
+        std::cout<<"Client Nonce is "<<this->clientNonce<<",received "<<receivedClientNonce<<endl;
+        return false;
+    }
 
     //copio dimensione pubkey
     uint16_t pubkey_len;
-    memcpy(&pubkey_len, (buffer+pos), 2);
-    pos += 2;
+    memcpy(&pubkey_len, (buffer+pos), sizeof(pubkey_len));
+    pos += sizeof(pubkey_len);
 
     //prelevo la pubkey
     auto *clientPubKey = new unsigned char[pubkey_len];
@@ -202,8 +210,8 @@ bool UserConnectionManager::waitForClientPubKey() {
 
     //copio dimensione signature
     uint16_t signature_len;
-    memcpy(&signature_len, (buffer+pos), 2);
-    pos += 2;
+    memcpy(&signature_len, (buffer+pos), sizeof(signature_len));
+    pos += sizeof(signature_len);
 
     //pos contiene la lunghezza del buffer fino a Yc.
     auto *signature = new unsigned char[signature_len];
@@ -219,6 +227,7 @@ bool UserConnectionManager::waitForClientPubKey() {
     path->append("_pubkey.pem");
     FILE* pubkeyUser = fopen(path->c_str(),"r");
     EVP_PKEY* pubkey = PEM_read_PUBKEY(pubkeyUser,NULL,NULL,NULL);
+
     this->signatureManager->setPubkey(pubkey);
 
     //verifico la firma
@@ -227,60 +236,26 @@ bool UserConnectionManager::waitForClientPubKey() {
         delete [] buffer;
         delete [] signature;
         delete [] messageToVerify;
-        delete [] receivedClientNonce;
-        delete [] myReceivedNonce;
         delete [] clientPubKey;
         return false;
     }
-    cout<<"PROVA"<<endl;
+
     delete [] signature;
     delete [] messageToVerify;
     messageToVerify_len = signature_len = pos = pubkey_len = 0;
 
-
-    //verifico client nonce
-    if(!verifyNonce(clientNonce, receivedClientNonce)){
-        cout<<"The client sent a different nonce"<<endl;
-        delete [] buffer;
-        delete [] receivedClientNonce;
-        delete [] myReceivedNonce;
-        return false;
-    }
-
-    delete [] receivedClientNonce;
-
-    //verifico il mio nonce
-    if(!verifyNonce(myNonce, myReceivedNonce)){
-        cout<<"My nonce is not verified"<<endl;
-        delete [] buffer;
-        delete [] myReceivedNonce;
-        return false;
-    }
-
-    delete [] myReceivedNonce;
-
-
     //chiamo DH
     diffieHellmannManager->setPeerPubKey(clientPubKey, PUBKEYLENGTH);
-    delete []clientPubKey;
+    cout<<"PROVA"<<endl;
+
+    delete [] clientPubKey;
 
 
     return true;
 
 
 }
-bool UserConnectionManager::verifyNonce(unsigned char* knownNonce, unsigned char* receivedNonce){
-    //comparison between the two nonces
 
-    if(memcmp(knownNonce, receivedNonce, NONCELENGTH) == 0) {
-        cout<<"Nonce verified"<<endl;
-        return true;
-    }
-    else {
-        cout<<"Nonce has not been verified"<<endl;
-        return false;
-    }
-}
 bool UserConnectionManager::sendMyPubKey() {
     auto *buffer = new unsigned char[MAXPUBKEYMESSAGELENGTH];
 
@@ -290,17 +265,18 @@ bool UserConnectionManager::sendMyPubKey() {
     pos++;
 
     //inserisco client nonce
-    memcpy((buffer+pos), clientNonce, NONCELENGTH);
+    memcpy((buffer+pos), &clientNonce, NONCELENGTH);
     pos += NONCELENGTH;
 
     //inserisco myNonce
-    memcpy((buffer+pos), myNonce, NONCELENGTH);
+    memcpy((buffer+pos), &myNonce, NONCELENGTH);
     pos += NONCELENGTH;
 
 
     //inserisco la lunghezza e chiave
     size_t myKey_len = PUBKEYLENGTH;
     unsigned char* myKey = diffieHellmannManager->getMyPubKey(myKey_len);
+
     memcpy((buffer+pos), &myKey_len, SIZETLENGTH);
     pos += SIZETLENGTH;
     memcpy((buffer+pos), myKey, myKey_len);
@@ -1091,6 +1067,4 @@ UserConnectionManager::~UserConnectionManager() {
     delete [] symmetricEncryptionManager;
     delete [] signatureManager;
     delete diffieHellmannManager;
-    delete [] clientNonce;
-    delete [] myNonce;
 }

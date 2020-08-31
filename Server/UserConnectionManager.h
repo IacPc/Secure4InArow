@@ -42,8 +42,8 @@ private:
     SignatureManager *signatureManager;
     DiffieHellmannManager *diffieHellmannManager;
 
-    unsigned char* clientNonce;
-    unsigned char* myNonce;
+    uint32_t clientNonce;
+    uint32_t myNonce;
 
 
     bool establishSecureConnection();

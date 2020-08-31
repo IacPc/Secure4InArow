@@ -66,6 +66,7 @@ void DiffieHellmannManager::computeSharedSecret() {
         std::cout<<"EVP_PKEY_CTX_new returned NULL"<<std::endl;
         return ;
     }
+
     /* Initialise */
     if(1 != EVP_PKEY_derive_init(ctx)){
         std::cout<<"Error in initialization"<<std::endl;
@@ -96,6 +97,7 @@ void DiffieHellmannManager::computeSharedSecret() {
         delete [] this->sharedSecret;
         return ;
     }
+    std::cout<<"shared secret computed succesfully"<<std::endl;
 
     EVP_PKEY_CTX_free(ctx);
 }

@@ -167,6 +167,7 @@ unsigned char *ServerConnectionManager::createHelloMessage(size_t& helloMessageB
     auto* helloMessageBuffer = new unsigned char[helloMessageBufferLen];
     helloMessageBuffer[0] = HELLOMSGCODE;
     RAND_bytes((unsigned char*)&this->myNonce,sizeof(this->myNonce));
+    memcpy(&helloMessageBuffer[1],(unsigned char*)&this->myNonce,sizeof(this->myNonce));
     strcpy((char*)&helloMessageBuffer[1 + sizeof(this->myNonce)], this->userName->c_str());
 
     return helloMessageBuffer;
@@ -215,8 +216,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     size_t pubKeyLength = 0;
     unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
 
-    size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + (1 + strlen(this->userName->c_str()))
-                                       + pubKeyLength +sizeof(uint16_t);
+    size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + sizeof(uint16_t) + pubKeyLength;
 
     auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength];
     pubKeyMessageToSignBuffer[0] = PUBKEYMESSAGECODE;
@@ -233,22 +233,22 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     step += pubKeyLength;
 
     //delete [] pubKeyBuf;
-
-    unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,pubKeyMessageToSignLength);
+    size_t signatureLength = step;
+    unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,signatureLength);
     if(!signature) {
         delete [] pubKeyMessageToSignBuffer;
         return nullptr;
     }
 
-    size_t pubKeyMessageLength = pubKeyMessageToSignLength + step + sizeof(len_16t);
+    size_t pubKeyMessageLength = pubKeyMessageToSignLength + sizeof(len_16t) + signatureLength;
     auto* pubKeyMessageBuffer = new unsigned char[pubKeyMessageLength];
     memcpy(pubKeyMessageBuffer,pubKeyMessageToSignBuffer,step);
 
-    len_16t = pubKeyMessageToSignLength;
+    len_16t = signatureLength;
     memcpy(&pubKeyMessageBuffer[step],&len_16t,sizeof(len_16t));
 
     step += sizeof(len_16t);
-    memcpy(&pubKeyMessageBuffer[step],signature,pubKeyMessageToSignLength);
+    memcpy(&pubKeyMessageBuffer[step],signature,signatureLength);
 
     delete [] signature;
     delete [] pubKeyMessageToSignBuffer;

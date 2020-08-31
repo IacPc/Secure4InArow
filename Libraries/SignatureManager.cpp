@@ -169,8 +169,6 @@ bool SignatureManager::verifyThisSignature(unsigned char* signature, size_t sign
     if(!this->pubKey)
         std::cerr << "no pubkey " << ret << "\n";
 
-    std::cout<< "signatureLen=" <<signatureLen<<std::endl;
-
     ret = EVP_VerifyFinal(md_ctx, signature, signatureLen, this->pubKey);
     return (ret == 1);
 }
