@@ -196,10 +196,10 @@ unsigned char *ServerConnectionManager::waitForCertificate(int & len) {
         cout<<"Wrong message,expected CERTIFICATEMSGCODE = 0X02,received "<<(uint8_t)buffer[0]<<endl;
         return NULL;
     }else{
-        memcpy(&this->serverNonce,&buffer[1 + sizeof(this->serverNonce)],sizeof(this->serverNonce));
+        memcpy(&this->serverNonce,&buffer[1],sizeof(this->serverNonce));
         size_t certLen = ret-1 - sizeof(this->serverNonce);
         auto* cert = new unsigned char[certLen];
-        memcpy(cert, buffer+1, certLen);
+        memcpy(cert, buffer + sizeof(this->serverNonce)+1, certLen);
 
         delete [] buffer;
         len = certLen;
