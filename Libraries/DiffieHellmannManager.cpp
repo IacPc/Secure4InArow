@@ -59,7 +59,7 @@ DiffieHellmannManager::DiffieHellmannManager() {
 }
 
 void DiffieHellmannManager::computeSharedSecret() {
-    EVP_PKEY_CTX* ctx;
+    EVP_PKEY_CTX* ctx = NULL;
 
     /* Create the context for the shared secret derivation */
     if(NULL == (ctx = EVP_PKEY_CTX_new(this->myPubKey, NULL))) {
@@ -73,23 +73,23 @@ void DiffieHellmannManager::computeSharedSecret() {
         EVP_PKEY_CTX_free(ctx);
         return ;
     }
-
+    std::cout<<"1"<<std::endl;
     /* Provide the peer public key */
     if(1 != EVP_PKEY_derive_set_peer(ctx, this->peerPubKey)){
         std::cout<<"Error in Providing the peer public key"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return ;
     }
-
+    std::cout<<"2"<<std::endl;
     /* Determine buffer length for shared secret */
     if(1 != EVP_PKEY_derive(ctx, NULL, &this->secret_len)) {
         std::cout<<"Error in Determining buffer length for shared secret"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return ;
     }
-
+    std::cout<<"3"<<std::endl;
     this->sharedSecret = new unsigned char[this->secret_len];
-
+    std::cout<<"4"<<std::endl;
     /* Derive the shared secret */
     if(1 != (EVP_PKEY_derive(ctx, this->sharedSecret, &this->secret_len))){
         std::cout<<"Error in Determining buffer length for shared secret"<<std::endl;
@@ -98,13 +98,17 @@ void DiffieHellmannManager::computeSharedSecret() {
         return ;
     }
     std::cout<<"shared secret computed succesfully"<<std::endl;
-
+    std::cout<<"5"<<std::endl;
     EVP_PKEY_CTX_free(ctx);
 }
 
 unsigned char *DiffieHellmannManager::getMyPubKey(size_t & pklen) {
 
     BIO *mbio = BIO_new(BIO_s_mem());
+    if(!mbio){
+        std::cout<<"mbio is NULL"<<std::endl;
+        return nullptr;
+    }
     PEM_write_bio_PUBKEY(mbio, this->myPubKey);
     unsigned char* pubkey_buf;
     long pubkey_size = BIO_get_mem_data(mbio, &pubkey_buf);
@@ -121,8 +125,17 @@ unsigned char *DiffieHellmannManager::getSharedSecret(size_t & len) {
 
 void DiffieHellmannManager::setPeerPubKey(unsigned char* pubkey_buf, size_t pubkey_size) {
     BIO *mbio = BIO_new(BIO_s_mem());
-    BIO_write(mbio, pubkey_buf, pubkey_size);
+    if(!mbio){
+        std::cout<<"mbio is NULL"<<std::endl;
+        return;
+    }
+    int ret = BIO_write(mbio, pubkey_buf, pubkey_size);
+    std::cout<<"BIO_write returned "<<ret<<std::endl;
     this->peerPubKey = PEM_read_bio_PUBKEY(mbio, NULL, NULL, NULL);
+
+    std::cout<<pubkey_size<<std::endl;
+    if (!this->peerPubKey)
+        std::cout<<"PEM_read_bio_PUBKEY returned NULL"<<std::endl;
     BIO_free(mbio);
     this->computeSharedSecret();
 }
