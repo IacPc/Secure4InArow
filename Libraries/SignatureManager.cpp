@@ -155,18 +155,19 @@ bool SignatureManager::verifyThisSignature(unsigned char* signature, size_t sign
                                            unsigned char* messageToVerify, size_t messageToVerifyLength) {
 
     int ret; // used for return values
-    EVP_MD_CTX* md_ctx = EVP_MD_CTX_new();
+    EVP_MD_CTX* md_ctx = nullptr;
+    md_ctx= EVP_MD_CTX_new();
     if(!md_ctx)
         return false;
-
+    std::cout<<"1"<<std::endl;
     ret = EVP_VerifyInit(md_ctx, this->hashMD);
     if(ret == 0){ std::cerr << "Error: EVP_VerifyInit returned " << ret << "\n"; }
-
+    std::cout<<"2"<<std::endl;
     ret = EVP_VerifyUpdate(md_ctx, messageToVerify, messageToVerifyLength);
     if (ret == 0) {
         std::cerr << "Error: EVP_VerifyUpdate returned " << ret << "\n";
     }
-
+    std::cout<<"3"<<std::endl;
     if(!this->pubKey)
         std::cerr << "no pubkey " << ret << "\n";
 
@@ -174,7 +175,7 @@ bool SignatureManager::verifyThisSignature(unsigned char* signature, size_t sign
         std::cerr << "no roba " << ret << "\n";
 
     ret = EVP_VerifyFinal(md_ctx, signature, signatureLen, this->pubKey);
-
+    std::cout<<"4"<<std::endl;
     return (ret == 1);
 }
 

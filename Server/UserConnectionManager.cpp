@@ -194,9 +194,9 @@ bool UserConnectionManager::waitForClientPubKey() {
     pos += 2;
 
     //prelevo la pubkey
-    auto *clientPubKey = new unsigned char[PUBKEYLENGTH];
-    memcpy(clientPubKey, (buffer+pos), PUBKEYLENGTH);
-    pos += PUBKEYLENGTH;
+    auto *clientPubKey = new unsigned char[pubkey_len];
+    memcpy(clientPubKey, (buffer+pos), pubkey_len);
+    pos += pubkey_len;
 
     size_t messageToVerify_len = pos;
 
@@ -211,7 +211,6 @@ bool UserConnectionManager::waitForClientPubKey() {
     memcpy(messageToVerify, buffer, messageToVerify_len);
     memcpy(signature, (buffer+pos), signature_len);
 
-
     //verifico la firma
     if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, messageToVerify_len)) {
         cout<<"Signature not verified"<<endl;
@@ -223,7 +222,7 @@ bool UserConnectionManager::waitForClientPubKey() {
         delete [] clientPubKey;
         return false;
     }
-
+    cout<<"PROVA"<<endl;
     delete [] signature;
     delete [] messageToVerify;
     messageToVerify_len = signature_len = pos = pubkey_len = 0;

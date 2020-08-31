@@ -8,6 +8,7 @@ DiffieHellmannManager::DiffieHellmannManager() {
     EVP_PKEY_CTX *pctx, *kctx;
     EVP_PKEY* params= NULL;
 
+
     /* Create the context for parameter generation */
     if(NULL == (pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL))) {
         std::cout<<"EVP_PKEY_CTX_new_id returned NULL"<<std::endl;
@@ -44,6 +45,7 @@ DiffieHellmannManager::DiffieHellmannManager() {
         return;
     }
 
+    this->myPubKey = NULL;
     if (1 != EVP_PKEY_keygen(kctx, &this->myPubKey)) {
         std::cout<<"error in key generation"<<std::endl;
         return;

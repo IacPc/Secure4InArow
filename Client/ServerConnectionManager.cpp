@@ -235,7 +235,6 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     //delete [] pubKeyBuf;
 
     unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,pubKeyMessageToSignLength);
-
     if(!signature) {
         delete [] pubKeyMessageToSignBuffer;
         return nullptr;
@@ -266,8 +265,7 @@ bool ServerConnectionManager::sendMyPubKey() {
         cerr<<"Error during public key Message creation\n";
         return false;
     }
-    int ret = send(this->serverNonce,pKeyMsg,len,0);
-    cout<<"RET = "<<ret<<endl;
+    int ret = send(this->serverSocket,pKeyMsg,len,0);
     delete [] pKeyMsg;
     if(ret!= len)
         return false;
