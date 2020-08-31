@@ -88,7 +88,6 @@ bool ServerConnectionManager::secureTheConnection(){
     helloMsg= createHelloMessage(hello_len);
     if(helloMsg == NULL){
         cerr<<"Error during Hello Message creation\n";
-        delete this;
         return false;
     }
 
@@ -163,7 +162,7 @@ bool ServerConnectionManager::secureTheConnection(){
 unsigned char *ServerConnectionManager::createHelloMessage(size_t& helloMessageBufferLen) {
 
     helloMessageBufferLen = 1 + sizeof(this->myNonce) + strlen(this->userName->c_str()) + 1;
-    auto* helloMessageBuffer = new unsigned  char[helloMessageBufferLen];
+    auto* helloMessageBuffer = new unsigned char[helloMessageBufferLen];
     helloMessageBuffer[0] = HELLOMSGCODE;
     RAND_bytes((unsigned char*)&this->myNonce,sizeof(this->myNonce));
     strcpy((char*)&helloMessageBuffer[1 + sizeof(this->myNonce)], this->userName->c_str());
@@ -194,7 +193,7 @@ unsigned char *ServerConnectionManager::waitForCertificate(int & len) {
     }
 
     if(buffer[0] != CERTIFICATEMSGCODE){
-        cout<<"Wrong message\n";
+        cout<<"Wrong message,expected CERTIFICATEMSGCODE = 0X02,received "<<(uint8_t)buffer[0]<<endl;
         return NULL;
     }else{
         memcpy(&this->serverNonce,&buffer[1 + sizeof(this->serverNonce)],sizeof(this->serverNonce));
