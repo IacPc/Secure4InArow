@@ -46,36 +46,36 @@ private:
     DiffieHellmannManager* diffieHellmannManager;
 
     bool sendHelloMessage(unsigned char*, size_t&);
-    bool verifyCertificate(unsigned char*, int);
     bool sendMyPubKey();
     bool waitForPeerPubkey();
     bool sendPlayersListRequest();
-    bool waitForPlayers(std::string*&);
-    bool sendSelectedPlayer();
+    bool sendSelectedPlayer(std::vector<std::string*>*);
     bool waitForSomething();
+    bool waitForChallengedResponseMessage();
+
+    //PARSER
+    bool tryParsePlayerChoice(std::string* input, unsigned int& output,size_t limit)
+
     unsigned char* waitForOpponentKey(struct in_addr & ipOpponent, size_t& port);
 
-    string* waitForPlayers(bool&);
-    string* selectPlayer(vector<string>);
+    string* selectPlayer(vector<string*>);
     string* waitForChallenge();
+    bool waitForPlayers(std::vector<std::string*>*&);
 
     unsigned char* createHelloMessage(size_t& helloMessageBufferLen);
     unsigned char* createPubKeyMessage(size_t&);
     unsigned char* waitForCertificate(int&);
-    unsigned char* createPlayersListRequestMessage();
-    unsigned char* createSelectedPlayerMessage();
+    unsigned char* createPlayersListRequestMessage(size_t&);
+    unsigned char* createSelectedPlayerMessage(std::string*,size_t&);
 
 public:
 
-
-
     ServerConnectionManager(const char* server_addr, int port, string* user);
-    bool sendServerNonce(const char*, size_t);
-    bool establishConnectionToServer();
+    bool connectToServer();
     bool secureTheConnection();
 
     ~ServerConnectionManager();
-    bool createConnectionWithServer();
+    void createConnectionWithServer();
 
 };
 

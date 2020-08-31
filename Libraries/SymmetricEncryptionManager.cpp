@@ -16,7 +16,7 @@ SymmetricEncryptionManager::SymmetricEncryptionManager(unsigned char* key, size_
 
 unsigned char *
 SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t& plaintext_len, unsigned char *aad,
-                                               size_t aad_len, unsigned char*& iv, size_t& iv_len, unsigned char*& tag) {
+                                               size_t aad_len, unsigned char* iv, size_t& iv_len, unsigned char*& tag) {
 
     EVP_CIPHER_CTX *ctx;
     int len;
@@ -68,7 +68,6 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
 
     ENCRYPTIONERROR:
     delete [] ciphertext;
-    delete [] iv;
     delete [] tag;
     aad_len = plaintext_len = iv_len = 0;
     EVP_CIPHER_CTX_cleanup(ctx);

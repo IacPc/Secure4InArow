@@ -25,7 +25,7 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
 
 }
 
-bool ServerConnectionManager::establishConnectionToServer(){
+bool ServerConnectionManager::connectToServer(){
 
     int ret;
     ret = connect(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
@@ -34,6 +34,46 @@ bool ServerConnectionManager::establishConnectionToServer(){
         return false;
     }
     return true;
+
+}
+
+void ServerConnectionManager::createConnectionWithServer() {
+   bool ok = this->connectToServer();
+   if(!ok)
+       return;
+   ok = secureTheConnection();
+
+   if(!ok)
+       return;
+   ok= this->sendPlayersListRequest();
+   if(!ok)
+        return;
+
+   std::vector<std::string*>* playerList = nullptr;
+   bool choiceWentWell = this->waitForPlayers(playerList);
+   if(!choiceWentWell) return;
+
+   if(playerList){
+       bool sendingWentWell = this->sendSelectedPlayer(playerList);
+       for (auto &i : *playerList) {
+           delete i;
+       }
+       delete playerList;
+
+       if(!sendingWentWell)
+           return;
+
+       bool challengedSaidYes = this->waitForChallengedResponseMessage();
+       if(challengedSaidYes){
+           // create P2PCommunication, for now just return
+           return;
+       }
+   }
+
+   while(true){
+      if(!this->waitForSomething())
+          return;
+   }
 
 }
 
@@ -290,37 +330,264 @@ bool ServerConnectionManager::waitForPeerPubkey() {
     return true;
 }
 
-unsigned char *ServerConnectionManager::createPlayersListRequestMessage() {
-    return nullptr;
+unsigned char *ServerConnectionManager::createPlayersListRequestMessage(size_t & len) {
+    size_t playersListMessageLength = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 * AESBLOCKLENGTH + AESGCMTAGLENGTH;
+    auto* playersListMessageBuffer = new unsigned char[playersListMessageLength];
+
+    playersListMessageBuffer[0] = PLAYERSLISTMESSAGECODE;
+    size_t step = 1;
+    auto* ivBuf = new unsigned char[AESGCMIVLENGTH];
+    RAND_bytes(ivBuf,AESGCMIVLENGTH);
+    memcpy(&playersListMessageBuffer[step],ivBuf,AESGCMIVLENGTH);
+    step += AESGCMIVLENGTH;
+    RAND_bytes((unsigned char*)&this->counter,sizeof(this->counter));
+    memcpy(&playersListMessageBuffer[step],&this->counter,sizeof(this->counter));
+    step += sizeof(this->counter);
+
+    size_t ptLen = this->userName->length()+1;
+    auto* usrBuf = new unsigned char[ptLen];
+    strcpy((char*)usrBuf,this->userName->c_str());
+
+    size_t ivLen = AESGCMIVLENGTH;
+    unsigned char* tag;
+    unsigned char* cipherText;
+    cipherText = this->symmetricEncryptionManager->encryptThisMessage(usrBuf,ptLen,playersListMessageBuffer,step,ivBuf,ivLen,tag);
+
+    delete [] ivBuf;
+    delete [] usrBuf;
+
+    memcpy(&playersListMessageBuffer[step],cipherText,ptLen);
+    step += ptLen;
+    delete [] cipherText;
+    memcpy(&playersListMessageBuffer[step],tag,AESGCMTAGLENGTH);
+    delete [] tag;
+    step += AESGCMTAGLENGTH;
+    len = step;
+
+    return playersListMessageBuffer;
 }
 
 bool ServerConnectionManager::sendPlayersListRequest() {
-    return false;
+    size_t playersListMessageLength;
+    unsigned char* playersListMessageBuffer = createPlayersListRequestMessage(playersListMessageLength);
+    int ret = send(this->serverSocket,playersListMessageBuffer,playersListMessageLength,0);
+    delete [] playersListMessageBuffer;
+    if(ret != playersListMessageLength){
+        return false;
+    }
+    this->counter++;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////                                         SECURE CHANNEL CREATED                                           ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ServerConnectionManager::waitForPlayers(std::string*& pChosen) {
-    return false;
-}
+bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
+    size_t playersListMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 + MAXUSERNAMELENGTH*MAXPLAYERSONLINE + AESGCMTAGLENGTH;
+    const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
+    unsigned char aadBuf[aadLen];
+    unsigned char ivBuf[AESGCMIVLENGTH];
+    unsigned char tagBuf[AESGCMTAGLENGTH];
+    unsigned int counterRecv;
 
-unsigned char* ServerConnectionManager::createSelectedPlayerMessage() {
-    return nullptr;
-}
+    auto* playerListBuffer = new unsigned char[playersListMessageLen];
+    int ret = recv(this->serverSocket,playerListBuffer,playersListMessageLen,0);
+    if(ret<=0) return false;
 
-bool ServerConnectionManager::sendSelectedPlayer() {
-    return false;
-}
+    if(playerListBuffer[0]!= PLAYERSLISTMESSAGECODE) {
+        delete [] playerListBuffer;
+        return false;
+    }
 
-unsigned char *ServerConnectionManager::waitForOpponentKey(in_addr &ipOpponent, size_t &port) {
-    return nullptr;
+    memcpy(&counterRecv,&playerListBuffer[1 + AESGCMIVLENGTH],sizeof(counterRecv));
+    if(counterRecv!= this->counter){
+        delete [] playerListBuffer;
+        return false;
+    }
+    this->counter++;
+
+    memcpy(ivBuf,&playerListBuffer[1],AESGCMIVLENGTH);
+    memcpy(tagBuf,&playerListBuffer[ret -AESGCMTAGLENGTH],AESGCMTAGLENGTH);
+    memcpy(aadBuf,playerListBuffer,aadLen);
+    size_t cipherTextLen = ret - (1 + AESGCMIVLENGTH + sizeof(this->counter) + AESGCMTAGLENGTH);
+    unsigned char* cipherText = new unsigned char[cipherTextLen];
+    memcpy(cipherText,&playerListBuffer[1 + AESGCMIVLENGTH + sizeof(this->counter)],cipherTextLen);
+
+
+    unsigned char* decryptedPlayersList = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,
+                                                                                               aadBuf,aadLen,tagBuf,ivBuf);
+    delete [] playerListBuffer;
+    delete [] cipherText;
+
+    if(!decryptedPlayersList){
+        return false;
+    }
+
+    uint16_t playersNumb;
+    memcpy(&playersNumb,decryptedPlayersList,sizeof(uint16_t));
+    if (playersNumb==0){
+        delete [] decryptedPlayersList;
+        pc = nullptr;
+        return true;
+    }
+    std::vector<std::string*>* playerList = new std::vector<std::string*>;
+
+    size_t step = 0;
+    char* players = (char*)&decryptedPlayersList[sizeof(playersNumb)];
+    for(std::size_t i = 0; i < playersNumb || step<cipherTextLen;i++){
+        string* toInsert = new std::string(players);
+        playerList->push_back(toInsert);
+        step += toInsert->length() + 1;
+        players += step;
+    }
+    pc= playerList;
+    delete [] decryptedPlayersList;
+    return true;
 }
 
 bool ServerConnectionManager::waitForSomething() {
     return false;
 }
 
+ServerConnectionManager::~ServerConnectionManager() {
+    delete userName;
+    delete symmetricEncryptionManager;
+    delete signatureManager;
+    delete certificateManager;
+    delete diffieHellmannManager;
+}
+
+unsigned char *ServerConnectionManager::createSelectedPlayerMessage(std::string * pl,size_t& len) {
+    const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
+    unsigned char aadBuf[aadLen];
+    size_t ivLen = AESGCMIVLENGTH;
+
+    unsigned char ivBuf[ivLen];
+    unsigned char counterBuf[sizeof(this->counter)];
+    unsigned char* tagBuf;
+
+    size_t challengedNameLen = pl->length()+1;
+    auto* challengedNameBuf = new unsigned char[challengedNameLen];
+    strcpy((char*)challengedNameBuf,pl->c_str());
+    aadBuf[0] = PLAYERCHOSENMESSAGECODE;
+    RAND_bytes(ivBuf,AESGCMIVLENGTH);
+    size_t step = 1 ;
+    memcpy(&aadBuf[step],ivBuf,AESGCMIVLENGTH);
+    step += AESGCMIVLENGTH;
+    memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
+    step += sizeof(this->counter);
+
+
+    unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(challengedNameBuf,challengedNameLen,
+                                                                                     aadBuf,aadLen,ivBuf,ivLen,tagBuf);
+
+    delete [] challengedNameBuf;
+
+    size_t selectedPlayerMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + challengedNameLen + AESGCMTAGLENGTH;
+    auto* selectedPlayerMessageBuf = new unsigned char[selectedPlayerMessageLen];
+
+    memcpy(selectedPlayerMessageBuf,aadBuf,step);
+    memcpy(&selectedPlayerMessageBuf[step],encPayload,challengedNameLen);
+    delete [] encPayload;
+
+    step += challengedNameLen;
+    memcpy(&selectedPlayerMessageBuf[step],tagBuf,AESGCMTAGLENGTH);
+
+    len = selectedPlayerMessageLen;
+    return selectedPlayerMessageBuf;
+
+}
+
+bool ServerConnectionManager::sendSelectedPlayer(std::vector<std::string *> * pl) {
+    cout<<"The following players are available"<<endl;
+    unsigned int i =0;
+    unsigned int out =0;
+    for (auto &p : *pl) {
+        std::cout << i << ")"<<p<<endl;
+        i++;
+    }
+    string choice;
+    do{
+        choice.clear();
+        cout<<"Please choose one player between 1 and "<<i-1<<endl;
+        getline(cin, choice);
+    }while(!tryParsePlayerChoice(&choice, out, i - 1));
+
+    out--;
+    string* selectedPlayer = pl->at(out);
+    std::size_t playerChosenMessageLength=0;
+    unsigned char* playerChosenMessageBuffer = this->createSelectedPlayerMessage(selectedPlayer,playerChosenMessageLength);
+    if(!playerChosenMessageBuffer){
+        cout<<"ERROR in creating playerChosenMessageBuffer"<<endl;
+        return false;
+    }
+
+    int ret = send(this->serverSocket, playerChosenMessageBuffer,playerChosenMessageLength,0);
+    this->counter++;
+    delete [] playerChosenMessageBuffer;
+    if(ret!=playerChosenMessageLength)
+        return false;
+    else
+        return true;
+
+}
+
+bool ServerConnectionManager::tryParsePlayerChoice(std::string* input, unsigned int& output,size_t limit) {
+    unsigned int temp;
+    try{
+        temp = std::stoi(input->c_str());
+    } catch (std::invalid_argument) {
+        return false;
+    }
+    if(temp<1 || temp > limit)
+        return false;
+    output = temp;
+    return true;
+}
+
+bool ServerConnectionManager::waitForChallengedResponseMessage() {
+    size_t challengedResponseMessageLength = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2* AESBLOCKLENGTH + AESGCMTAGLENGTH;
+    auto* challengedResponseMessageBuf = new unsigned char[challengedResponseMessageLength];
+    const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
+    unsigned char aadBuf[aadLen];
+    unsigned char ivBuf[AESGCMIVLENGTH];
+    unsigned char tagBuf[AESGCMTAGLENGTH];
+
+    int ret = recv(this->serverSocket,challengedResponseMessageBuf,challengedResponseMessageLength,0);
+    if(ret <=0){
+        cout<<"ERROR in receiving challenged response message"<<endl;
+        return false;
+    }
+    uint32_t countRec;
+    memcpy(&countRec, &challengedResponseMessageBuf[1 + AESGCMIVLENGTH],sizeof(countRec));
+    if(challengedResponseMessageBuf[0]!= CHALLENGEDRESPONSEMESSAGECODE || (countRec != this->counter)){
+        cout<<"ERROR in receiving challenged response message:message corrupted!"<<endl;
+        delete [] challengedResponseMessageBuf;
+        return false;
+    }
+    this->counter++;
+    memcpy(ivBuf,&challengedResponseMessageBuf[1],AESGCMIVLENGTH);
+
+    size_t cipherTextLen = ret - ( 1 + AESGCMIVLENGTH + sizeof(countRec) + AESGCMTAGLENGTH);
+    size_t tagPosition = 1 + AESGCMIVLENGTH + sizeof(countRec) + cipherTextLen;
+
+    memcpy(aadBuf,challengedResponseMessageBuf,aadLen);
+    memcpy(tagBuf,&challengedResponseMessageBuf[tagPosition],AESGCMTAGLENGTH);
+
+    auto* cipherText = new unsigned char[cipherTextLen];
+    memcpy(cipherText,&challengedResponseMessageBuf[aadLen],cipherTextLen);
+
+    unsigned char* answer = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,aadBuf,aadLen,tagBuf,ivBuf);
+    if(!answer)
+        return false;
+    else{
+        if ((const char)answer[0] == 'Y')
+            return true;
+        else
+            return false;
+    }
+
+}
 
 

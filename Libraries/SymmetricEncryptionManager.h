@@ -23,7 +23,7 @@ public:
     SymmetricEncryptionManager(unsigned char*, size_t);
     ~SymmetricEncryptionManager();
     unsigned char* encryptThisMessage(unsigned char *, size_t& ,unsigned char *, size_t ,
-                                      unsigned char*& ,size_t& ,unsigned char*& );
+                                      unsigned char* ,size_t& ,unsigned char*& );
     unsigned char* decryptThisMessage(unsigned char *ciphertext, size_t &ciphertext_len,
                                       unsigned char *aad, size_t aad_len,
                                       unsigned char *tag, unsigned char *iv);
