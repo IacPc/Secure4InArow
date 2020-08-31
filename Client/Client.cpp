@@ -19,6 +19,8 @@ bool Client::establishConnection() {
 
     std::thread t(&ServerConnectionManager::createConnectionWithServer, serverConnectionManager);
     t.detach();
+
+    return true;
 }
 
 string* Client::getUsername() {

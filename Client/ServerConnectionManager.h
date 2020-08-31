@@ -54,7 +54,7 @@ private:
     bool waitForChallengedResponseMessage();
 
     //PARSER
-    bool tryParsePlayerChoice(std::string* input, unsigned int& output,size_t limit)
+    bool tryParsePlayerChoice(std::string* input, unsigned int& output,size_t limit);
 
     unsigned char* waitForOpponentKey(struct in_addr & ipOpponent, size_t& port);
 
