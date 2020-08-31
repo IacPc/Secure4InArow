@@ -211,6 +211,16 @@ bool UserConnectionManager::waitForClientPubKey() {
     memcpy(messageToVerify, buffer, messageToVerify_len);
     memcpy(signature, (buffer+pos), signature_len);
 
+    string* path = new std::string ("../Server/Server_Keys/4InARowServerPrvkey.pem");
+    this->signatureManager = new SignatureManager(path, nullptr);
+    path->clear();
+    path->append("../Server/Users_Public_Keys/");
+    path->append(this->userName->c_str());
+    path->append("_pubkey.pem");
+    FILE* pubkeyUser = fopen(path->c_str(),"r");
+    EVP_PKEY* pubkey = PEM_read_PUBKEY(pubkeyUser,NULL,NULL,NULL);
+    this->signatureManager->setPubkey(pubkey);
+
     //verifico la firma
     if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, messageToVerify_len)) {
         cout<<"Signature not verified"<<endl;

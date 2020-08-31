@@ -18,8 +18,8 @@ Client::Client(string* server_addr, int port, string* user){
 bool Client::establishConnection() {
 
     std::thread t(&ServerConnectionManager::createConnectionWithServer, serverConnectionManager);
+    //t.detach();
     t.join();
-
     return true;
 }
 
