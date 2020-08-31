@@ -41,6 +41,7 @@ void UserConnectionManager::openNewconnectionwithClient() {
 
 bool UserConnectionManager::establishSecureConnection() {
 
+    cout<<"Starting establishing secure connection"<<endl;
 
     //wait for hello message
     if(!waitForHelloMessage()){
@@ -88,10 +89,11 @@ bool UserConnectionManager::establishSecureConnection() {
 }
 bool UserConnectionManager::waitForHelloMessage(){
 
+    cout<<"Waiting for hello message"<<endl;
     auto *buffer = new unsigned char[HELLOMESSAGELENGTH];
     size_t ret;
 
-    ret = recv(userSocket, buffer, HELLOMESSAGELENGTH, MSG_WAITALL);
+    ret = recv(userSocket, buffer, HELLOMESSAGELENGTH, 0);
     if(ret <= 0){
         cout<<"Error in receiving HelloMessage\n";
         return false;
@@ -150,14 +152,15 @@ unsigned char* UserConnectionManager::createCertificateMessage(size_t& msg_len){
     //copio certificato nel buffer
     memcpy((buffer + pos), cert, (size_t)(cert_len));
     pos += (size_t)(cert_len);
-    cout<<"Certificate message created succesfully "<<endl;
+    cout<<"Certificate message created successfully "<<endl;
+
 
     return buffer;
 }
 bool UserConnectionManager::waitForClientPubKey() {
 
     auto* buffer = new unsigned char[MAXPUBKEYMESSAGELENGTH];
-    size_t ret = recv(userSocket ,buffer, MAXPUBKEYMESSAGELENGTH, MSG_WAITALL);
+    size_t ret = recv(userSocket ,buffer, MAXPUBKEYMESSAGELENGTH, 0);
     if(ret <= 0){
         cout<<"Error receiving the public key message"<<endl;
         delete [] buffer;
@@ -186,9 +189,9 @@ bool UserConnectionManager::waitForClientPubKey() {
     pos += NONCELENGTH;
 
     //copio dimensione pubkey
-    size_t pubkey_len;
-    memcpy(&pubkey_len, (buffer+pos), SIZETLENGTH);
-    pos += SIZETLENGTH;
+    uint16_t pubkey_len;
+    memcpy(&pubkey_len, (buffer+pos), 2);
+    pos += 2;
 
     //prelevo la pubkey
     auto *clientPubKey = new unsigned char[PUBKEYLENGTH];
@@ -198,9 +201,9 @@ bool UserConnectionManager::waitForClientPubKey() {
     size_t messageToVerify_len = pos;
 
     //copio dimensione signature
-    size_t signature_len;
-    memcpy(&signature_len, (buffer+pos), SIZETLENGTH);
-    pos += SIZETLENGTH;
+    uint16_t signature_len;
+    memcpy(&signature_len, (buffer+pos), 2);
+    pos += 2;
 
     //pos contiene la lunghezza del buffer fino a Yc.
     auto *signature = new unsigned char[signature_len];
@@ -415,7 +418,7 @@ bool UserConnectionManager::sharePlayersList() {
 bool UserConnectionManager::waitForPlayersRequest() {
 
     auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
-    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, MSG_WAITALL);
+    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
     if(ret < 0){
         cout<<"Error receiving Players Request Message"<<endl;
         delete []buffer;
@@ -596,7 +599,7 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 
 
     auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
-    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, MSG_WAITALL);
+    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
     if(ret < 0){
         cout<<"Error receiving Players Request Message"<<endl;
         delete []buffer;
@@ -744,7 +747,7 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
 
     auto *buffer = new unsigned char[MAXCHALLENGEDRESPONSEMESSAGELENGTH];
-    size_t ret = recv(userSocket, buffer, MAXCHALLENGEDRESPONSEMESSAGELENGTH, MSG_WAITALL);
+    size_t ret = recv(userSocket, buffer, MAXCHALLENGEDRESPONSEMESSAGELENGTH, 0);
 
     if(ret < AADLENGTH + AESBLOCKLENGTH + AESGCMTAGLENGTH){
         cerr<<"Error receiving the challenge response message\n";
@@ -909,7 +912,7 @@ bool UserConnectionManager::waitForChallengedReady(uint32_t& port, string* oppon
 
     size_t msg_len = MAXREADYFORCHALLENGEMESSAGELENGTH;
     auto *buffer = new unsigned char[msg_len];
-    size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, MSG_WAITALL);
+    size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, 0);
 
     if(ret < AADLENGTH + AESGCMTAGLENGTH + AESBLOCKLENGTH){
         cerr<<"Error in receving Challenged Ready message,received "<<ret<<" bytes"<<endl;

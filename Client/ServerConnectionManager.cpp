@@ -113,7 +113,7 @@ bool ServerConnectionManager::secureTheConnection(){
     EVP_PKEY* serverPubkey;
     if(certificateManager->verifyCertificate(serializedCertificate,certLen)){
         cout<<"The certificate has been verified correcly\n";
-        serverPubkey = certificateManager->extractPubKey(serializedCertificate,certLen);
+        serverPubkey = certificateManager->extractPubKey(serializedCertificate, certLen);
     }else
         return false;
 
@@ -123,16 +123,18 @@ bool ServerConnectionManager::secureTheConnection(){
     path->append(userName->c_str());
     path->append("_prvkey.pem");
     this->signatureManager = new SignatureManager(path);
+    cout<<"private key set correctly"<<endl;
     this->signatureManager->setPubkey(serverPubkey);
-
+    cout<<"server public key set correctly"<<endl;
     this->diffieHellmannManager = new DiffieHellmannManager();
+    cout<<"DH created correctly"<<endl;
 
     //send the readiness msg
     if(!sendMyPubKey()){
-        cerr<<"Error during Readiness Message sending\n";
+        cerr<<"Error during sending my pubkey\n";
         return false;
     }
-    std::cout<<"Readiness message sent correctly!"<<std::endl;
+    std::cout<<"Pubkey message sent correctly!"<<std::endl;
 
     //wait for keys message
     if(!waitForPeerPubkey()){
@@ -214,7 +216,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
 
     size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + (1 + strlen(this->userName->c_str()))
-                                       + pubKeyLength +2*sizeof(uint16_t);
+                                       + pubKeyLength +sizeof(uint16_t);
 
     auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength];
     pubKeyMessageToSignBuffer[0] = PUBKEYMESSAGECODE;
@@ -230,7 +232,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,pubKeyLength);
     step += pubKeyLength;
 
-    delete [] pubKeyBuf;
+    //delete [] pubKeyBuf;
 
     unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,pubKeyMessageToSignLength);
 
@@ -253,6 +255,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     delete [] pubKeyMessageToSignBuffer;
 
     len = pubKeyMessageLength;
+    cout<<"CreatePubKeyMessage finished correctly"<<endl;
     return pubKeyMessageBuffer;
 }
 
@@ -264,6 +267,7 @@ bool ServerConnectionManager::sendMyPubKey() {
         return false;
     }
     int ret = send(this->serverNonce,pKeyMsg,len,0);
+    cout<<"RET = "<<ret<<endl;
     delete [] pKeyMsg;
     if(ret!= len)
         return false;

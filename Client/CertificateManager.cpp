@@ -53,12 +53,14 @@ CertificateManager::~CertificateManager() {
     X509_STORE_free(store);
 }
 
-bool CertificateManager::verifyCertificate(unsigned char* uchar_cert,size_t certSize) {
+bool CertificateManager::verifyCertificate(unsigned char* uchar_cert, size_t certSize) {
     int ret;
     std::cout<<"CertificateManager.verifyCertificate: certsize="<<certSize<<endl;
     X509* cert = d2i_X509(NULL,(const unsigned char**)&uchar_cert, certSize);
-    if(!cert)
+    if(!cert) {
+        cout<<"Certificate not deserialized"<<endl;
         return false;
+    }
 
     X509_STORE_CTX *certvfy_ctx = X509_STORE_CTX_new();
 
