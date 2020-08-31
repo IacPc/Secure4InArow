@@ -6,7 +6,7 @@
 
 DiffieHellmannManager::DiffieHellmannManager() {
     EVP_PKEY_CTX *pctx, *kctx;
-    EVP_PKEY* params;
+    EVP_PKEY* params= NULL;
 
     /* Create the context for parameter generation */
     if(NULL == (pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL))) {
@@ -25,6 +25,7 @@ DiffieHellmannManager::DiffieHellmannManager() {
         std::cout<<"error in generating parameters"<<std::endl;
         return;
     }
+
     /* Create the parameter object params */
     if (!EVP_PKEY_paramgen(pctx, &params)){
         std::cout<<"error in creating parameters"<<std::endl;
@@ -36,16 +37,19 @@ DiffieHellmannManager::DiffieHellmannManager() {
         std::cout<<"error in the context for the key generation"<<std::endl;
         return;
     }
+
     /* Generate the key */
     if(1 != EVP_PKEY_keygen_init(kctx)) {
         std::cout<<"error in key generation init"<<std::endl;
         return;
     }
+
     if (1 != EVP_PKEY_keygen(kctx, &this->myPubKey)) {
         std::cout<<"error in key generation"<<std::endl;
         return;
     }
 
+    std::cout<<"DH keys generated correctly"<<std::endl;
     EVP_PKEY_CTX_free(kctx);
     EVP_PKEY_free(params);
     EVP_PKEY_CTX_free(pctx);
