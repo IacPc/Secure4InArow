@@ -32,6 +32,7 @@ class Client;
 class ServerConnectionManager {
 
 private:
+    bool busy;
     string* userName;
     string* prvKeyFilePasswd;
     int serverSocket;

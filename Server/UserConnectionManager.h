@@ -37,6 +37,7 @@ private:
     string *userName;
     int userSocket;
     uint32_t counter;
+    bool busy;
 
     SymmetricEncryptionManager *symmetricEncryptionManager;
     SignatureManager *signatureManager;
@@ -45,6 +46,7 @@ private:
     uint32_t clientNonce;
     uint32_t myNonce;
 
+    std::mutex ucmMutex;
 
     bool establishSecureConnection();
     bool waitForHelloMessage();
@@ -60,6 +62,7 @@ private:
     bool sendOpponentKeyToChallenged(string *opponent, uint32_t opponentPort);
     bool waitForChallengedReady(uint32_t&, string*);
     bool sendMyKeyToChallenger(string*, uint32_t);
+    bool endGame();
 
     void createSessionKey();
 

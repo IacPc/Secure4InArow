@@ -44,6 +44,7 @@ bool UserConnectionManager::establishSecureConnection() {
     cout<<"Starting establishing secure connection"<<endl;
 
     //wait for hello message
+
     if(!waitForHelloMessage()){
         cerr<<"Error in receiving Hello Message"<<endl;
         delete this;
@@ -122,7 +123,7 @@ bool UserConnectionManager::waitForHelloMessage(){
 }
 bool UserConnectionManager::sendCertificate(unsigned char* msg, size_t msg_len){
     cout<<"sendCertificate\n";
-
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     size_t ret;
     ret = send(userSocket, msg, msg_len, 0);
     if(ret < msg_len){
@@ -295,6 +296,7 @@ bool UserConnectionManager::sendMyPubKey() {
     pos += signature_len;
 
     //invio
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     size_t ret = send(userSocket, buffer, pos, 0);
     if(ret != pos){
         cout<<"Error in sending my pubkey"<<endl;
@@ -339,7 +341,12 @@ void UserConnectionManager::createSessionKey() {
 
 bool UserConnectionManager::sharePlayersList() {
     bool waiting = true;
-    while(waiting) {
+    bool waitingForReadiness = false;
+    bool waitingForEndGame = false;
+    auto *buffer = new unsigned char[4096];
+    string *opponent;
+
+    while(1) {
         if (!waitForPlayersRequest()) {
             cout << "Error in players list request" << endl;
             return false;
@@ -349,48 +356,100 @@ bool UserConnectionManager::sharePlayersList() {
             cout << "Error in sending players list" << endl;
             return false;
         }
+        while(waiting){
+            const std::lock_guard<std::mutex> lock(this->ucmMutex);
+            size_t ret = recv(userSocket, buffer, 4096, 0);
+            if (ret <= 0) {
+                cout << "Error in receiving message" << endl;
+                return false;
+            }
 
-        string *choice = waitForClientChoice(waiting);
-        if (choice == nullptr && !waiting) {
-            cout << "Error in receiving player choice" << endl;
-            return false;
-        }else{
-            if(!waiting){
-                if(!sendChallengerRequest(choice)) {
-                    delete choice;
-                    return false;
-                }
-            }else{
-                bool stillWait;
-                string *opponent = waitForChallengedResponse(stillWait);
-                if(opponent == nullptr) {
-                    return false;
-                }else{
-                    if(stillWait)
-                        waiting = true;
-                    else{
-                        //invio la chiave di opponent al challenged
-                        waiting = false;
-                        if(!sendOpponentKeyToChallenged(opponent, 0))
-                            return false;
-                        //aspetto la risposta del challenged
-                        uint32_t challenged_port;
-                        if(!waitForChallengedReady(challenged_port, opponent))
-                            return false;
-                        //invio la mia chiave al challenger
-                        if(!sendMyKeyToChallenger(opponent, challenged_port))
-                            return false;
+            unsigned char opcode = buffer[0];
+
+            switch (opcode) {
+                case PLAYERCHOSENMESSAGECODE: {
+                    string *choice = waitForClientChoice(waiting);
+                    if (choice == nullptr) {
+                        delete[] buffer;
+                        return false;
                     }
+                    if (!sendChallengerRequest(choice)) {
+                        delete[] buffer;
+                        delete choice;
+                        return false;
+                    }
+                    break;
+                }
+
+                case CHALLENGEDRESPONSEMESSAGECODE: {
+                    bool stillWait;
+                    opponent = waitForChallengedResponse(stillWait);
+
+                    if (opponent == nullptr) {
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    if (!stillWait) {
+                        if (!sendOpponentKeyToChallenged(opponent, 0)) {
+                            delete[] buffer;
+                            delete opponent;
+                            return false;
+                        }
+                        waitingForReadiness = true;
+                    }else{
+                        //LISTA O ASPETTA???
+                    }
+                    break;
+                }
+
+                case CLIENTREADYFORCHALLENGEMESSAGECODE: {
+                    uint32_t challenged_port;
+                    if (!waitForChallengedReady(challenged_port, opponent)) {
+                        waitingForReadiness = false;
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    //invio la mia chiave al challenger
+                    if (!sendMyKeyToChallenger(opponent, challenged_port)) {
+                        waitingForReadiness = false;
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    waitingForReadiness = false;
+                    waitingForEndGame = true;
+                    break;
+                }
+
+                case ENDGAMEMESSAGECODE: {
+                    if (!endGame()) {
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    waitingForEndGame = false;
+                    waiting = false;
+                    break;
+                }
+
+                case LOGOUTMESSAGECODE: {
+                    //LOGOUT MESSAGE
+                    break;
                 }
 
             }
         }
-    }
 
+    }
+    delete [] buffer;
+    delete opponent;
     return true;
 }
 bool UserConnectionManager::waitForPlayersRequest() {
 
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
     size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
     if(ret <= 0){
@@ -475,6 +534,7 @@ bool UserConnectionManager::sendPlayerList() {
    size_t msg_len;
    unsigned char *buffer = createPlayerListMsg(list, msg_len);
 
+   const std::lock_guard<std::mutex> lock(this->ucmMutex);
    size_t ret = send(userSocket, buffer, msg_len, 0);
    if (ret < 0) {
        cerr << "Error in sending players list\n";
@@ -577,7 +637,7 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
 }
 string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 
-
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
     size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
     if(ret <= 0){
@@ -652,12 +712,14 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 
     if(player->length() < 1){
         waiting = true;
-    }else
+    }else {
+        busy = true;
         waiting = false;
+    }
     return player;
 
-
 }
+
 bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
     size_t plain_len = userName->length()+1;
@@ -665,6 +727,7 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     memcpy(plainMsg, userName->c_str(), plain_len);
 
     UserConnectionManager * challengedUCM = server->getUserConnection(*challenged);
+    const std::lock_guard<std::mutex> lock(challengedUCM->ucmMutex);
     //AAD
     size_t aad_len = AADLENGTH;
     auto *AAD = new unsigned char[aad_len];
@@ -719,13 +782,14 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
         cerr<<"Error during sending challenge message to the challenged player\n";
         return false;
     }
-
+    challengedUCM->busy = true;
     message_len = iv_len = plain_len = aad_len = pos = 0;
     cout<<"Challenger request message has been sent\n";
     return true;
 }
 string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
 
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     auto *buffer = new unsigned char[MAXCHALLENGEDRESPONSEMESSAGELENGTH];
     size_t ret = recv(userSocket, buffer, MAXCHALLENGEDRESPONSEMESSAGELENGTH, 0);
 
@@ -801,6 +865,9 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
     }else {
         cout<<"The player refused the challenge\n";
         stillWaiting = true;
+        this->busy = false;
+        UserConnectionManager *ucm = server->getUserConnection(opponent->c_str());
+        ucm->busy = false;
         return opponent;
     }
 }
@@ -872,6 +939,7 @@ bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32
     memcpy((buffer+pos), tag, AESGCMTAGLENGTH);
     delete [] tag;
 
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
 
     size_t ret = send(userSocket, buffer, msg_len, 0);
     delete [] buffer;
@@ -890,6 +958,7 @@ unsigned char *UserConnectionManager::getUserPubKey(string* opponent, size_t& pu
 }
 bool UserConnectionManager::waitForChallengedReady(uint32_t& port, string* opponent) {
 
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     size_t msg_len = MAXREADYFORCHALLENGEMESSAGELENGTH;
     auto *buffer = new unsigned char[msg_len];
     size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, 0);
@@ -982,7 +1051,7 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
     }
 
     UserConnectionManager *challengerUCM = server->getUserConnection(challenger->c_str());
-
+    const std::lock_guard<std::mutex> lock(challengerUCM->ucmMutex);
     struct in_addr myIP = this->clAdd.sin_addr;
     size_t port_len = sizeof(uint32_t);
 
@@ -1051,7 +1120,64 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
     cout<<"Adversary key and address sent correctly\n";
     return true;
 }
+bool UserConnectionManager::endGame() {
 
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
+
+    auto *buffer = new unsigned char[AADLENGTH+MAXENCRYPTEDUSERLENGTH+AESGCMTAGLENGTH];
+    size_t ret = recv(userSocket, buffer, AADLENGTH+MAXENCRYPTEDUSERLENGTH+AESGCMTAGLENGTH, 0);
+
+    if(ret <= 0){
+        cout<<"Error in receiving endGame message"<<endl;
+        delete [] buffer;
+        return false;
+    }
+
+    if(buffer[0] != ENDGAMEMESSAGECODE){
+        cout<<"Wrong message. End Game message expected"<<endl;
+        delete [] buffer;
+        return false;
+    }
+
+    uint32_t cont;
+    memcpy(&cont, &buffer[OPCODELENGTH+AESGCMIVLENGTH], COUNTERLENGTH);
+    if(cont != this->counter){
+        cout<<"Error! Wrong counter value!"<<endl;
+        delete [] buffer;
+        return false;
+    }
+
+    auto *iv = new unsigned char[AESGCMIVLENGTH];
+    memcpy(iv, buffer+OPCODELENGTH, AESGCMIVLENGTH);
+
+    size_t aad_len = AADLENGTH;
+    auto *aad = new unsigned char[AADLENGTH];
+    memcpy(aad, buffer, AADLENGTH);
+
+    size_t encrypted_len = ret-AADLENGTH-AESGCMTAGLENGTH;
+    auto *encrypted = new unsigned char[encrypted_len];
+    memcpy(encrypted, buffer+AADLENGTH, encrypted_len);
+
+    auto *tag = new unsigned char[AESGCMTAGLENGTH];
+    memcpy(tag, &buffer[AADLENGTH+encrypted_len], AESGCMTAGLENGTH);
+
+    unsigned char* plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
+
+    delete [] tag;
+    delete [] encrypted;
+    delete [] aad;
+    delete [] iv;
+    delete [] buffer;
+
+    if(strcmp((const char *)(plainMessage), this->userName->c_str()) != 0){
+        cout<<"Error. Username not expected"<<endl;
+        delete [] plainMessage;
+        return false;
+    }
+    this->busy = false;
+    delete [] plainMessage;
+    return true;
+}
 
 
 UserConnectionManager::~UserConnectionManager() {
@@ -1063,3 +1189,4 @@ UserConnectionManager::~UserConnectionManager() {
     delete [] signatureManager;
     delete diffieHellmannManager;
 }
+
