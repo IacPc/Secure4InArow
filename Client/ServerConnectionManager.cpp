@@ -252,9 +252,11 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
 
     delete [] signature;
     delete [] pubKeyMessageToSignBuffer;
-
+    std::cout<<"PubKeyLen="<<pubKeyLength<<endl;
+    std::cout<<"SignatureLen="<<signatureLength<<endl;
     len = pubKeyMessageLength;
-    cout<<"CreatePubKeyMessage finished correctly"<<endl;
+    cout<<"Creation of PubKeyMessage of size "<<len<<" finished correctly "<<endl;
+
     return pubKeyMessageBuffer;
 }
 

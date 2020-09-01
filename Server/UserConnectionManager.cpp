@@ -200,7 +200,7 @@ bool UserConnectionManager::waitForClientPubKey() {
     uint16_t pubkey_len;
     memcpy(&pubkey_len, (buffer+pos), sizeof(pubkey_len));
     pos += sizeof(pubkey_len);
-
+    cout<<"pubkey_len="<<pubkey_len<<endl;
     //prelevo la pubkey
     auto *clientPubKey = new unsigned char[pubkey_len];
     memcpy(clientPubKey, (buffer+pos), pubkey_len);
@@ -242,10 +242,9 @@ bool UserConnectionManager::waitForClientPubKey() {
 
     delete [] signature;
     delete [] messageToVerify;
-    messageToVerify_len = signature_len = pos = pubkey_len = 0;
 
     //chiamo DH
-    diffieHellmannManager->setPeerPubKey(clientPubKey, PUBKEYLENGTH);
+    diffieHellmannManager->setPeerPubKey(clientPubKey, pubkey_len);
     cout<<"PROVA"<<endl;
 
     delete [] clientPubKey;
