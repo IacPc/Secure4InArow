@@ -122,8 +122,7 @@ void DiffieHellmannManager::computeSharedSecret() {
         std::cout<<"ERROR in secret derivation"<<std::endl;
         return ;
     }
-    std::cout<<"SHARED SECRET"<<std::endl;
-    BIO_dump_fp(stdout,(const char*)skey,skeylen);
+
     this->sharedSecret =skey;
     this->secret_len = skeylen;
 }
@@ -140,25 +139,6 @@ unsigned char *DiffieHellmannManager::getMyPubKey(size_t & pklen) {
     pklen = size;
     return i2dbuff;
 
-    /*
-    BIO *mbio = BIO_new(BIO_s_mem());
-    if(!mbio){
-        std::cout<<"BIO_new failed"<<std::endl;
-        return nullptr;
-    }
-
-    if(1 != PEM_write_bio_PUBKEY(mbio, this->myPubKey)){
-        std::cout<<"PEM_write_bio_PUBKEY failed"<<std::endl;
-        return nullptr;
-    }
-    unsigned char* pubkey_buf;
-    long pubkey_size = BIO_get_mem_data(mbio, &pubkey_buf);
-    BIO_free(mbio);
-    pklen = pubkey_size;
-    return pubkey_buf;
-*/
-
-
 }
 
 unsigned char *DiffieHellmannManager::getSharedSecret(size_t & len) {
@@ -172,29 +152,7 @@ void DiffieHellmannManager::setPeerPubKey(unsigned char* pubkey_buf, size_t pubk
         std::cout<<"d2i_PUBKEY failed"<<std::endl;
         return;
     }
-    std::cout<<"peer pubkey set succesfully"<<std::endl;
 
-    /*
-    BIO *bio = BIO_new(BIO_s_mem());
-    std::cout<<"pubkey_size="<<pubkey_size<<std::endl;
-
-    if(!bio){
-        std::cout<<"BIO_new failed"<<std::endl;
-        return;
-    }
-
-    if(BIO_write(bio, pubkey_buf, pubkey_size) != pubkey_size){
-        std::cout<<"BIO_write failed"<<std::endl;
-        return;
-    }
-
-    this->peerPubKey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
-
-    if(!this->peerPubKey){
-        std::cout<<"PEM_read_bio_PUBKEY failed"<<std::endl;
-        return;
-    }
-    BIO_free(bio);*/
     this->computeSharedSecret();
     std::cout<<"shared secret computed succesfully "<<std::endl;
 

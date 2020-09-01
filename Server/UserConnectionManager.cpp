@@ -310,31 +310,20 @@ bool UserConnectionManager::sendMyPubKey() {
 void UserConnectionManager::createSessionKey() {
 
     size_t sharedSecret_len;
-    unsigned char*sharedSecret = diffieHellmannManager->getSharedSecret(sharedSecret_len);
-    auto* usefulSecret = new unsigned char[USEFULSECRETLENGTH];
+    unsigned char* sharedSecret = diffieHellmannManager->getSharedSecret(sharedSecret_len);
+    auto* HashedSecret = new unsigned char[EVP_MD_size(EVP_sha256())];
+    size_t dhSecretLen = 0;
 
-    //copio i 16 byte meno significati
-    memcpy(usefulSecret, sharedSecret, USEFULSECRETLENGTH);
-    delete [] sharedSecret;
+    SHA256(sharedSecret,sharedSecret_len,HashedSecret);
+    size_t aesKeyLen = EVP_CIPHER_key_length(EVP_aes_128_gcm());
+    auto* simmetricKeyBuffer = new unsigned char[aesKeyLen];
+    memcpy(&simmetricKeyBuffer[0],&HashedSecret[0],aesKeyLen);
 
-    unsigned char* digest;
-    unsigned int digest_len;
+    symmetricEncryptionManager = new SymmetricEncryptionManager(simmetricKeyBuffer, aesKeyLen);
 
-    EVP_MD_CTX *Hctx;
-    Hctx = EVP_MD_CTX_new();
-
-    digest = (unsigned char*)malloc(EVP_MD_size(EVP_sha256()));
-
-    EVP_DigestInit(Hctx, EVP_sha256());
-    EVP_DigestUpdate(Hctx, (unsigned char*)sharedSecret, USEFULSECRETLENGTH);
-    EVP_DigestFinal(Hctx, digest, &digest_len);
-
-    EVP_MD_CTX_free(Hctx);
-
-    delete [] usefulSecret;
-
-    symmetricEncryptionManager = new SymmetricEncryptionManager(digest, digest_len);
-    delete [] digest;
+    delete [] simmetricKeyBuffer;
+    delete [] HashedSecret;
+    delete diffieHellmannManager;
 }
 
 
@@ -499,6 +488,7 @@ bool UserConnectionManager::sendPlayerList() {
    return true;
 
 }
+
 unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, size_t& msg_len) {
 
 
@@ -590,7 +580,7 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 
     auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
     size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
-    if(ret < 0){
+    if(ret <= 0){
         cout<<"Error receiving Players Request Message"<<endl;
         delete []buffer;
         waiting = false;
@@ -739,7 +729,7 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
     auto *buffer = new unsigned char[MAXCHALLENGEDRESPONSEMESSAGELENGTH];
     size_t ret = recv(userSocket, buffer, MAXCHALLENGEDRESPONSEMESSAGELENGTH, 0);
 
-    if(ret < AADLENGTH + AESBLOCKLENGTH + AESGCMTAGLENGTH){
+    if(ret <=0){
         cerr<<"Error receiving the challenge response message\n";
         stillWaiting = false;
         return nullptr;
@@ -904,7 +894,7 @@ bool UserConnectionManager::waitForChallengedReady(uint32_t& port, string* oppon
     auto *buffer = new unsigned char[msg_len];
     size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, 0);
 
-    if(ret < AADLENGTH + AESGCMTAGLENGTH + AESBLOCKLENGTH){
+    if(ret <=0){
         cerr<<"Error in receving Challenged Ready message,received "<<ret<<" bytes"<<endl;
         delete [] buffer;
         return false;

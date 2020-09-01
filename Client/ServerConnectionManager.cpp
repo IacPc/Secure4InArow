@@ -51,8 +51,8 @@ void ServerConnectionManager::createConnectionWithServer() {
        return;
    }
    std::vector<std::string*>* playerList = nullptr;
-   bool choiceWentWell = this->waitForPlayers(playerList);
-   if(!choiceWentWell) return;
+   bool iReceivedTheList = this->waitForPlayers(playerList);
+   if(!iReceivedTheList) return;
 
    if(playerList){
        bool sendingWentWell = this->sendSelectedPlayer(playerList);
@@ -70,7 +70,7 @@ void ServerConnectionManager::createConnectionWithServer() {
            return;
        }
    }
-
+   // APRIRE UN FORM DEL
    while(true){
       if(!this->waitForSomething())
           return;
@@ -410,15 +410,20 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     auto* playerListBuffer = new unsigned char[playersListMessageLen];
     cout<<"waiting for Players list message"<<endl;
     int ret = recv(this->serverSocket,playerListBuffer,playersListMessageLen,0);
-    if(ret<=0) return false;
+    if(ret<=0) {
+        cout<<"Error in receiving Players list message"<<endl;
+        return false;
+    }
 
     if(playerListBuffer[0]!= PLAYERSLISTMESSAGECODE) {
+        cout<<"Wrong message expected PLAYERSLISTMESSAGECODE "<<endl;
         delete [] playerListBuffer;
         return false;
     }
 
     memcpy(&counterRecv,&playerListBuffer[1 + AESGCMIVLENGTH],sizeof(counterRecv));
     if(counterRecv!= this->counter){
+        cout<<"Wrong counter, expected "<<this->counter<<", received "<<counterRecv<<endl;
         delete [] playerListBuffer;
         return false;
     }
@@ -438,6 +443,7 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     delete [] cipherText;
 
     if(!decryptedPlayersList){
+        cout<<"error in decrypting Player list"<<endl;
         return false;
     }
 
@@ -446,6 +452,7 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     if (playersNumb==0){
         delete [] decryptedPlayersList;
         pc = nullptr;
+        cout<<"Received 0 players"<<endl;
         return true;
     }
     std::vector<std::string*>* playerList = new std::vector<std::string*>;
@@ -460,11 +467,13 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     }
     pc= playerList;
     delete [] decryptedPlayersList;
+    cout<<"Player list received correctly"<<endl;
+
     return true;
 }
 
 bool ServerConnectionManager::waitForSomething() {
-    return false;
+
 }
 
 ServerConnectionManager::~ServerConnectionManager() {
@@ -527,11 +536,14 @@ bool ServerConnectionManager::sendSelectedPlayer(std::vector<std::string *> * pl
     string choice;
     do{
         choice.clear();
-        cout<<"Please choose one player between 1 and "<<i-1<<endl;
+        cout<<"Please choose one player between 1 and "<<i-1<<"Or just press enter"<<endl;
         getline(cin, choice);
+        if(choice.length()==0){
+
+        }
     }while(!tryParsePlayerChoice(&choice, out, i - 1));
 
-    out--;
+
     string* selectedPlayer = pl->at(out);
     std::size_t playerChosenMessageLength=0;
     unsigned char* playerChosenMessageBuffer = this->createSelectedPlayerMessage(selectedPlayer,playerChosenMessageLength);
