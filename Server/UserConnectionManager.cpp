@@ -158,8 +158,8 @@ unsigned char* UserConnectionManager::createCertificateMessage(size_t& msg_len){
 }
 bool UserConnectionManager::waitForClientPubKey() {
 
-    auto* buffer = new unsigned char[MAXPUBKEYMESSAGELENGTH];
-    size_t ret = recv(userSocket ,buffer, MAXPUBKEYMESSAGELENGTH, 0);
+    auto* buffer = new unsigned char[500];
+    size_t ret = recv(userSocket ,buffer, 500, 0);
     if(ret <= 0){
         cout<<"Error receiving the public key message"<<endl;
         delete [] buffer;
@@ -200,12 +200,11 @@ bool UserConnectionManager::waitForClientPubKey() {
     uint16_t pubkey_len;
     memcpy(&pubkey_len, (buffer+pos), sizeof(pubkey_len));
     pos += sizeof(pubkey_len);
-    cout<<"pubkey_len="<<pubkey_len<<endl;
+
     //prelevo la pubkey
     auto *clientPubKey = new unsigned char[pubkey_len];
     memcpy(clientPubKey, (buffer+pos), pubkey_len);
     pos += pubkey_len;
-
     size_t messageToVerify_len = pos;
 
     //copio dimensione signature
@@ -229,9 +228,11 @@ bool UserConnectionManager::waitForClientPubKey() {
     EVP_PKEY* pubkey = PEM_read_PUBKEY(pubkeyUser,NULL,NULL,NULL);
 
     this->signatureManager->setPubkey(pubkey);
-
+    cout<<"SIGNATURE LEN "<< ret -1 -8 - 4- pubkey_len<<endl;
+    cout<<signature_len<<endl;
+    cout<<"RET = "<<ret<<endl;
     //verifico la firma
-    if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, messageToVerify_len)) {
+    if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, ret-signature_len-2)) {
         cout<<"Signature not verified"<<endl;
         delete [] buffer;
         delete [] signature;
@@ -239,14 +240,15 @@ bool UserConnectionManager::waitForClientPubKey() {
         delete [] clientPubKey;
         return false;
     }
-
+    cout<<"Signature verified"<<endl;
     delete [] signature;
     delete [] messageToVerify;
 
+
     //chiamo DH
     diffieHellmannManager->setPeerPubKey(clientPubKey, pubkey_len);
-    cout<<"PROVA"<<endl;
-
+    cout<<"Set peer public key"<<endl;
+    messageToVerify_len = signature_len = pos = pubkey_len = 0;
     delete [] clientPubKey;
 
 

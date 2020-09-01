@@ -159,9 +159,12 @@ bool SignatureManager::verifyThisSignature(unsigned char* signature, size_t sign
     md_ctx= EVP_MD_CTX_new();
     if(!md_ctx)
         return false;
+
     ret = EVP_VerifyInit(md_ctx, this->hashMD);
+
     if(ret == 0){ std::cerr << "Error: EVP_VerifyInit returned " << ret << "\n"; }
     ret = EVP_VerifyUpdate(md_ctx, messageToVerify, messageToVerifyLength);
+
     if (ret == 0) {
         std::cerr << "Error: EVP_VerifyUpdate returned " << ret << "\n";
     }
@@ -170,6 +173,7 @@ bool SignatureManager::verifyThisSignature(unsigned char* signature, size_t sign
         std::cerr << "no pubkey " << ret << "\n";
 
     ret = EVP_VerifyFinal(md_ctx, signature, signatureLen, this->pubKey);
+
     return (ret == 1);
 }
 
