@@ -158,8 +158,8 @@ unsigned char* UserConnectionManager::createCertificateMessage(size_t& msg_len){
 }
 bool UserConnectionManager::waitForClientPubKey() {
 
-    auto* buffer = new unsigned char[500];
-    size_t ret = recv(userSocket ,buffer, 500, 0);
+    auto* buffer = new unsigned char[2048];
+    size_t ret = recv(userSocket ,buffer, 2048, 0);
     if(ret <= 0){
         cout<<"Error receiving the public key message"<<endl;
         delete [] buffer;
@@ -200,9 +200,9 @@ bool UserConnectionManager::waitForClientPubKey() {
     uint16_t pubkey_len;
     memcpy(&pubkey_len, (buffer+pos), sizeof(pubkey_len));
     pos += sizeof(pubkey_len);
-
+    std::cout<<"pubkey_len="<<pubkey_len<<endl;
     //prelevo la pubkey
-    auto *clientPubKey = new unsigned char[pubkey_len];
+    auto* clientPubKey = new unsigned char[pubkey_len];
     memcpy(clientPubKey, (buffer+pos), pubkey_len);
     pos += pubkey_len;
     size_t messageToVerify_len = pos;
@@ -240,20 +240,19 @@ bool UserConnectionManager::waitForClientPubKey() {
         delete [] clientPubKey;
         return false;
     }
-    cout<<"Signature verified"<<endl;
+    cout<<"Signature verified correctly"<<endl;
     delete [] signature;
     delete [] messageToVerify;
 
-
     //chiamo DH
-    diffieHellmannManager->setPeerPubKey(clientPubKey, pubkey_len);
-    cout<<"Set peer public key"<<endl;
-    messageToVerify_len = signature_len = pos = pubkey_len = 0;
-    delete [] clientPubKey;
 
+    diffieHellmannManager->setPeerPubKey(clientPubKey, pubkey_len);
+
+    cout<<"Set peer public key"<<endl;
+    delete [] clientPubKey;
+    delete [] buffer;
 
     return true;
-
 
 }
 
@@ -273,17 +272,16 @@ bool UserConnectionManager::sendMyPubKey() {
     memcpy((buffer+pos), &myNonce, NONCELENGTH);
     pos += NONCELENGTH;
 
-
     //inserisco la lunghezza e chiave
     size_t myKey_len = PUBKEYLENGTH;
     unsigned char* myKey = diffieHellmannManager->getMyPubKey(myKey_len);
 
-    memcpy((buffer+pos), &myKey_len, SIZETLENGTH);
-    pos += SIZETLENGTH;
+    memcpy((buffer+pos), &myKey_len, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
     memcpy((buffer+pos), myKey, myKey_len);
     pos += myKey_len;
 
-    delete [] myKey;
+    //delete [] myKey;
 
     //firmo il messaggio
     size_t signature_len = pos;

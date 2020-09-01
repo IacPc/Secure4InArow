@@ -219,7 +219,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
 
     size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + sizeof(uint16_t) + pubKeyLength;
 
-    auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength + 100];
+    auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength];
     pubKeyMessageToSignBuffer[0] = PUBKEYMESSAGECODE;
 
     size_t step = 1;
@@ -228,10 +228,11 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     memcpy(&pubKeyMessageToSignBuffer[step],&this->serverNonce,sizeof(this->serverNonce));
     step += sizeof(this->serverNonce);
     uint16_t len_16t = pubKeyLength;
+    std::cout<<"len_16t ="<<len_16t<<std::endl;
     memcpy(&pubKeyMessageToSignBuffer[step], &len_16t, sizeof(len_16t));
     step += sizeof(len_16t);
-    memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,pubKeyLength);
-    step += pubKeyLength;
+    memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,len_16t);
+    step += len_16t;
 
     //delete [] pubKeyBuf;
     size_t signatureLength = step;
