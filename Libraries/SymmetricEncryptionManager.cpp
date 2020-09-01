@@ -114,7 +114,7 @@ SymmetricEncryptionManager::decryptThisMessage(unsigned char *ciphertext, size_t
       anything else is a failure,namely the plaintext is not trustworthy.
      */
     if((EVP_DecryptFinal(ctx, plaintext + len, &len)) <=0){
-        std::cout<<" Error Plaintext nt valid"<<std::endl;
+        std::cout<<" Error Plaintext not valid"<<std::endl;
         goto DECRYPTIONERROR;
     }
 
@@ -126,7 +126,6 @@ SymmetricEncryptionManager::decryptThisMessage(unsigned char *ciphertext, size_t
     DECRYPTIONERROR:
         EVP_CIPHER_CTX_cleanup(ctx);
         delete [] plaintext;
-        delete [] tag;
         return nullptr;
 }
 

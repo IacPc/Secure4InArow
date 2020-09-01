@@ -46,9 +46,10 @@ void ServerConnectionManager::createConnectionWithServer() {
    if(!ok)
        return;
    ok= this->sendPlayersListRequest();
-   if(!ok)
-        return;
-
+   if(!ok) {
+       cout<<"error in sending Player list request"<<endl;
+       return;
+   }
    std::vector<std::string*>* playerList = nullptr;
    bool choiceWentWell = this->waitForPlayers(playerList);
    if(!choiceWentWell) return;
@@ -158,6 +159,9 @@ bool ServerConnectionManager::secureTheConnection(){
     this->symmetricEncryptionManager = new SymmetricEncryptionManager(simmetricKeyBuffer,
                                                                       EVP_CIPHER_key_length(EVP_aes_128_gcm()));
     delete [] simmetricKeyBuffer;
+
+    cout<<"Secure connection established"<<endl;
+
     return true;
 }
 
@@ -278,21 +282,23 @@ bool ServerConnectionManager::sendMyPubKey() {
 }
 
 bool ServerConnectionManager::waitForPeerPubkey() {
-
+/*
     size_t PeerPubKeyMessageLen =
             1 + 2 * sizeof(this->serverNonce) + 2 * sizeof(uint16_t) + this->userName->length() + 1 +
             EVP_PKEY_size(this->diffieHellmannManager->getMyPubKey_EVP()) +
             EVP_PKEY_size(this->signatureManager->getPrvkey());
-
-    auto *peerPubKeyMessageBuffer = new unsigned char[PeerPubKeyMessageLen];
-    int ret = recv(this->serverSocket, peerPubKeyMessageBuffer, PeerPubKeyMessageLen, 0);
+*/
+    auto *peerPubKeyMessageBuffer = new unsigned char[2048];
+    int ret = recv(this->serverSocket, peerPubKeyMessageBuffer, 2048, 0);
 
     if (ret <= 0) {
+        cout<<"received "<<ret << " bytes"<<endl;
         delete [] peerPubKeyMessageBuffer;
         return false;
     }
 
     if(peerPubKeyMessageBuffer[0] != PUBKEYMESSAGECODE){
+        cout<<"wrong opcode "<<endl;
         delete [] peerPubKeyMessageBuffer;
         return false;
     }
@@ -300,6 +306,7 @@ bool ServerConnectionManager::waitForPeerPubkey() {
     memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1],sizeof(nonceRecv));
 
     if(nonceRecv != this->myNonce){
+        cout<<"wrong client nonce "<<endl;
         delete [] peerPubKeyMessageBuffer;
         return false;
     }
@@ -307,6 +314,7 @@ bool ServerConnectionManager::waitForPeerPubkey() {
     memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1 + sizeof(nonceRecv)],sizeof(nonceRecv));
 
     if(nonceRecv != this->serverNonce){
+        cout<<"wrong server nonce "<<endl;
         delete [] peerPubKeyMessageBuffer;
         return false;
     }
@@ -324,6 +332,7 @@ bool ServerConnectionManager::waitForPeerPubkey() {
                                                            peerPubKeyMessageBuffer, messageToBeVErifiedLength);
     delete [] recvSignatureBuffer;
     if(!signCheck){
+        cout<<"Uncorrect signature"<<endl;
         delete [] peerPubKeyMessageBuffer;
         return false;
     }
@@ -339,7 +348,7 @@ unsigned char *ServerConnectionManager::createPlayersListRequestMessage(size_t &
     size_t playersListMessageLength = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 * AESBLOCKLENGTH + AESGCMTAGLENGTH;
     auto* playersListMessageBuffer = new unsigned char[playersListMessageLength];
 
-    playersListMessageBuffer[0] = PLAYERSLISTMESSAGECODE;
+    playersListMessageBuffer[0] = LISTREQUESTMESSAGE;
     size_t step = 1;
     auto* ivBuf = new unsigned char[AESGCMIVLENGTH];
     RAND_bytes(ivBuf,AESGCMIVLENGTH);
@@ -368,7 +377,7 @@ unsigned char *ServerConnectionManager::createPlayersListRequestMessage(size_t &
     delete [] tag;
     step += AESGCMTAGLENGTH;
     len = step;
-
+    std::cout<<"playersListMessageBuffer created correctly"<<endl;
     return playersListMessageBuffer;
 }
 
@@ -381,6 +390,8 @@ bool ServerConnectionManager::sendPlayersListRequest() {
         return false;
     }
     this->counter++;
+
+    cout<<"PlayersListRequest Message sent correctly"<<endl;
     return true;
 }
 
@@ -397,6 +408,7 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     unsigned int counterRecv;
 
     auto* playerListBuffer = new unsigned char[playersListMessageLen];
+    cout<<"waiting for Players list message"<<endl;
     int ret = recv(this->serverSocket,playerListBuffer,playersListMessageLen,0);
     if(ret<=0) return false;
 

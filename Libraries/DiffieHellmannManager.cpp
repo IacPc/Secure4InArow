@@ -170,7 +170,7 @@ void DiffieHellmannManager::setPeerPubKey(unsigned char* pubkey_buf, size_t pubk
         std::cout<<"d2i_PUBKEY failed"<<std::endl;
         return;
     }
-    std::cout<<"peer pubkey set succsfully"<<std::endl;
+    std::cout<<"peer pubkey set succesfully"<<std::endl;
 
     /*
     BIO *bio = BIO_new(BIO_s_mem());

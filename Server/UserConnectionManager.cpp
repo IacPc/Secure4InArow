@@ -257,7 +257,7 @@ bool UserConnectionManager::waitForClientPubKey() {
 }
 
 bool UserConnectionManager::sendMyPubKey() {
-    auto *buffer = new unsigned char[MAXPUBKEYMESSAGELENGTH];
+    auto *buffer = new unsigned char[2048];
 
     //inserisco opcode
     size_t pos = 0;
@@ -273,16 +273,17 @@ bool UserConnectionManager::sendMyPubKey() {
     pos += NONCELENGTH;
 
     //inserisco la lunghezza e chiave
-    size_t myKey_len = PUBKEYLENGTH;
+    size_t myKey_len;
     unsigned char* myKey = diffieHellmannManager->getMyPubKey(myKey_len);
-
+    std::cout<<"my pubkey obtained succesfully of len "<<myKey_len<<endl;
     memcpy((buffer+pos), &myKey_len, sizeof(uint16_t));
     pos += sizeof(uint16_t);
+
     memcpy((buffer+pos), myKey, myKey_len);
     pos += myKey_len;
 
     //delete [] myKey;
-
+    cout<<"now i do the signature"<<endl;
     //firmo il messaggio
     size_t signature_len = pos;
     unsigned char* signedMessage = signatureManager->signTHisMessage(buffer, signature_len);
@@ -403,7 +404,7 @@ bool UserConnectionManager::waitForPlayersRequest() {
 
     auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
     size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
-    if(ret < 0){
+    if(ret <= 0){
         cout<<"Error receiving Players Request Message"<<endl;
         delete []buffer;
         return false;
@@ -438,7 +439,7 @@ bool UserConnectionManager::waitForPlayersRequest() {
 
 
     //copio dati criptati
-    size_t encrypted_len = ret - AESGCMTAGLENGTH;
+    size_t encrypted_len = ret - AESGCMTAGLENGTH - aad_len;
     auto* encryptedData = new unsigned char[encrypted_len];
     memcpy(encryptedData, buffer+pos, encrypted_len);
     pos += encrypted_len;
@@ -451,7 +452,12 @@ bool UserConnectionManager::waitForPlayersRequest() {
 
     delete [] buffer;
 
+
     unsigned char* plaintext = symmetricEncryptionManager->decryptThisMessage(encryptedData, encrypted_len, AAD, aad_len, tag, iv);
+    if(plaintext)
+        cout<<"LISTREQUESTMESSAGE decrypted correctly "<<endl;
+    else
+        return false;
 
     delete [] AAD;
     delete [] iv;
