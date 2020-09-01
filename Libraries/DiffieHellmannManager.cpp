@@ -122,6 +122,8 @@ void DiffieHellmannManager::computeSharedSecret() {
         std::cout<<"ERROR in secret derivation"<<std::endl;
         return ;
     }
+    std::cout<<"SHARED SECRET"<<std::endl;
+    BIO_dump_fp(stdout,(const char*)skey,skeylen);
     this->sharedSecret =skey;
     this->secret_len = skeylen;
 }

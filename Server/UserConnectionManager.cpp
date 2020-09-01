@@ -317,7 +317,7 @@ void UserConnectionManager::createSessionKey() {
     memcpy(usefulSecret, sharedSecret, USEFULSECRETLENGTH);
     delete [] sharedSecret;
 
-    unsigned char*digest;
+    unsigned char* digest;
     unsigned int digest_len;
 
     EVP_MD_CTX *Hctx;

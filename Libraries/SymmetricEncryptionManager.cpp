@@ -25,6 +25,9 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
     iv_len = AESGCMIVLENGTH ;
     tag = new unsigned char[AESGCMTAGLENGTH];
 
+    std::cout<<"encryptThisMessage"<<std::endl;
+    BIO_dump_fp(stdout,(const char*) this->aesKey, AESKEYLENGTH);
+
     // Create and initialise the context
     if(!(ctx = EVP_CIPHER_CTX_new())) {
         std::cout<<" Error in creating the context for encryption"<<std::endl;
@@ -82,6 +85,8 @@ SymmetricEncryptionManager::decryptThisMessage(unsigned char *ciphertext, size_t
     int len;
     int plaintext_len;
     int ret;
+    std::cout<<"decryptThisMessage"<<std::endl;
+    BIO_dump_fp(stdout,(const char*) this->aesKey, AESKEYLENGTH);
 
     /* Create and initialise the context */
     if(!(ctx = EVP_CIPHER_CTX_new())){

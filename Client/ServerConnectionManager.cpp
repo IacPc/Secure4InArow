@@ -151,7 +151,7 @@ bool ServerConnectionManager::secureTheConnection(){
     delete diffieHellmannManager;
 
     auto* simmetricKeyBuffer = new unsigned char[EVP_CIPHER_key_length(EVP_aes_128_gcm())];
-    memcpy(simmetricKeyBuffer,HashedSecret,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+    memcpy(&simmetricKeyBuffer[0],&HashedSecret[0],EVP_CIPHER_key_length(EVP_aes_128_gcm()));
 
     memset(HashedSecret,0X00,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
     delete [] HashedSecret;
