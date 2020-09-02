@@ -35,8 +35,8 @@ private:
     SymmetricEncryptionManager* symmetricEncryptionManager;
     DiffieHellmannManager *diffieHellmannManager;
 
-    uint32_t challengerNonce;
-    uint32_t challengedNonce;
+    uint32_t opponentNonce;
+    uint32_t myNonce;
     uint32_t counter;
 
     bool waitForChallengeRConnection();
@@ -44,8 +44,8 @@ private:
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
 
-    bool waitForChallengeRHelloMessage();
-    bool sendChallengeDHelloMessage();
+    bool waitForHelloMessage();         //valido per entrambi
+    bool sendHelloMessage();            //valido per entrambi
     bool waitForChallengeRPubKey();
     bool sendChallengeDPubKey();
 

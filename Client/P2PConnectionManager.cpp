@@ -87,13 +87,13 @@ bool P2PConnectionManager::waitForChallengeRConnection() {
 
 bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
 
-    if(!waitForChallengeRHelloMessage()){
+    if(!waitForHelloMessage()){
         cerr<<"Error in receiving the peer Hello Message"<<endl;
         delete this;
         return false;
     }
 
-    if(!sendChallengeDHelloMessage()){
+    if(!sendHelloMessage()){
         cerr<<"Error in sending my Hello Message"<<endl;
         delete this;
         return false;
@@ -121,7 +121,7 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
     return true;
 }
 
-bool P2PConnectionManager::waitForChallengeRHelloMessage() {
+bool P2PConnectionManager::waitForHelloMessage() {
     cout<<"Waiting for challenger hello message"<<endl;
     auto *buffer = new unsigned char[HELLOMESSAGELENGTH];
     size_t ret;
@@ -143,12 +143,31 @@ bool P2PConnectionManager::waitForChallengeRHelloMessage() {
     }
 
 
-    memcpy((unsigned char*)&this->challengerNonce, &buffer[1], NONCELENGTH);
+    memcpy((unsigned char*)&this->opponentNonce, &buffer[1], NONCELENGTH);
 
     buffer[ret-1] = '\0';
     this->opponentUsername = new string((const char*)&buffer[1 + NONCELENGTH]);
 
     cout<<"THE RECEIVED USERNAME IS: "<<this->opponentUsername->c_str()<<endl;
     delete []buffer;
+    return true;
+}
+
+bool P2PConnectionManager::sendHelloMessage() {
+
+    size_t msg_len = 1 + NONCELENGTH + strlen(this->myUsername->c_str())+1;
+    auto* buffer = new unsigned char[msg_len];
+
+    buffer[0] = HELLOMSGCODE;
+    RAND_bytes((unsigned char*)&this->myNonce, sizeof(this->myNonce));
+    memcpy(&buffer[1], (unsigned char*)&this->myNonce, NONCELENGTH);
+    strcpy((char*)&buffer[1 + NONCELENGTH], this->myUsername->c_str());
+
+    size_t ret = send(this->opponentSocket, buffer, msg_len, 0);
+    if(ret != msg_len){
+        cout<<"Error in sending my nonce"<<endl;
+        return false;
+    }
+
     return true;
 }
