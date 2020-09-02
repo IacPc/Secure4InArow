@@ -29,7 +29,6 @@ private:
     struct sockaddr_in myAddr;
     int opponentSocket;
     int mySocket;
-    int port;
     SignatureManager* signatureManager;
     SymmetricEncryptionManager* symmetricEncryptionManager;
 
