@@ -44,6 +44,7 @@ bool UserConnectionManager::establishSecureConnection() {
     cout<<"Starting establishing secure connection"<<endl;
 
     //wait for hello message
+
     if(!waitForHelloMessage()){
         cerr<<"Error in receiving Hello Message"<<endl;
         delete this;
@@ -122,7 +123,7 @@ bool UserConnectionManager::waitForHelloMessage(){
 }
 bool UserConnectionManager::sendCertificate(unsigned char* msg, size_t msg_len){
     cout<<"sendCertificate\n";
-
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     size_t ret;
     ret = send(userSocket, msg, msg_len, 0);
     if(ret < msg_len){
@@ -295,6 +296,7 @@ bool UserConnectionManager::sendMyPubKey() {
     pos += signature_len;
 
     //invio
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     size_t ret = send(userSocket, buffer, pos, 0);
     if(ret != pos){
         cout<<"Error in sending my pubkey"<<endl;
@@ -339,61 +341,148 @@ void UserConnectionManager::createSessionKey() {
 
 bool UserConnectionManager::sharePlayersList() {
     bool waiting = true;
-    while(waiting) {
-        if (!waitForPlayersRequest()) {
-            cout << "Error in players list request" << endl;
+    bool waitingForReadiness = false;
+    bool waitingForEndGame = false;
+    auto *buffer = new unsigned char[4096];
+    string *opponent;
+
+    while(1) {
+
+        size_t ret = recv(userSocket, buffer, 4096, 0);
+        if (ret <= 0) {
+            cout << "Error in receiving message" << endl;
             return false;
         }
 
-        if (!sendPlayerList()) {
-            cout << "Error in sending players list" << endl;
-            return false;
-        }
+        unsigned char opcode = buffer[0];
 
-        string *choice = waitForClientChoice(waiting);
-        if (choice == nullptr && !waiting) {
-            cout << "Error in receiving player choice" << endl;
-            return false;
-        }else{
-            if(!waiting){
-                if(!sendChallengerRequest(choice)) {
-                    delete choice;
+        switch(opcode){
+            case LISTREQUESTMESSAGE: {
+                if (!waitForPlayersRequest(buffer, ret)) {
+                    cout << "Error in players list request" << endl;
                     return false;
                 }
-            }else{
-                bool stillWait;
-                string *opponent = waitForChallengedResponse(stillWait);
-                if(opponent == nullptr) {
+                if (!sendPlayerList()) {
+                    cout << "Error in sending players list" << endl;
                     return false;
-                }else{
-                    if(stillWait)
-                        waiting = true;
-                    else{
-                        //invio la chiave di opponent al challenged
-                        waiting = false;
-                        if(!sendOpponentKeyToChallenged(opponent, 0))
-                            return false;
-                        //aspetto la risposta del challenged
-                        uint32_t challenged_port;
-                        if(!waitForChallengedReady(challenged_port, opponent))
-                            return false;
-                        //invio la mia chiave al challenger
-                        if(!sendMyKeyToChallenger(opponent, challenged_port))
-                            return false;
+                }
+                break;
+            }
+
+            case LOGOUTMESSAGECODE:{
+                logout(buffer, ret);
+                break;
+            }
+            default:{
+                cout<<"Error! This message was not expected in this moment!"<<endl;
+                return false;
+            }
+        }
+
+        while(waiting){
+            const std::lock_guard<std::mutex> lock(this->ucmMutex);
+            size_t ret = recv(userSocket, buffer, 4096, 0);
+            if (ret <= 0) {
+                cout << "Error in receiving message" << endl;
+                return false;
+            }
+
+            opcode = buffer[0];
+
+            switch (opcode) {
+                case PLAYERCHOSENMESSAGECODE: {
+                    string *choice = waitForClientChoice(buffer, ret);
+                    if (choice == nullptr) {
+                        delete[] buffer;
+                        return false;
                     }
+                    if (!sendChallengerRequest(choice)) {
+                        delete[] buffer;
+                        delete choice;
+                        return false;
+                    }
+                    delete choice;
+                    break;
+                }
+
+                case CHALLENGEDRESPONSEMESSAGECODE: {
+                    bool stillWait;
+                    opponent = waitForChallengedResponse(buffer, ret, stillWait);
+
+                    if (opponent == nullptr) {
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    if (!stillWait) {
+                        if (!sendOpponentKeyToChallenged(opponent, 0)) {
+                            delete[] buffer;
+                            delete opponent;
+                            return false;
+                        }
+                        waitingForReadiness = true;
+                    }else{
+                        waiting = false;
+                    }
+                    break;
+                }
+
+                case CLIENTREADYFORCHALLENGEMESSAGECODE: {
+                    uint32_t challenged_port;
+                    if (!waitForChallengedReady(buffer, ret, challenged_port, opponent)) {
+                        waitingForReadiness = false;
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    //invio la mia chiave al challenger
+                    if (!sendMyKeyToChallenger(opponent, challenged_port)) {
+                        waitingForReadiness = false;
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    waitingForReadiness = false;
+                    waitingForEndGame = true;
+                    break;
+                }
+
+                case ENDGAMEMESSAGECODE: {
+                    if (!endGame(buffer, ret)) {
+                        delete[] buffer;
+                        delete opponent;
+                        return false;
+                    }
+                    waitingForEndGame = false;
+                    waiting = false;
+                    break;
+                }
+
+                case LOGOUTMESSAGECODE: {
+                    //LOGOUT MESSAGE
+                    logout(buffer, ret);
+                    break;
+                }
+                default:{
+                    cout<<"The message received was not expected"<<endl;
+                    return false;
                 }
 
             }
+            memset(buffer, 0x00, 4096);
+            opponent->clear();
         }
-    }
 
+    }
+    delete [] buffer;
+    delete opponent;
     return true;
 }
-bool UserConnectionManager::waitForPlayersRequest() {
+bool UserConnectionManager::waitForPlayersRequest(unsigned char*buffer, size_t buffer_len) {
 
-    auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
-    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
-    if(ret <= 0){
+    const std::lock_guard<std::mutex> lock(this->ucmMutex);
+
+    if(buffer_len <= 0){
         cout<<"Error receiving Players Request Message"<<endl;
         delete []buffer;
         return false;
@@ -428,7 +517,7 @@ bool UserConnectionManager::waitForPlayersRequest() {
 
 
     //copio dati criptati
-    size_t encrypted_len = ret - AESGCMTAGLENGTH - aad_len;
+    size_t encrypted_len = buffer_len - AESGCMTAGLENGTH - aad_len;
     auto* encryptedData = new unsigned char[encrypted_len];
     memcpy(encryptedData, buffer+pos, encrypted_len);
     pos += encrypted_len;
@@ -475,6 +564,7 @@ bool UserConnectionManager::sendPlayerList() {
    size_t msg_len;
    unsigned char *buffer = createPlayerListMsg(list, msg_len);
 
+   const std::lock_guard<std::mutex> lock(this->ucmMutex);
    size_t ret = send(userSocket, buffer, msg_len, 0);
    if (ret < 0) {
        cerr << "Error in sending players list\n";
@@ -575,15 +665,12 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
 
 
 }
-string *UserConnectionManager::waitForClientChoice(bool& waiting) {
+string *UserConnectionManager::waitForClientChoice(unsigned char* buffer, size_t buffer_len) {
 
 
-    auto* buffer = new unsigned char[MAXPLAYERSREQUESTMESSAGELENGTH];
-    size_t ret = recv(userSocket, buffer, MAXPLAYERSREQUESTMESSAGELENGTH, 0);
-    if(ret <= 0){
+    if(buffer_len <= 0){
         cout<<"Error receiving Players Request Message"<<endl;
         delete []buffer;
-        waiting = false;
         return nullptr;
     }
 
@@ -592,7 +679,6 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
     }else{
         cout<<"Wrong message"<<endl;
         delete [] buffer;
-        waiting = false;
         return nullptr;
     }
 
@@ -610,10 +696,9 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
         cout<<"The counter has a wrong value"<<endl;
         delete [] iv;
         delete [] buffer;
-        waiting = false;
         return nullptr;
     }
-    counter++;
+    this->counter++;
     pos+= COUNTERLENGTH;
 
     //copio AAD
@@ -624,7 +709,7 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
 
 
     //copio dati criptati
-    size_t encrypted_len = ret - AESGCMTAGLENGTH;
+    size_t encrypted_len = buffer_len - AESGCMTAGLENGTH - aad_len;
     auto* encryptedData = new unsigned char[encrypted_len];
     memcpy(encryptedData, buffer+pos, encrypted_len);
     pos += encrypted_len;
@@ -651,20 +736,23 @@ string *UserConnectionManager::waitForClientChoice(bool& waiting) {
     cout<<"The chosen player is: "<<player->c_str()<<endl;
 
     if(player->length() < 1){
-        waiting = true;
+        cout<<"Error, no player has been chosen!"<<endl;
+        return nullptr;
     }else
-        waiting = false;
+        busy = true;
+
     return player;
 
-
 }
-bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
+bool UserConnectionManager::sendChallengerRequest(string *challenged) {
+    //INVIO IL MIO USERNAME ALLO SFIDATO, QUINDI PRENDO IL SUO UCM
     size_t plain_len = userName->length()+1;
     auto* plainMsg = new unsigned char[plain_len];
     memcpy(plainMsg, userName->c_str(), plain_len);
 
     UserConnectionManager * challengedUCM = server->getUserConnection(*challenged);
+    const std::lock_guard<std::mutex> lock(challengedUCM->ucmMutex);
     //AAD
     size_t aad_len = AADLENGTH;
     auto *AAD = new unsigned char[aad_len];
@@ -719,17 +807,15 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
         cerr<<"Error during sending challenge message to the challenged player\n";
         return false;
     }
-
+    challengedUCM->busy = true;
     message_len = iv_len = plain_len = aad_len = pos = 0;
     cout<<"Challenger request message has been sent\n";
     return true;
 }
-string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
+string* UserConnectionManager::waitForChallengedResponse(unsigned char*buffer, size_t buffer_len, bool& stillWaiting) {
 
-    auto *buffer = new unsigned char[MAXCHALLENGEDRESPONSEMESSAGELENGTH];
-    size_t ret = recv(userSocket, buffer, MAXCHALLENGEDRESPONSEMESSAGELENGTH, 0);
 
-    if(ret <=0){
+    if(buffer_len <=0){
         cerr<<"Error receiving the challenge response message\n";
         stillWaiting = false;
         return nullptr;
@@ -769,7 +855,7 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
     auto *iv = new unsigned char[iv_len];
     memcpy(iv, aad+1, iv_len);
 
-    size_t encrypted_len = ret - AESGCMTAGLENGTH - pos;
+    size_t encrypted_len = buffer_len - AESGCMTAGLENGTH - pos;
     auto* encrypted = new unsigned char[encrypted_len];
     memcpy(encrypted, buffer+pos, encrypted_len);
     pos += encrypted_len;
@@ -801,6 +887,9 @@ string* UserConnectionManager::waitForChallengedResponse(bool& stillWaiting) {
     }else {
         cout<<"The player refused the challenge\n";
         stillWaiting = true;
+        this->busy = false;
+        UserConnectionManager *ucm = server->getUserConnection(opponent->c_str());
+        ucm->busy = false;
         return opponent;
     }
 }
@@ -888,14 +977,11 @@ unsigned char *UserConnectionManager::getUserPubKey(string* opponent, size_t& pu
     UserConnectionManager *opponentUCM = server->getUserConnection(opponent->c_str());
     return opponentUCM->signatureManager->getPubkey(pubkey_len);
 }
-bool UserConnectionManager::waitForChallengedReady(uint32_t& port, string* opponent) {
+bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t buffer_len, uint32_t& port, string* opponent) {
 
-    size_t msg_len = MAXREADYFORCHALLENGEMESSAGELENGTH;
-    auto *buffer = new unsigned char[msg_len];
-    size_t ret = recv(userSocket, buffer, MAXENCRYPTEDUSERLENGTH+HMACLENGTH, 0);
 
-    if(ret <=0){
-        cerr<<"Error in receving Challenged Ready message,received "<<ret<<" bytes"<<endl;
+    if(buffer_len <=0){
+        cerr<<"Error in receving Challenged Ready message,received "<<buffer_len<<" bytes"<<endl;
         delete [] buffer;
         return false;
     }
@@ -927,7 +1013,7 @@ bool UserConnectionManager::waitForChallengedReady(uint32_t& port, string* oppon
     memcpy(aad, buffer, aad_len);
 
     //copio encrypted message
-    size_t encrypted_len = ret-aad_len-AESGCMTAGLENGTH;
+    size_t encrypted_len = buffer_len-aad_len-AESGCMTAGLENGTH;
     auto *encrypted = new unsigned char[encrypted_len];
     memcpy(encrypted, (buffer+aad_len), encrypted_len);
 
@@ -982,7 +1068,7 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
     }
 
     UserConnectionManager *challengerUCM = server->getUserConnection(challenger->c_str());
-
+    const std::lock_guard<std::mutex> lock(challengerUCM->ucmMutex);
     struct in_addr myIP = this->clAdd.sin_addr;
     size_t port_len = sizeof(uint32_t);
 
@@ -1051,7 +1137,106 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
     cout<<"Adversary key and address sent correctly\n";
     return true;
 }
+bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
 
+    if(buffer_len <= 0){
+        cout<<"Error in receiving endGame message"<<endl;
+        delete [] buffer;
+        return false;
+    }
+
+    if(buffer[0] != ENDGAMEMESSAGECODE){
+        cout<<"Wrong message. End Game message expected"<<endl;
+        delete [] buffer;
+        return false;
+    }
+
+    uint32_t cont;
+    memcpy(&cont, &buffer[OPCODELENGTH+AESGCMIVLENGTH], COUNTERLENGTH);
+    if(cont != this->counter+1){
+        cout<<"Error! Wrong counter value!"<<endl;
+        delete [] buffer;
+        return false;
+    }
+    this->counter++;
+    auto *iv = new unsigned char[AESGCMIVLENGTH];
+    memcpy(iv, buffer+OPCODELENGTH, AESGCMIVLENGTH);
+
+    size_t aad_len = AADLENGTH;
+    auto *aad = new unsigned char[AADLENGTH];
+    memcpy(aad, buffer, AADLENGTH);
+
+    size_t encrypted_len = buffer_len-AADLENGTH-AESGCMTAGLENGTH;
+    auto *encrypted = new unsigned char[encrypted_len];
+    memcpy(encrypted, buffer+AADLENGTH, encrypted_len);
+
+    auto *tag = new unsigned char[AESGCMTAGLENGTH];
+    memcpy(tag, &buffer[AADLENGTH+encrypted_len], AESGCMTAGLENGTH);
+
+    unsigned char* plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
+
+    delete [] tag;
+    delete [] encrypted;
+    delete [] aad;
+    delete [] iv;
+    delete [] buffer;
+
+    if(strcmp((const char *)(plainMessage), this->userName->c_str()) != 0){
+        cout<<"Error. Username not expected"<<endl;
+        delete [] plainMessage;
+        return false;
+    }
+    this->busy = false;
+    delete [] plainMessage;
+    return true;
+}
+void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
+
+    uint32_t cont;
+    if(buffer_len < AADLENGTH+AESGCMTAGLENGTH+AESBLOCKLENGTH){
+        cout<<"Error in receiving logout message"<<endl;
+        delete this;
+        return;
+    }
+    memcpy(&cont, &buffer[1+AESGCMIVLENGTH], COUNTERLENGTH);
+    if(cont != this->counter+1){
+        cout<<"Error! Wrong counter value"<<endl;
+        delete this;
+        return;
+    }
+    this->counter++;
+    auto *iv = new unsigned char[AESGCMIVLENGTH];
+    memcpy(iv, &buffer[1], AESGCMIVLENGTH);
+
+    auto *aad = new unsigned char[AADLENGTH];
+    size_t aad_len = AADLENGTH;
+    memcpy(aad, buffer, aad_len);
+
+    auto *tag = new unsigned char[AESGCMTAGLENGTH];
+    memcpy(tag, &buffer[buffer_len-AESGCMTAGLENGTH], AESGCMTAGLENGTH);
+
+    size_t encrypted_len = buffer_len-AESGCMTAGLENGTH-AADLENGTH;
+    auto *encrypted = new unsigned char[encrypted_len];
+    memcpy(encrypted, &buffer[aad_len], encrypted_len);
+
+    delete [] buffer;
+
+    unsigned char* plaintext = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
+
+    delete [] iv;
+    delete [] aad;
+    delete [] tag;
+    delete [] encrypted;
+
+    if(strcmp((const char*)plaintext, this->userName->c_str()) != 0){
+        cout<<"Wrong username for logout request "<<endl;
+        delete[] plaintext;
+        return;
+    }
+
+    delete [] plaintext;
+    delete this;
+}
 
 
 UserConnectionManager::~UserConnectionManager() {
@@ -1063,3 +1248,4 @@ UserConnectionManager::~UserConnectionManager() {
     delete [] signatureManager;
     delete diffieHellmannManager;
 }
+

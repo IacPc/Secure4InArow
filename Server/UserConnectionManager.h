@@ -37,6 +37,7 @@ private:
     string *userName;
     int userSocket;
     uint32_t counter;
+    bool busy;
 
     SymmetricEncryptionManager *symmetricEncryptionManager;
     SignatureManager *signatureManager;
@@ -45,30 +46,32 @@ private:
     uint32_t clientNonce;
     uint32_t myNonce;
 
+    std::mutex ucmMutex;
 
     bool establishSecureConnection();
     bool waitForHelloMessage();
     bool sendCertificate(unsigned char*, size_t);
     bool waitForClientPubKey();
-    bool verifyNonce(unsigned char*, unsigned char*);
     bool sendMyPubKey();
 
     bool sharePlayersList();
-    bool waitForPlayersRequest();
+    bool waitForPlayersRequest(unsigned char*, size_t);
     bool sendPlayerList();
     bool sendChallengerRequest(string*);
     bool sendOpponentKeyToChallenged(string *opponent, uint32_t opponentPort);
-    bool waitForChallengedReady(uint32_t&, string*);
+    bool waitForChallengedReady(unsigned char*, size_t, uint32_t&, string*);
     bool sendMyKeyToChallenger(string*, uint32_t);
+    bool endGame(unsigned char*, size_t);
 
     void createSessionKey();
+    void logout(unsigned char*, size_t);
 
 
     unsigned char* createCertificateMessage(size_t&);
     unsigned char* createPlayerListMsg(vector<string>, size_t&);
     unsigned char *getUserPubKey(string*, size_t&);
-    string* waitForClientChoice(bool&);
-    string* waitForChallengedResponse(bool&);
+    string* waitForClientChoice(unsigned char*, size_t);
+    string* waitForChallengedResponse(unsigned char*, size_t, bool&);
 
 
 public:
