@@ -50,8 +50,7 @@ private:
     bool sendMyPubKey();
     bool waitForPeerPubkey();
     bool sendPlayersListRequest();
-    bool sendSelectedPlayer(std::vector<std::string*>*);
-    bool waitForSomething();
+    bool sendSelectedPlayer(std::string*);
     bool waitForChallengedResponseMessage();
 
     //PARSER
@@ -59,8 +58,10 @@ private:
 
     unsigned char* waitForOpponentKey(struct in_addr & ipOpponent, size_t& port);
 
-    string* selectPlayer(vector<string*>);
-    string* waitForChallenge();
+    std::string* selectPlayer(vector<string*>);
+    std::string* waitForChallenge();
+    std::string* waitForChallengeRequest();
+
     bool waitForPlayers(std::vector<std::string*>*&);
 
     unsigned char* createHelloMessage(size_t& helloMessageBufferLen);
@@ -74,7 +75,7 @@ public:
     ServerConnectionManager(const char* server_addr, int port, string* user);
     bool connectToServer();
     bool secureTheConnection();
-
+    void enterThegame();
     ~ServerConnectionManager();
     void createConnectionWithServer();
 

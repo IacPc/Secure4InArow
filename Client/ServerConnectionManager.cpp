@@ -24,7 +24,85 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
     cout<<"ServerConnectionManager created successfully"<<endl;
 
 }
+void ServerConnectionManager::enterThegame() {
 
+    createConnectionWithServer();
+
+    std::vector<std::string*>* playerList = nullptr;
+    bool iReceivedTheList = this->waitForPlayers(playerList);
+    if(!iReceivedTheList) return;
+
+    unsigned int i =0;
+    unsigned int out =0;
+
+    if(playerList){
+        cout<<"The following players are available"<<endl;
+        for (auto &p : *playerList) {
+            std::cout << i << ")"<<p<<endl;
+            i++;
+        }
+
+    }
+
+    string choice;
+    do{
+        choice.clear();
+        cout<<"choose one player between 1 and "<<i-1<<",press enter to wait or 0 to logout"<<endl;
+        getline(cin, choice);
+        if(choice.length()==0){
+            break;
+        }
+    }while(!tryParsePlayerChoice(&choice, out, i - 1));
+/*
+ * RIVEDERE
+ */
+
+    if(choice.length()==0) {
+        string *challenger = NULL;
+        string yn;
+        cout << "Waiting for Challenge" << endl;
+        if (!(challenger = this->waitForChallengeRequest()))
+            return;
+        cout << challenger->c_str() << " wants to play with you, do you accept?" << endl;
+
+    }
+/*
+    if(choice.length()>0 && out!= -1) {
+        string* selectedPlayer = playerList->at(out);
+        bool sendingWentWell = this->sendSelectedPlayer(selectedPlayer);
+        for (auto &i : *playerList) {
+            delete i;
+        }
+        delete playerList;
+
+        if (!sendingWentWell)
+            return;
+
+        bool challengedSaidYes = this->waitForChallengedResponseMessage();
+        if (challengedSaidYes) {
+                // istanzio P2p e contatto il challenged
+                // aspetto le chiavi
+                // istanzio nuovo thread su StartAsChallengeR
+                // join()
+        }
+    }else {
+        if (out == -1) {
+
+            return;
+        }else {
+            string *challenger = NULL;
+            string yn;
+            while (true) {
+                cout << "Waiting for Challenge" << endl;
+                if (!(challenger = this->waitForChallengeRequest()))
+                    break;
+                cout << challenger->c_str() << " wants to play with you, do you accept?" << endl;
+
+            }
+        }
+    }
+*/
+}
 bool ServerConnectionManager::connectToServer(){
 
     int ret;
@@ -49,31 +127,6 @@ void ServerConnectionManager::createConnectionWithServer() {
    if(!ok) {
        cout<<"error in sending Player list request"<<endl;
        return;
-   }
-   std::vector<std::string*>* playerList = nullptr;
-   bool iReceivedTheList = this->waitForPlayers(playerList);
-   if(!iReceivedTheList) return;
-
-   if(playerList){
-       bool sendingWentWell = this->sendSelectedPlayer(playerList);
-       for (auto &i : *playerList) {
-           delete i;
-       }
-       delete playerList;
-
-       if(!sendingWentWell)
-           return;
-
-       bool challengedSaidYes = this->waitForChallengedResponseMessage();
-       if(challengedSaidYes){
-           // create P2PCommunication, for now just return
-           return;
-       }
-   }
-   // APRIRE UN FORM DEL
-   while(true){
-      if(!this->waitForSomething())
-          return;
    }
 
 }
@@ -395,10 +448,6 @@ bool ServerConnectionManager::sendPlayersListRequest() {
     return true;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////                                         SECURE CHANNEL CREATED                                           ////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     size_t playersListMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 + MAXUSERNAMELENGTH*MAXPLAYERSONLINE + AESGCMTAGLENGTH;
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
@@ -472,17 +521,69 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     return true;
 }
 
-bool ServerConnectionManager::waitForSomething() {
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////                                        CHALLENGED FUNCTIONS                                              ////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+std::string* ServerConnectionManager::waitForChallengeRequest() {
+    std::size_t waitingBufferLen = 65;
+    uint32_t receivedCounter;
+    size_t ivLength = AESGCMIVLENGTH;
+    unsigned char ivBuf[AESGCMIVLENGTH];
+    unsigned char cipherText[2*AESBLOCKLENGTH];
+    size_t tagLen = AESGCMTAGLENGTH;
+    unsigned char tagBuf[AESGCMTAGLENGTH];
+    size_t aadLen = 1 +AESGCMIVLENGTH  +sizeof(this->counter);
+    unsigned char aadBuf[aadLen];
+
+    auto* waitingBuffer = new unsigned char[waitingBufferLen];
+    int ret = recv(this->serverSocket, waitingBuffer, waitingBufferLen, 0);
+    if(ret <=0){
+        std::cout<<"Server disconnection"<<endl;
+        return nullptr;
+    }
+
+    if(waitingBuffer[0]!= PLAYERCHOSENMESSAGECODE ){
+        cout<<"wrong opcode "<<endl;
+        delete [] waitingBuffer;
+        return nullptr;
+    }
+
+
+    memcpy(&receivedCounter,&waitingBuffer[1 +AESGCMIVLENGTH],sizeof(receivedCounter));
+    if(this->counter != receivedCounter){
+        cout<<"Wrong counter, expected "<<this->counter<<", received "<<receivedCounter<<endl;
+        delete [] waitingBuffer;
+        return nullptr;
+    }
+    this->counter++;
+    size_t step = 1;
+    memcpy(ivBuf, &waitingBuffer[step],ivLength);
+    memcpy(aadBuf,waitingBuffer,aadLen);
+    step += ivLength +sizeof(receivedCounter);
+    size_t cipherTextLen = ret - (1 + ivLength + sizeof(receivedCounter) + tagLen);
+    memcpy(cipherText,&waitingBuffer[step],cipherTextLen);
+    step += cipherTextLen;
+    memcpy(tagBuf,&waitingBuffer[step],tagLen);
+
+    size_t plainTextLen = cipherTextLen;
+    unsigned char* clearText = this->symmetricEncryptionManager->decryptThisMessage(cipherText,plainTextLen,aadBuf,
+                                                                                    aadLen,tagBuf,ivBuf);
+    if(!clearText){
+        cout<<"error in decrypting challenge request"<<endl;
+        return nullptr;
+    }
+
+    clearText[plainTextLen-1]= '\0';
+
+    auto* challengerName = new std::string((char*)clearText);
+
+    return challengerName;
 
 }
-
-ServerConnectionManager::~ServerConnectionManager() {
-    delete userName;
-    delete symmetricEncryptionManager;
-    delete signatureManager;
-    delete certificateManager;
-    delete diffieHellmannManager;
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////                                        CHALLENGER FUNCTIONS                                              ////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 unsigned char *ServerConnectionManager::createSelectedPlayerMessage(std::string * pl,size_t& len) {
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
@@ -525,26 +626,8 @@ unsigned char *ServerConnectionManager::createSelectedPlayerMessage(std::string 
 
 }
 
-bool ServerConnectionManager::sendSelectedPlayer(std::vector<std::string *> * pl) {
-    cout<<"The following players are available"<<endl;
-    unsigned int i =0;
-    unsigned int out =0;
-    for (auto &p : *pl) {
-        std::cout << i << ")"<<p<<endl;
-        i++;
-    }
-    string choice;
-    do{
-        choice.clear();
-        cout<<"Please choose one player between 1 and "<<i-1<<"Or just press enter"<<endl;
-        getline(cin, choice);
-        if(choice.length()==0){
+bool ServerConnectionManager::sendSelectedPlayer(string* selectedPlayer) {
 
-        }
-    }while(!tryParsePlayerChoice(&choice, out, i - 1));
-
-
-    string* selectedPlayer = pl->at(out);
     std::size_t playerChosenMessageLength=0;
     unsigned char* playerChosenMessageBuffer = this->createSelectedPlayerMessage(selectedPlayer,playerChosenMessageLength);
     if(!playerChosenMessageBuffer){
@@ -569,7 +652,8 @@ bool ServerConnectionManager::tryParsePlayerChoice(std::string* input, unsigned 
     } catch (std::invalid_argument) {
         return false;
     }
-    if(temp<1 || temp > limit)
+
+    if(temp<-1 || temp > limit)
         return false;
     output = temp;
     return true;
@@ -617,6 +701,14 @@ bool ServerConnectionManager::waitForChallengedResponseMessage() {
             return false;
     }
 
+}
+
+ServerConnectionManager::~ServerConnectionManager() {
+    delete userName;
+    delete symmetricEncryptionManager;
+    delete signatureManager;
+    delete certificateManager;
+    delete diffieHellmannManager;
 }
 
 

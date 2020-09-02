@@ -85,21 +85,28 @@ SignatureManager::SignatureManager(EVP_PKEY* pb , EVP_PKEY* pv) {
 }
 
 SignatureManager::SignatureManager(std::string *prvkey_file_name) {
+
+    EVP_PKEY* prvkey= nullptr;
     if (prvkey_file_name) {
         FILE *prvkey_file = fopen(prvkey_file_name->c_str(), "r");
         if (!prvkey_file) {
             std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
         }
 
-        this->prvKey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, NULL);
+        std::string pwd;
+        std::cout << "Enter your prvkey file password" << std::endl;
+        getline(std::cin, pwd);
+        prvkey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
+        while (!prvkey) {
+            pwd.clear();
+            std::cout << "Error:Enter your prvkey file password" << std::endl;
+            getline(std::cin, pwd);
+            prvkey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
+        }
 
-        fclose(prvkey_file);
-        if (!this->prvKey) {
-            std::cout << "Error: PEM_read_PrivateKey returned NULL\n";
-        }else
-            std::cout<<"private key set correctly"<<std::endl;
-    }else
-        this->prvKey = nullptr;
+    }
+    this->prvKey = prvkey;
+    std::cout << "private key set correctly" << std::endl;
 }
 
 SignatureManager::SignatureManager() {
@@ -146,7 +153,7 @@ unsigned char *SignatureManager::signTHisMessage(unsigned char *messageToBeSigne
 
     SIGNINGERROR:
         EVP_MD_CTX_free(signatureCTX);
-        delete[] sgnt_buf;
+        delete [] sgnt_buf;
         messageToBeSignedLength = 0;
         return nullptr;
 }
