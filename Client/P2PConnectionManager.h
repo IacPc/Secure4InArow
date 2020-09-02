@@ -7,6 +7,7 @@
 #include "../Libraries/Constant.h"
 #include "../Libraries/SignatureManager.h"
 #include "../Libraries/SymmetricEncryptionManager.h"
+#include "ServerConnectionManager.h"
 #include <string>
 #include <vector>
 #include <thread>
@@ -20,7 +21,6 @@
 #include <stdexcept>
 #include <cstdio>
 
-class ServerConnectionManager;
 
 class P2PConnectionManager {
 private:

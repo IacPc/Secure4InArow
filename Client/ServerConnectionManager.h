@@ -78,6 +78,7 @@ public:
     void enterThegame();
     ~ServerConnectionManager();
     void createConnectionWithServer();
+    string *getUsername();
 
 };
 

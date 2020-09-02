@@ -711,4 +711,8 @@ ServerConnectionManager::~ServerConnectionManager() {
     delete diffieHellmannManager;
 }
 
+string *ServerConnectionManager::getUsername() {
+    return this->userName;
+}
+
 

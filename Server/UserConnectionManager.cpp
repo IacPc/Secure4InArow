@@ -425,7 +425,10 @@ bool UserConnectionManager::sharePlayersList() {
                         }
                         waitingForReadiness = true;
                     }else{
-                        waiting = false;
+                        if (!sendPlayerList()) {
+                            cout << "Error in sending players list" << endl;
+                            return false;
+                        }
                     }
                     break;
                 }
