@@ -60,7 +60,6 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
         delete this;
         return;
     }
-
     cout<<"Secure connection has been established. The game can start. "<<endl;
     cout<<"Wait for the challenger's first move"<<endl;
 }
