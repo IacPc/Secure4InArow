@@ -17,8 +17,7 @@ Client::Client(string* server_addr, int port, string* user){
 
 bool Client::establishConnection() {
 
-    std::thread t(&ServerConnectionManager::createConnectionWithServer, serverConnectionManager);
-    //t.detach();
+    std::thread t(&ServerConnectionManager::enterThegame, serverConnectionManager);
     t.join();
     return true;
 }
