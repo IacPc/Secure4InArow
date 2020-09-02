@@ -3,6 +3,7 @@
 //
 
 #include "ServerConnectionManager.h"
+#include "P2PConnectionManager.h"
 
 ServerConnectionManager::ServerConnectionManager(const char *server_addr, int port, string* user) {
 
@@ -24,85 +25,88 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
     cout<<"ServerConnectionManager created successfully"<<endl;
 
 }
+
 void ServerConnectionManager::enterThegame() {
 
     createConnectionWithServer();
 
-    std::vector<std::string*>* playerList = nullptr;
-    bool iReceivedTheList = this->waitForPlayers(playerList);
-    if(!iReceivedTheList) return;
+    while(true){
+        std::vector<std::string*>* playerList = nullptr;
 
-    unsigned int i =0;
-    unsigned int out =0;
+        bool iReceivedTheList = this->waitForPlayers(playerList);
+        if (!iReceivedTheList) return;
 
-    if(playerList){
-        cout<<"The following players are available"<<endl;
-        for (auto &p : *playerList) {
-            std::cout << i << ")"<<p<<endl;
-            i++;
+        unsigned int i = 0;
+        unsigned int out = 0;
+
+        if (playerList) {
+            cout << "The following players are available" << endl;
+            for (auto &p : *playerList) {
+                std::cout << i << ")" << p << endl;
+                i++;
+            }
+
         }
 
-    }
+        string choice;
+        do {
+            choice.clear();
+            cout << "choose one player between 1 and " << i - 1
+                 << ",press enter to wait for a challenge request or 0 to logout" << endl;
+            getline(cin, choice);
+            if (choice.length() == 0) {
+                break;
+            }
+        } while (!tryParsePlayerChoice(&choice, out, i - 1));
 
-    string choice;
-    do{
-        choice.clear();
-        cout<<"choose one player between 1 and "<<i-1<<",press enter to wait or 0 to logout"<<endl;
-        getline(cin, choice);
-        if(choice.length()==0){
-            break;
+
+        if (choice.length() == 0) {
+            string *challenger = NULL;
+            string yn;
+            cout << "Waiting for Challenge" << endl;
+            if (!(challenger = this->waitForChallengeRequest()))
+                return;
+            cout << challenger->c_str() << " wants to play with you, do you accept?" << endl;
+            auto *p2pConnMan = new P2PConnectionManager(this->signatureManager->getPrvkey(), this);
+            std::thread t(&P2PConnectionManager::startTheGameAsChallengeD, p2pConnMan);
+            t.join();
         }
-    }while(!tryParsePlayerChoice(&choice, out, i - 1));
-/*
- * RIVEDERE
- */
 
-    if(choice.length()==0) {
-        string *challenger = NULL;
-        string yn;
-        cout << "Waiting for Challenge" << endl;
-        if (!(challenger = this->waitForChallengeRequest()))
-            return;
-        cout << challenger->c_str() << " wants to play with you, do you accept?" << endl;
+        if (out != -1) {
+            string *selectedPlayer = playerList->at(out);
+            playerList->erase(playerList->begin() + out );
+            bool sendingWentWell = this->sendSelectedPlayer(selectedPlayer);
 
-    }
-/*
-    if(choice.length()>0 && out!= -1) {
-        string* selectedPlayer = playerList->at(out);
-        bool sendingWentWell = this->sendSelectedPlayer(selectedPlayer);
+            if (!sendingWentWell)
+                return;
+
+            bool challengedSaidYes = this->waitForChallengedResponseMessage();
+            if (challengedSaidYes) {
+                cout << selectedPlayer->c_str() << " has accepted" << endl;
+                auto *p2pConnMan = new P2PConnectionManager(this->signatureManager->getPrvkey(), this);
+                std::thread t(&P2PConnectionManager::startTheGameAsChallengeR, p2pConnMan);
+                t.join();
+            } else {
+                cout << selectedPlayer->c_str() << " refused" << endl;
+                delete selectedPlayer;
+            }
+        }
+
         for (auto &i : *playerList) {
             delete i;
         }
         delete playerList;
 
-        if (!sendingWentWell)
-            return;
-
-        bool challengedSaidYes = this->waitForChallengedResponseMessage();
-        if (challengedSaidYes) {
-                // istanzio P2p e contatto il challenged
-                // aspetto le chiavi
-                // istanzio nuovo thread su StartAsChallengeR
-                // join()
-        }
-    }else {
         if (out == -1) {
-
+            this->sendLogOutMessage();
             return;
-        }else {
-            string *challenger = NULL;
-            string yn;
-            while (true) {
-                cout << "Waiting for Challenge" << endl;
-                if (!(challenger = this->waitForChallengeRequest()))
-                    break;
-                cout << challenger->c_str() << " wants to play with you, do you accept?" << endl;
-
-            }
         }
+        this->sendEndGameMessage();
+
     }
-*/
+
 }
+
 bool ServerConnectionManager::connectToServer(){
 
     int ret;
@@ -522,6 +526,109 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////                                        BOTH CHALLENGER AND CHALLENGED UTILS                              ////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+unsigned char *ServerConnectionManager::createLogOutMessage(std::size_t& len) {
+    size_t ivLen = AESGCMIVLENGTH;
+    unsigned char ivBUf[AESGCMIVLENGTH];
+    unsigned char* tagBuf = new unsigned char[AESGCMTAGLENGTH];
+    size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
+    unsigned char aadBuf[aadLen];
+    size_t plainTextLen = this->userName->length()+1;
+    unsigned char plainText[plainTextLen];
+
+    RAND_bytes(&ivBUf[0],AESGCMIVLENGTH);
+    aadBuf[0] = LOGOUTMESSAGECODE;
+    size_t step = 1;
+    memcpy(&aadBuf[step], ivBUf,AESGCMIVLENGTH);
+    step += AESGCMIVLENGTH;
+    memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
+
+    strcpy((char*)plainText,this->userName->c_str());
+    size_t ctLen = plainTextLen;
+    unsigned char* cipherText = this->symmetricEncryptionManager->encryptThisMessage(plainText, ctLen, aadBuf,
+                                                                                     aadLen, ivBUf, ivLen, tagBuf);
+    if(!cipherText)
+        return nullptr;
+    size_t logoutMessageBufferLen = aadLen + ctLen + AESGCMTAGLENGTH;
+    auto* logoutMessageBuffer = new unsigned char[logoutMessageBufferLen];
+    step = 0;
+    memcpy(&logoutMessageBuffer[step],aadBuf,aadLen);
+    step += aadLen;
+    memcpy(&logoutMessageBuffer[step],cipherText,ctLen);
+    step += ctLen;
+    memcpy(&logoutMessageBuffer[step],tagBuf,AESGCMTAGLENGTH);
+
+    delete [] tagBuf;
+    delete [] cipherText;
+
+    len = logoutMessageBufferLen;
+    return logoutMessageBuffer;
+
+}
+
+unsigned char *ServerConnectionManager::createEndGameMessage(size_t& len) {
+    size_t ivLen = AESGCMIVLENGTH;
+    unsigned char ivBUf[AESGCMIVLENGTH];
+    unsigned char* tagBuf = new unsigned char[AESGCMTAGLENGTH];
+    size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
+    unsigned char aadBuf[aadLen];
+    size_t plainTextLen = this->userName->length()+1;
+    unsigned char plainText[plainTextLen];
+
+    RAND_bytes(&ivBUf[0],AESGCMIVLENGTH);
+    aadBuf[0] = ENDGAMEMESSAGECODE;
+    size_t step = 1;
+    memcpy(&aadBuf[step], ivBUf,AESGCMIVLENGTH);
+    step += AESGCMIVLENGTH;
+    memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
+
+    strcpy((char*)plainText,this->userName->c_str());
+    size_t ctLen = plainTextLen;
+    unsigned char* cipherText = this->symmetricEncryptionManager->encryptThisMessage(plainText, ctLen, aadBuf,
+                                                                                     aadLen, ivBUf, ivLen, tagBuf);
+    size_t logoutMessageBufferLen = aadLen + ctLen + AESGCMTAGLENGTH;
+    auto* logoutMessageBuffer = new unsigned char[logoutMessageBufferLen];
+    step = 0;
+    memcpy(&logoutMessageBuffer[step],aadBuf,aadLen);
+    step += aadLen;
+    memcpy(&logoutMessageBuffer[step],cipherText,ctLen);
+    step += ctLen;
+    memcpy(&logoutMessageBuffer[step],tagBuf,AESGCMTAGLENGTH);
+
+    delete [] tagBuf;
+    delete [] cipherText;
+
+    len = logoutMessageBufferLen;
+    return logoutMessageBuffer;
+}
+
+bool ServerConnectionManager::sendLogOutMessage() {
+    size_t logOutMessageBufferLen = 0;
+    unsigned char * logoutMessageBuffer = this->createLogOutMessage(logOutMessageBufferLen);
+    int ret = send(this->serverSocket,logoutMessageBuffer,logOutMessageBufferLen,0);
+    delete [] logoutMessageBuffer;
+    if(ret!=logOutMessageBufferLen){
+        cout<<"error in sending LogOutMessage"<<endl;
+        return false;
+    }
+    return true;
+}
+
+bool ServerConnectionManager::sendEndGameMessage() {
+    size_t endGameMessageBufferLen = 0;
+    unsigned char * endGameMessageBuffer = this->createEndGameMessage(endGameMessageBufferLen);
+    int ret = send(this->serverSocket, endGameMessageBuffer, endGameMessageBufferLen, 0);
+    delete [] endGameMessageBuffer;
+    if(ret != endGameMessageBufferLen){
+        cout<<"error in sending LogOutMessage"<<endl;
+        return false;
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////                                        CHALLENGED FUNCTIONS                                              ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -581,6 +688,7 @@ std::string* ServerConnectionManager::waitForChallengeRequest() {
     return challengerName;
 
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////                                        CHALLENGER FUNCTIONS                                              ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

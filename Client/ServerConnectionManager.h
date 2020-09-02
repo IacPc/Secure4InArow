@@ -52,14 +52,15 @@ private:
     bool sendPlayersListRequest();
     bool sendSelectedPlayer(std::string*);
     bool waitForChallengedResponseMessage();
+    bool sendLogOutMessage();
+    bool sendEndGameMessage();
 
     //PARSER
     bool tryParsePlayerChoice(std::string* input, unsigned int& output,size_t limit);
 
     unsigned char* waitForOpponentKey(struct in_addr & ipOpponent, size_t& port);
 
-    std::string* selectPlayer(vector<string*>);
-    std::string* waitForChallenge();
+
     std::string* waitForChallengeRequest();
 
     bool waitForPlayers(std::vector<std::string*>*&);
@@ -69,7 +70,8 @@ private:
     unsigned char* waitForCertificate(int&);
     unsigned char* createPlayersListRequestMessage(size_t&);
     unsigned char* createSelectedPlayerMessage(std::string*,size_t&);
-
+    unsigned char* createLogOutMessage(size_t&);
+    unsigned char* createEndGameMessage(size_t&);
 public:
 
     ServerConnectionManager(const char* server_addr, int port, string* user);
