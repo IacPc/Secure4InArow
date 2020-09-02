@@ -53,6 +53,7 @@ private:
     bool waitForCoordinateMessage(uint8_t&,uint8_t&);
     bool tryParseX(std::string* , uint8_t& );
     bool tryParseY(std::string* , uint8_t& );
+    bool challengeDGame(bool&);
     void createSessionKey();
 
     unsigned char* createCoordinateMessage(uint8_t,uint8_t);
