@@ -3,6 +3,7 @@
 //
 
 #include "P2PConnectionManager.h"
+#include "ServerConnectionManager.h"
 
 P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnectionManager *srvcnm) {
 
