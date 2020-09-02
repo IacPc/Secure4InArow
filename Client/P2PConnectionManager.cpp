@@ -13,6 +13,8 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
     prvkPath->append(this->serverConnectionManager->getUsername()->c_str());
     prvkPath->append("_prvkey.pem");
 
+    myUsername = new string(this->serverConnectionManager->getUsername()->c_str());
+
     signatureManager = new SignatureManager(prvkPath);
     delete prvkPath;
     signatureManager->setPubkey(opponentKey);
@@ -80,5 +82,73 @@ bool P2PConnectionManager::waitForChallengeRConnection() {
     }else
         cout<<"Connection successful\n";
 
+    return true;
+}
+
+bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
+
+    if(!waitForChallengeRHelloMessage()){
+        cerr<<"Error in receiving the peer Hello Message"<<endl;
+        delete this;
+        return false;
+    }
+
+    if(!sendChallengeDHelloMessage()){
+        cerr<<"Error in sending my Hello Message"<<endl;
+        delete this;
+        return false;
+    }
+
+    if(!waitForChallengeRPubKey()){
+        cerr<<"Error in receiving challenger pubkey"<<endl;
+        delete this;
+        return false;
+    }else{
+        cout<<"Challenger public key received successfully"<<endl;
+    }
+
+
+    if(!sendChallengeDPubKey()){
+        cerr<<"Error in sending my pubkey"<<endl;
+        delete this;
+        return false;
+    }else{
+        cout<<"PubKey sent successfully"<<endl;
+    }
+
+    createSessionKey();
+
+    return true;
+}
+
+bool P2PConnectionManager::waitForChallengeRHelloMessage() {
+    cout<<"Waiting for challenger hello message"<<endl;
+    auto *buffer = new unsigned char[HELLOMESSAGELENGTH];
+    size_t ret;
+
+    ret = recv(this->opponentSocket, buffer, HELLOMESSAGELENGTH, 0);
+    if(ret <= 0){
+        cout<<"Error in receiving Challenger HelloMessage\n";
+        return false;
+    }
+
+    cout<<"Dimensione HelloMessage: "<<ret<<endl;
+    if(buffer[0] == HELLOMSGCODE) {
+        cout << "HelloMessage opcode verified\n";
+    }
+    else{
+        cerr<<"Wrong message!\n";
+        delete []buffer;
+        return false;
+    }
+
+
+    memcpy((unsigned char*)&this->challengerNonce, &buffer[1], NONCELENGTH);
+
+    buffer[ret-1] = '\0';
+    this->opponentUsername = new string((const char*)&buffer[1 + NONCELENGTH]);
+
+    cout<<"THE RECEIVED USERNAME IS: "<<this->opponentUsername->c_str()<<endl;
+    delete []buffer;
     return true;
 }

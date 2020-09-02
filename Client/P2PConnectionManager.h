@@ -29,13 +29,27 @@ private:
     struct sockaddr_in myAddr;
     int opponentSocket;
     int mySocket;
+    string *myUsername;
+    string *opponentUsername;
     SignatureManager* signatureManager;
     SymmetricEncryptionManager* symmetricEncryptionManager;
+    DiffieHellmannManager *diffieHellmannManager;
+
+    uint32_t challengerNonce;
+    uint32_t challengedNonce;
+    uint32_t counter;
 
     bool waitForChallengeRConnection();
     bool connectToChallengeD();
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
+
+    bool waitForChallengeRHelloMessage();
+    bool sendChallengeDHelloMessage();
+    bool waitForChallengeRPubKey();
+    bool sendChallengeDPubKey();
+
+    void createSessionKey();
 
 public:
     P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*);
