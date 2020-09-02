@@ -348,6 +348,8 @@ bool UserConnectionManager::sharePlayersList() {
 
     while(1) {
 
+        const std::lock_guard<std::mutex> lock(this->ucmMutex);
+
         size_t ret = recv(userSocket, buffer, 4096, 0);
         if (ret <= 0) {
             cout << "Error in receiving message" << endl;
@@ -378,6 +380,7 @@ bool UserConnectionManager::sharePlayersList() {
                 return false;
             }
         }
+        const std::lock_guard<std::mutex> unlock(this->ucmMutex);
 
         while(waiting){
             const std::lock_guard<std::mutex> lock(this->ucmMutex);
@@ -422,7 +425,10 @@ bool UserConnectionManager::sharePlayersList() {
                         }
                         waitingForReadiness = true;
                     }else{
-                        waiting = false;
+                        if (!sendPlayerList()) {
+                            cout << "Error in sending players list" << endl;
+                            return false;
+                        }
                     }
                     break;
                 }
@@ -453,8 +459,17 @@ bool UserConnectionManager::sharePlayersList() {
                         delete opponent;
                         return false;
                     }
+                    /*  Ho ricevuto il fine partita, allora gli rimando la lista dei giocatori:
+                     *  - può scegliere il giocatore
+                     *  - può decidere di aspettare una richiesta
+                     *  - può mandarmi un messaggio di logout
+                     */
                     waitingForEndGame = false;
-                    waiting = false;
+                    if (!sendPlayerList()) {
+                        cout << "Error in sending players list" << endl;
+                        return false;
+                    }
+
                     break;
                 }
 

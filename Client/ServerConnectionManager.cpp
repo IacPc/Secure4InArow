@@ -819,4 +819,12 @@ ServerConnectionManager::~ServerConnectionManager() {
     delete diffieHellmannManager;
 }
 
+string *ServerConnectionManager::getUsername() {
+    return this->userName;
+}
+
+int ServerConnectionManager::getP2PPort() {
+    return this->P2Pport;
+}
+
 

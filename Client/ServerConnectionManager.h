@@ -80,6 +80,8 @@ public:
     void enterThegame();
     ~ServerConnectionManager();
     void createConnectionWithServer();
+    string *getUsername();
+    int getP2PPort();
 
 };
 

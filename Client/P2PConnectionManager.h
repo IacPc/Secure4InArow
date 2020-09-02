@@ -1,5 +1,5 @@
 //
-// Created by iacopo on 02/09/20.
+// Created by Laura Lemmi on 02/09/2020.
 //
 
 #ifndef ALL_P2PCONNECTIONMANAGER_H
@@ -7,7 +7,7 @@
 #include "../Libraries/Constant.h"
 #include "../Libraries/SignatureManager.h"
 #include "../Libraries/SymmetricEncryptionManager.h"
-#include "../Libraries/DiffieHellmannManager.h"
+#include "ServerConnectionManager.h"
 #include <string>
 #include <vector>
 #include <thread>
@@ -21,26 +21,44 @@
 #include <stdexcept>
 #include <cstdio>
 
-class ServerConnectionManager;
 
 class P2PConnectionManager {
 private:
     ServerConnectionManager* serverConnectionManager;
-    struct sockaddr_in myAddr;
     struct sockaddr_in opponentAddr;
+    struct sockaddr_in myAddr;
     int opponentSocket;
     int mySocket;
+    string *myUsername;
+    string *opponentUsername;
     SignatureManager* signatureManager;
     SymmetricEncryptionManager* symmetricEncryptionManager;
+    DiffieHellmannManager *diffieHellmannManager;
 
+    uint32_t opponentNonce;
+    uint32_t myNonce;
+    uint32_t counter;
+
+    bool waitForChallengeRConnection();
+    bool connectToChallengeD();
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
+
+    bool waitForHelloMessage();         //valido per entrambi
+    bool sendHelloMessage();            //valido per entrambi
+    bool waitForChallengeRPubKey();
+    bool sendChallengeDPubKey();
+
+    void createSessionKey();
+
 public:
     P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*);
 
     void startTheGameAsChallengeR();
     void startTheGameAsChallengeD();
-    void setChallengedIp(struct in_addr);
+    void setOpponentIp(struct in_addr);
+
+    ~P2PConnectionManager();
 
 };
 
