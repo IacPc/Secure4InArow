@@ -7,6 +7,7 @@
 #include "../Libraries/Constant.h"
 #include "../Libraries/SignatureManager.h"
 #include "../Libraries/SymmetricEncryptionManager.h"
+#include "../Libraries/DiffieHellmannManager.h"
 #include <string>
 #include <vector>
 #include <thread>
@@ -19,6 +20,7 @@
 #include <unistd.h>
 #include <stdexcept>
 #include <cstdio>
+using namespace std;
 class ServerConnectionManager;
 
 class P2PConnectionManager {
@@ -42,13 +44,18 @@ private:
     bool connectToChallengeD();
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
+    bool sendCoordinateMessage(uint8_t, uint8_t);
 
     bool waitForHelloMessage();         //valido per entrambi
     bool sendHelloMessage();            //valido per entrambi
     bool waitForChallengeRPubKey();
     bool sendChallengeDPubKey();
-
+    bool waitForCoordinateMessage(uint8_t&,uint8_t&);
+    bool tryParseX(std::string* , uint8_t& );
+    bool tryParseY(std::string* , uint8_t& );
     void createSessionKey();
+
+    unsigned char* createCoordinateMessage(uint8_t,uint8_t);
 
 public:
     P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*);
