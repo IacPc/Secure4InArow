@@ -259,25 +259,39 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
     myAddr.sin_port = htons(this->serverConnectionManager->getP2PPort());
     myAddr.sin_addr.s_addr = INADDR_ANY;
 
-    if(::bind(mySocket, (struct sockaddr*)&myAddr, sizeof(myAddr)) == -1){
-        cerr<<"Error during bind"<<endl;
+    if (::bind(mySocket, (struct sockaddr *) &myAddr, sizeof(myAddr)) == -1) {
+        cerr << "Error during bind" << endl;
         delete this;
         return;
     }
 
-    if(!waitForChallengeRConnection()){
-        cerr<<"Error during connection with challenger"<<endl;
+    if (!waitForChallengeRConnection()) {
+        cerr << "Error during connection with challenger" << endl;
         delete this;
         return;
     }
 
-    if(!establishSecureConnectionWithChallengeR()){
-        cerr<<"Secure Connection not established"<<endl;
+    if (!establishSecureConnectionWithChallengeR()) {
+        cerr << "Secure Connection not established" << endl;
         delete this;
         return;
     }
-    cout<<"Secure connection has been established. The game can start. "<<endl;
-    cout<<"Wait for the challenger's first move"<<endl;
+    cout << "Secure connection has been established. The game can start. " << endl;
+    cout << "Wait for the challenger's first move" << endl;
+
+    bool win;
+    if (challengeDGame(win)) {
+        if(win) {
+            cout << "You won" << endl;
+        }else{
+            cout << "You lost the match" << endl;
+        }
+    }else{
+        cout<<"Error during the match. The game cannot be finished"<<endl;
+    }
+
+    delete this;
+    return;
 }
 
 bool P2PConnectionManager::waitForChallengeRConnection() {
@@ -502,6 +516,41 @@ void P2PConnectionManager::createSessionKey() {
     delete diffieHellmannManager;
 }
 
+bool P2PConnectionManager::challengeDGame(bool& win) {
+
+    bool finish = false;
+    while(!finish){
+        uint8_t x;
+        uint8_t y;
+        waitForCoordinateMessage(x, y);
+
+        //TESTARE LA FINE DEL GIOCO
+
+        string x_coordinate;
+        do {
+            x_coordinate.clear();
+            cout << "Type the coordinate x: choose a number between 1 and 7" << endl;
+            getline(cin, x_coordinate);
+        } while (!tryParseX(&x_coordinate, x));
+
+        string y_coordinate;
+        do {
+            y_coordinate.clear();
+            cout << "Type the coordinate x: choose a number between 1 and 6" << endl;
+            getline(cin, y_coordinate);
+        } while (!tryParseY(&y_coordinate, x));
+
+        if(!sendCoordinateMessage(x, y)){
+            cout<<"Error: Coordinate message has not been sent"<<endl;
+            return false;
+        }
+
+        //TESTARE LA FINE DELLA PARTITA
+
+    }
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////                                        CHALLENGER FUNCTIONS                                              ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -529,4 +578,5 @@ bool P2PConnectionManager::connectToChallengedUser() {
     }
     return true;
 }
+
 

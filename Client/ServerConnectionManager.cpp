@@ -2,7 +2,6 @@
 // Created by iacopo on 14/08/20.
 //
 
-#include "ServerConnectionManager.h"
 #include "P2PConnectionManager.h"
 
 ServerConnectionManager::ServerConnectionManager(const char *server_addr, int port, string* user) {
