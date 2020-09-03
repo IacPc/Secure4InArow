@@ -760,7 +760,6 @@ bool ServerConnectionManager::tryParsePlayerChoice(std::string* input, unsigned 
     } catch (std::invalid_argument) {
         return false;
     }
-
     if(temp<-1 || temp > limit)
         return false;
     output = temp;
@@ -768,6 +767,7 @@ bool ServerConnectionManager::tryParsePlayerChoice(std::string* input, unsigned 
 }
 
 bool ServerConnectionManager::waitForChallengedResponseMessage() {
+
     size_t challengedResponseMessageLength = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2* AESBLOCKLENGTH + AESGCMTAGLENGTH;
     auto* challengedResponseMessageBuf = new unsigned char[challengedResponseMessageLength];
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
@@ -800,8 +800,10 @@ bool ServerConnectionManager::waitForChallengedResponseMessage() {
     memcpy(cipherText,&challengedResponseMessageBuf[aadLen],cipherTextLen);
 
     unsigned char* answer = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,aadBuf,aadLen,tagBuf,ivBuf);
-    if(!answer)
+    if(!answer) {
+        cout<<"Error in decrypting challenged response"<<endl;
         return false;
+    }
     else{
         if ((const char)answer[0] == 'Y')
             return true;
@@ -810,6 +812,8 @@ bool ServerConnectionManager::waitForChallengedResponseMessage() {
     }
 
 }
+
+
 
 ServerConnectionManager::~ServerConnectionManager() {
     delete userName;
@@ -825,6 +829,18 @@ string *ServerConnectionManager::getUsername() {
 
 int ServerConnectionManager::getP2PPort() {
     return this->P2Pport;
+}
+
+bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY* pubkey,struct in_addr ip) {
+    return false;
+}
+
+unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t&) {
+    return nullptr;
+}
+
+bool ServerConnectionManager::sendCHallengedReadyMessage() {
+    return false;
 }
 
 

@@ -503,20 +503,30 @@ void P2PConnectionManager::createSessionKey() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////                                        CHALLENGED FUNCTIONS                                              ////////
+//////                                        CHALLENGER FUNCTIONS                                              ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void P2PConnectionManager::startTheGameAsChallengeR() {
 
 
 }
-void P2PConnectionManager::setOpponentIp(struct in_addr) {
+
+void P2PConnectionManager::setOpponentIp(struct in_addr ip) {
 
     this->opponentAddr.sin_family = AF_INET;
     this->opponentAddr.sin_port = this->serverConnectionManager->getP2PPort();
     this->opponentAddr.sin_addr = ip;
 
-    char *IPbuffer = inet_ntoa(this->myAddr.sin_addr);
-    printf("Opponent IP: %s\n", IPbuffer);
 }
 
+bool P2PConnectionManager::connectToChallengedUser() {
+    int ret;
+    this->opponentSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    ret = connect(this->opponentSocket, (struct sockaddr*)&this->myAddr, sizeof(this->myAddr));
+    if(ret < 0){
+        cerr<<"Error during TCP connection with server\n";
+        return false;
+    }
+    return true;
+}
 

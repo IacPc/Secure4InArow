@@ -92,7 +92,6 @@ DiffieHellmannManager::DiffieHellmannManager() {
 
 }
 
-
 void DiffieHellmannManager::computeSharedSecret() {
     EVP_PKEY_CTX *derive_ctx;
     unsigned char *skey;
@@ -165,6 +164,6 @@ DiffieHellmannManager::~DiffieHellmannManager() {
     EVP_PKEY_free(this->myPubKey);
 }
 
-EVP_PKEY *DiffieHellmannManager::getMyPubKey_EVP() {
+EVP_PKEY* DiffieHellmannManager::getMyPubKey_EVP() {
     return this->myPubKey;
 }

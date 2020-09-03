@@ -54,6 +54,7 @@ private:
     bool tryParseX(std::string* , uint8_t& );
     bool tryParseY(std::string* , uint8_t& );
     void createSessionKey();
+    bool connectToChallengedUser();
 
     unsigned char* createCoordinateMessage(uint8_t,uint8_t);
 
