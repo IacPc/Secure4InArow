@@ -529,18 +529,18 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
         string x_coordinate;
         do {
             x_coordinate.clear();
-            cout << "Type the coordinate x: choose a number between 1 and 7" << endl;
+            cout << "Type the coordinate x: choose a number between 1 and 6" << endl;
             getline(cin, x_coordinate);
         } while (!tryParseX(&x_coordinate, x));
 
         string y_coordinate;
         do {
             y_coordinate.clear();
-            cout << "Type the coordinate x: choose a number between 1 and 6" << endl;
+            cout << "Type the coordinate x: choose a number between 1 and 7" << endl;
             getline(cin, y_coordinate);
         } while (!tryParseY(&y_coordinate, x));
 
-        if(!sendCoordinateMessage(x, y)){
+        if(!sendCoordinateMessage(x-1, y-1)){
             cout<<"Error: Coordinate message has not been sent"<<endl;
             return false;
         }
