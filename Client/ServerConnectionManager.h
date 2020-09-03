@@ -32,9 +32,7 @@ class Client;
 class ServerConnectionManager {
 
 private:
-    bool busy;
     string* userName;
-    string* prvKeyFilePasswd;
     int serverSocket;
     int serverNonce;
     int myNonce;
@@ -54,7 +52,7 @@ private:
     bool waitForChallengedResponseMessage();
     bool sendLogOutMessage();
     bool sendEndGameMessage();
-    bool waitForOpponentCredentials(EVP_PKEY*,struct in_addr);
+    bool waitForOpponentCredentials(EVP_PKEY*&,struct in_addr&);
     bool waitForPlayers(std::vector<std::string*>*&);
     bool sendCHallengedReadyMessage();
     //PARSER
