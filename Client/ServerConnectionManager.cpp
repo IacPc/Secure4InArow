@@ -75,6 +75,7 @@ void ServerConnectionManager::enterThegame() {
         if (out != -1) {
             string *selectedPlayer = playerList->at(out);
             playerList->erase(playerList->begin() + out );
+            cout<<"The selected player is "<<selectedPlayer->c_str()<<endl;
             bool sendingWentWell = this->sendSelectedPlayer(selectedPlayer);
 
             if (!sendingWentWell)
@@ -183,7 +184,6 @@ bool ServerConnectionManager::secureTheConnection(){
     this->signatureManager = new SignatureManager(path);
     this->signatureManager->setPubkey(serverPubkey);
     this->diffieHellmannManager = new DiffieHellmannManager();
-
     //send the readiness msg
     if(!sendMyPubKey()){
         cerr<<"Error during sending my pubkey\n";
@@ -376,19 +376,20 @@ bool ServerConnectionManager::waitForPeerPubkey() {
                                                            peerPubKeyMessageBuffer, messageToBeVErifiedLength);
     delete [] recvSignatureBuffer;
 
-    cout<<"received peer pubkey COPIATA AMMODO"<<endl;
 
     if(!signCheck){
         cout<<"Uncorrect signature"<<endl;
         return false;
     }
+    cout<<"Signature verified correctly"<<endl;
     size_t pubKeyPosition = 1 +2*sizeof(this->serverNonce)+ sizeof(recvPubKeyLen);
 
     auto* peerpubkeyBuf = new unsigned char[recvPubKeyLen];
     memcpy(peerpubkeyBuf,&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
     size_t len = recvPubKeyLen;
+    cout<<"Set peer pubkey"<<endl;
     this->diffieHellmannManager->setPeerPubKey(peerpubkeyBuf,len);
-    cout<<"DH FATTO  BENE"<<endl;
+    cout<<"Peer pubkey set correctly"<<endl;
     delete [] peerpubkeyBuf;
     return true;
 }
@@ -483,7 +484,6 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     unsigned char* cipherText = new unsigned char[cipherTextLen];
     memcpy(cipherText,&playerListBuffer[1 + AESGCMIVLENGTH + sizeof(this->counter)],cipherTextLen);
 
-    cout<<" PLAYERSLISTMESSAGECODE COPIATO BENE"<<endl;
 
     unsigned char* decryptedPlayersList = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,
                                                                                                aadBuf,aadLen,tagBuf,ivBuf);
@@ -677,6 +677,7 @@ bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY*& pubkey,struc
         return false;
     }
     BIO_free(mbio);
+
     return true;
 }
 

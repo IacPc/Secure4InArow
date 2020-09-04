@@ -198,7 +198,6 @@ bool UserConnectionManager::waitForClientPubKey() {
     uint16_t pubkey_len;
     memcpy(&pubkey_len, (buffer+pos), sizeof(pubkey_len));
     pos += sizeof(pubkey_len);
-    std::cout<<"pubkey_len="<<pubkey_len<<endl;
     //prelevo la pubkey
     auto* clientPubKey = new unsigned char[pubkey_len];
     memcpy(clientPubKey, (buffer+pos), pubkey_len);
@@ -226,9 +225,7 @@ bool UserConnectionManager::waitForClientPubKey() {
     EVP_PKEY* pubkey = PEM_read_PUBKEY(pubkeyUser,NULL,NULL,NULL);
 
     this->signatureManager->setPubkey(pubkey);
-    cout<<"SIGNATURE LEN "<< ret -1 -8 - 4- pubkey_len<<endl;
-    cout<<signature_len<<endl;
-    cout<<"RET = "<<ret<<endl;
+
     //verifico la firma
     if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, ret-signature_len-2)) {
         cout<<"Signature not verified"<<endl;
@@ -347,6 +344,7 @@ bool UserConnectionManager::sharePlayersList() {
         size_t ret = recv(userSocket, buffer, 4096, 0);
         if (ret <= 0) {
             cout << "Error in receiving sharePlayersList message" << endl;
+            server->removeUser(this->userName);
             return false;
         }
 
@@ -491,7 +489,6 @@ bool UserConnectionManager::waitForPlayersRequest(unsigned char*buffer, size_t b
         cout<<"Players list request message verified"<<endl;
     }else{
         cout<<"Wrong message"<<endl;
-        delete [] buffer;
         return false;
     }
 
@@ -527,7 +524,6 @@ bool UserConnectionManager::waitForPlayersRequest(unsigned char*buffer, size_t b
     memcpy(tag, buffer+pos, tag_len);
     pos += tag_len;
 
-    delete [] buffer;
 
 
     unsigned char* plaintext = symmetricEncryptionManager->decryptThisMessage(encryptedData, encrypted_len, AAD, aad_len, tag, iv);
@@ -668,15 +664,13 @@ string *UserConnectionManager::waitForClientChoice(unsigned char* buffer, size_t
 
     if(buffer_len <= 0){
         cout<<"Error receiving Players Request Message"<<endl;
-        delete []buffer;
         return nullptr;
     }
 
     if(buffer[0] == PLAYERCHOSENMESSAGECODE){
-        cout<<"Players list request message verified"<<endl;
+        cout<<"Players choice message verified"<<endl;
     }else{
         cout<<"Wrong message"<<endl;
-        delete [] buffer;
         return nullptr;
     }
 
@@ -718,7 +712,6 @@ string *UserConnectionManager::waitForClientChoice(unsigned char* buffer, size_t
     memcpy(tag, buffer+pos, tag_len);
     pos += tag_len;
 
-    delete [] buffer;
 
     unsigned char* plaintext = symmetricEncryptionManager->decryptThisMessage(encryptedData, encrypted_len, AAD, aad_len, tag, iv);
 
@@ -730,8 +723,12 @@ string *UserConnectionManager::waitForClientChoice(unsigned char* buffer, size_t
 
     string *player;
     plaintext[encrypted_len-1] = '\0';
-    player = new string((const char*)&plaintext[1]);
+    player = new string((const char*)&plaintext[0]);
     cout<<"The chosen player is: "<<player->c_str()<<endl;
+
+    if(!server->getUserConnection(*player)){
+        return nullptr;
+    }
 
     if(player->length() < 1){
         cout<<"Error, no player has been chosen!"<<endl;
@@ -748,7 +745,7 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     size_t plain_len = userName->length()+1;
     auto* plainMsg = new unsigned char[plain_len];
     memcpy(plainMsg, userName->c_str(), plain_len);
-
+    cout<<plainMsg<<endl;
     UserConnectionManager * challengedUCM = server->getUserConnection(*challenged);
     const std::lock_guard<std::mutex> lock(challengedUCM->ucmMutex);
     //AAD
@@ -773,8 +770,9 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     delete [] plainMsg;
     delete [] iv;
 
-    if(plain_len < AESBLOCKLENGTH){
-        cout<<"Error in encryting the username"<<endl;
+    cout<<"encrypted len is "<<plain_len<<endl;
+    if(plain_len < 0){
+        cout<<"Error in encrypting the username"<<endl;
         delete [] encrypted;
         delete [] tag;
         delete [] AAD;

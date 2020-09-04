@@ -123,8 +123,8 @@ bool Server::removeUser(string* user) {
     if(!checkUserPresence(*user)) {
         return false;
     }else {
-        auto* ucm = usersConnectedMap.at(*user);
-        delete ucm;
+    //    auto* ucm = usersConnectedMap.at(*user);
+    //    delete ucm;
         usersConnectedMap.erase(*user);
 
         this->nThreads--;
