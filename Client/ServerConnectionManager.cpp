@@ -339,12 +339,7 @@ bool ServerConnectionManager::sendMyPubKey() {
 }
 
 bool ServerConnectionManager::waitForPeerPubkey() {
-/*
-    size_t PeerPubKeyMessageLen =
-            1 + 2 * sizeof(this->serverNonce) + 2 * sizeof(uint16_t) + this->userName->length() + 1 +
-            EVP_PKEY_size(this->diffieHellmannManager->getMyPubKey_EVP()) +
-            EVP_PKEY_size(this->signatureManager->getPrvkey());
-*/
+
     auto *peerPubKeyMessageBuffer = new unsigned char[2048];
     int ret = recv(this->serverSocket, peerPubKeyMessageBuffer, 2048, 0);
 
@@ -628,6 +623,60 @@ bool ServerConnectionManager::sendEndGameMessage() {
     return true;
 }
 
+bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY*& pubkey,struct in_addr& ip) {
+    size_t opponentCredentialsMessageLen = 512;
+    const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
+    unsigned char aadBuf[aadLen];
+    unsigned char ivBuf[AESGCMIVLENGTH];
+    unsigned char tagBuf[AESGCMTAGLENGTH];
+
+    auto* msgReceivingBuf = new unsigned char[opponentCredentialsMessageLen];
+    int ret = recv(this->serverSocket,msgReceivingBuf,opponentCredentialsMessageLen,0);
+    if(ret <= 0){
+        cout<<"ERROR in receiving opponent credentials message"<<endl;
+        return false;
+    }
+    if(msgReceivingBuf[0]!= OPPONENTKEYMESSAGECODE ){
+        cout<<"wrong opcode "<<endl;
+        delete [] msgReceivingBuf;
+        return false;
+    }
+    uint32_t receivedCounter;
+    memcpy(&receivedCounter,&msgReceivingBuf[1 +AESGCMIVLENGTH],sizeof(receivedCounter));
+    if(this->counter != receivedCounter){
+        cout<<"Wrong counter, expected "<<this->counter<<", received "<<receivedCounter<<endl;
+        delete [] msgReceivingBuf;
+        return false;
+    }
+
+    this->counter++;
+    memcpy(ivBuf,&msgReceivingBuf[1],AESGCMIVLENGTH);
+
+    size_t cipherTextLen = ret - ( 1 + AESGCMIVLENGTH + sizeof(receivedCounter) + AESGCMTAGLENGTH);
+    size_t tagPosition = 1 + AESGCMIVLENGTH + sizeof(receivedCounter) + cipherTextLen;
+
+    memcpy(aadBuf,msgReceivingBuf,aadLen);
+    memcpy(tagBuf,&msgReceivingBuf[tagPosition],AESGCMTAGLENGTH);
+
+    auto* cipherText = new unsigned char[cipherTextLen];
+    memcpy(cipherText,&msgReceivingBuf[aadLen],cipherTextLen);
+
+    unsigned char* opponentCredentials = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,aadBuf,aadLen,tagBuf,ivBuf);
+
+    memcpy(&ip,opponentCredentials,sizeof(ip));
+    memcpy(&this->P2Pport,&opponentCredentials[4],sizeof(P2Pport));
+    BIO *mbio = BIO_new(BIO_s_mem());
+    if(!mbio) return false;
+    BIO_write(mbio,&opponentCredentials[2*sizeof(int)],cipherTextLen- 2*sizeof(int));
+    pubkey = PEM_read_bio_PUBKEY(mbio,NULL,NULL,NULL);
+    if(!pubkey){
+        cout<<"error in deserializing pubkey"<<endl;
+        return false;
+    }
+    BIO_free(mbio);
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////                                        CHALLENGED FUNCTIONS                                              ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -812,8 +861,6 @@ bool ServerConnectionManager::waitForChallengedResponseMessage() {
 
 }
 
-
-
 ServerConnectionManager::~ServerConnectionManager() {
     delete userName;
     delete symmetricEncryptionManager;
@@ -828,60 +875,6 @@ string *ServerConnectionManager::getUsername() {
 
 int ServerConnectionManager::getP2PPort() {
     return this->P2Pport;
-}
-
-bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY*& pubkey,struct in_addr& ip) {
-    size_t opponentCredentialsMessageLen = 512;
-    const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
-    unsigned char aadBuf[aadLen];
-    unsigned char ivBuf[AESGCMIVLENGTH];
-    unsigned char tagBuf[AESGCMTAGLENGTH];
-
-    auto* msgReceivingBuf = new unsigned char[opponentCredentialsMessageLen];
-    int ret = recv(this->serverSocket,msgReceivingBuf,opponentCredentialsMessageLen,0);
-    if(ret <= 0){
-        cout<<"ERROR in receiving opponent credentials message"<<endl;
-        return false;
-    }
-    if(msgReceivingBuf[0]!= OPPONENTKEYMESSAGECODE ){
-        cout<<"wrong opcode "<<endl;
-        delete [] msgReceivingBuf;
-        return false;
-    }
-    uint32_t receivedCounter;
-    memcpy(&receivedCounter,&msgReceivingBuf[1 +AESGCMIVLENGTH],sizeof(receivedCounter));
-    if(this->counter != receivedCounter){
-        cout<<"Wrong counter, expected "<<this->counter<<", received "<<receivedCounter<<endl;
-        delete [] msgReceivingBuf;
-        return false;
-    }
-
-    this->counter++;
-    memcpy(ivBuf,&msgReceivingBuf[1],AESGCMIVLENGTH);
-
-    size_t cipherTextLen = ret - ( 1 + AESGCMIVLENGTH + sizeof(receivedCounter) + AESGCMTAGLENGTH);
-    size_t tagPosition = 1 + AESGCMIVLENGTH + sizeof(receivedCounter) + cipherTextLen;
-
-    memcpy(aadBuf,msgReceivingBuf,aadLen);
-    memcpy(tagBuf,&msgReceivingBuf[tagPosition],AESGCMTAGLENGTH);
-
-    auto* cipherText = new unsigned char[cipherTextLen];
-    memcpy(cipherText,&msgReceivingBuf[aadLen],cipherTextLen);
-
-    unsigned char* opponentCredentials = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,aadBuf,aadLen,tagBuf,ivBuf);
-
-    memcpy(&ip,opponentCredentials,sizeof(ip));
-    memcpy(&this->P2Pport,&opponentCredentials[4],sizeof(P2Pport));
-    BIO *mbio = BIO_new(BIO_s_mem());
-    if(!mbio) return false;
-    BIO_write(mbio,&opponentCredentials[2*sizeof(int)],cipherTextLen- 2*sizeof(int));
-    pubkey = PEM_read_bio_PUBKEY(mbio,NULL,NULL,NULL);
-    if(!pubkey){
-        cout<<"error in deserializing pubkey"<<endl;
-        return false;
-    }
-    BIO_free(mbio);
-    return true;
 }
 
 unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len) {

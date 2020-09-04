@@ -433,7 +433,7 @@ bool UserConnectionManager::sharePlayersList() {
                     break;
                 }
 
-                case CLIENTREADYFORCHALLENGEMESSAGECODE: {
+                case CHALLENGEDREADYFORCHALLENGEMESSAGECODE: {
                     uint32_t challenged_port;
                     if (!waitForChallengedReady(buffer, ret, challenged_port, opponent)) {
                         waitingForReadiness = false;
@@ -1010,7 +1010,7 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
     }
     this->counter++;
 
-    if(buffer[0] != CLIENTREADYFORCHALLENGEMESSAGECODE){
+    if(buffer[0] != CHALLENGEDREADYFORCHALLENGEMESSAGECODE){
         cout<<"Wrong message"<<endl;
         delete [] buffer;
         return false;

@@ -34,8 +34,6 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
     std::cout<<"P2PConnectionManager created successfully"<<std::endl;
 }
 
-
-
 P2PConnectionManager::~P2PConnectionManager() {
 
     delete serverConnectionManager;
@@ -243,6 +241,71 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t& x,uint8_t& y) {
         cout<<"NOT VALID coordinates!"<<endl;
         return false;
     }
+
+    return true;
+}
+
+unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
+    size_t pubKeyLength = 0;
+    unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
+    cout<<"PUBKEY LENGTH "<<pubKeyLength<<endl;
+
+    size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->opponentNonce) + sizeof(uint16_t) + pubKeyLength;
+
+    auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength];
+    pubKeyMessageToSignBuffer[0] = PUBKEYMESSAGECODE;
+
+    size_t step = 1;
+    memcpy(&pubKeyMessageToSignBuffer[step],&this->myNonce,sizeof(this->myNonce));
+    step += sizeof(this->myNonce);
+    memcpy(&pubKeyMessageToSignBuffer[step],&this->opponentNonce,sizeof(this->opponentNonce));
+    step += sizeof(this->opponentNonce);
+    uint16_t len_16t = pubKeyLength;
+    std::cout<<"len_16t ="<<len_16t<<std::endl;
+    memcpy(&pubKeyMessageToSignBuffer[step], &len_16t, sizeof(len_16t));
+    step += sizeof(len_16t);
+    memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,len_16t);
+    step += len_16t;
+
+    //delete [] pubKeyBuf;
+    size_t signatureLength = step;
+    unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,signatureLength);
+    if(!signature) {
+        delete [] pubKeyMessageToSignBuffer;
+        return nullptr;
+    }
+    cout<<"SIGNATURE LEN "<<signatureLength<<endl;
+    size_t pubKeyMessageLength = step + sizeof(len_16t) + signatureLength;
+    auto* pubKeyMessageBuffer = new unsigned char[pubKeyMessageLength];
+    memcpy(pubKeyMessageBuffer,pubKeyMessageToSignBuffer,step);
+
+    len_16t = signatureLength;
+    memcpy(&pubKeyMessageBuffer[step],&len_16t,sizeof(len_16t));
+
+    step += sizeof(len_16t);
+    memcpy(&pubKeyMessageBuffer[step],signature,signatureLength);
+
+    delete [] signature;
+    delete [] pubKeyMessageToSignBuffer;
+    std::cout<<"PubKeyLen="<<pubKeyLength<<endl;
+    std::cout<<"SignatureLen="<<signatureLength<<endl;
+    len = pubKeyMessageLength;
+    cout<<"Creation of PubKeyMessage of size "<<len<<" finished correctly "<<endl;
+
+    return pubKeyMessageBuffer;
+}
+
+bool P2PConnectionManager::sendMyPubKey() {
+    size_t len;
+    unsigned char* pKeyMsg = createPubKeyMessage(len);
+    if(!pKeyMsg){
+        cerr<<"Error during public key Message creation\n";
+        return false;
+    }
+    int ret = send(this->opponentSocket,pKeyMsg,len,0);
+    delete [] pKeyMsg;
+    if(ret!= len)
+        return false;
 
     return true;
 }
@@ -551,11 +614,174 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
     return true;
 }
 
+bool P2PConnectionManager::waitForPeerPubkey() {
+
+    unsigned char peerPubKeyMessageBuffer[2048];
+    int ret = recv(this->opponentSocket, peerPubKeyMessageBuffer, 2048, 0);
+
+    if (ret <= 0) {
+        cout<<"received "<<ret << " bytes"<<endl;
+        return false;
+    }
+
+    if(peerPubKeyMessageBuffer[0] != PUBKEYMESSAGECODE){
+        cout<<"wrong opcode "<<endl;
+        return false;
+    }
+    uint32_t nonceRecv = 0;
+    memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1],sizeof(nonceRecv));
+
+    if(nonceRecv != this->myNonce){
+        cout<<"wrong client nonce "<<endl;
+        return false;
+    }
+
+    memcpy(&nonceRecv,&peerPubKeyMessageBuffer[1 + sizeof(nonceRecv)],sizeof(nonceRecv));
+
+    if(nonceRecv != this->opponentNonce){
+        cout<<"wrong server nonce "<<endl;
+        return false;
+    }
+
+    uint16_t recvSignatureLen = 0;
+    uint16_t recvPubKeyLen = 0;
+    memcpy(&recvPubKeyLen,&peerPubKeyMessageBuffer[1 + 2*sizeof(nonceRecv)],sizeof(recvPubKeyLen));
+    size_t signaturePosition = 1 +2*sizeof(nonceRecv) +2*sizeof(recvPubKeyLen) + recvPubKeyLen;
+    memcpy(&recvSignatureLen,&peerPubKeyMessageBuffer[signaturePosition-2],sizeof(recvSignatureLen));
+
+    auto* recvSignatureBuffer = new unsigned char[recvSignatureLen];
+    memcpy(recvSignatureBuffer,&peerPubKeyMessageBuffer[signaturePosition],recvSignatureLen);
+    size_t messageToBeVErifiedLength = signaturePosition-2;
+    bool signCheck = signatureManager->verifyThisSignature(recvSignatureBuffer, recvSignatureLen,
+                                                           peerPubKeyMessageBuffer, messageToBeVErifiedLength);
+    delete [] recvSignatureBuffer;
+
+    if(!signCheck){
+        cout<<"Uncorrect signature"<<endl;
+        return false;
+    }
+
+    size_t pubKeyPosition = 1 + 2*sizeof(this->opponentNonce) + sizeof(recvPubKeyLen);
+
+    this->diffieHellmannManager->setPeerPubKey(&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
+
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////                                        CHALLENGER FUNCTIONS                                              ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void P2PConnectionManager::startTheGameAsChallengeR() {
+bool P2PConnectionManager::establishSecureConnectionWithChallengeD() {
+    EVP_PKEY* pb;
+    in_addr ip;
+    if(!this->serverConnectionManager->waitForOpponentCredentials(pb,ip)) {
+        cout<<"error in receiving challenged pubkey"<<endl;
+        return false;
+    }
+    this->signatureManager->setPubkey(pb);
+    this->setOpponentIp(ip);
 
+    if(!this->connectToChallengedUser()) {
+        cout<<"error in connecting to challenged"<<endl;
+        return false;
+    }
+
+    if(!this->sendHelloMessage()){
+        cout<<"error in sending hello message"<<endl;
+        return false;
+    }
+
+    if(!this->waitForHelloMessage()){
+        cout<<"error in receiving hello message"<<endl;
+        return false;
+    }
+
+    if(!this->sendMyPubKey()){
+        cout<<"error in sending my pubkey"<<endl;
+        return false;
+    }
+
+    if(!this->waitForPeerPubkey()){
+        cout<<"error in receiving opponent pubkey"<<endl;
+        return false;
+    }
+
+    auto* HashedSecret = new unsigned char[EVP_MD_size(EVP_sha256())];
+    size_t dhSecretLen = 0;
+    unsigned char* dhSecret = this->diffieHellmannManager->getSharedSecret(dhSecretLen);
+
+    SHA256(dhSecret,dhSecretLen,HashedSecret);
+
+    delete diffieHellmannManager;
+
+    auto* simmetricKeyBuffer = new unsigned char[EVP_CIPHER_key_length(EVP_aes_128_gcm())];
+    memcpy(&simmetricKeyBuffer[0],&HashedSecret[0],EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+
+    memset(HashedSecret,0X00,EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+    delete [] HashedSecret;
+
+    this->symmetricEncryptionManager = new SymmetricEncryptionManager(simmetricKeyBuffer,
+                                                                      EVP_CIPHER_key_length(EVP_aes_128_gcm()));
+
+    delete [] simmetricKeyBuffer;
+
+    cout<<"Secure connection with challenged established"<<endl;
+
+    return true;
+}
+
+void P2PConnectionManager::startTheGameAsChallengeR() {
+   if(!establishSecureConnectionWithChallengeD()){
+       return;
+   }
+
+   uint8_t coordX,coordY;
+   int ret, status = 1;
+   auto* encryptedCoordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
+   unsigned char* clearTextCoordinateMessageBuffer;
+   unsigned char *encryptedChallengeMessageBuffer;
+
+   while (true){
+       cout << "insert your coordinate X:";
+       cin >> coordX;
+       cout << endl;
+
+       string x;
+       x += (char) coordX;
+
+       while (!tryParseX(&x, coordX)) {
+           cout << "coordinate not valid, insert it again: ";
+           cin >> coordX;
+           x.replace(0, 1, (char *) &coordX);
+           cout << endl;
+       }
+
+       string y;
+       y += (char) coordY;
+
+       while (!tryParseY(&y, coordY)) {
+           cout << "coordinate not valid, insert it again: ";
+           cin >> coordY;
+           x.replace(0, 1, (char *) &coordY);
+           cout << endl;
+       }
+
+       cout << "Your coordinate => X=" << coordX << ",Y=" << coordY << endl;
+
+       if(!sendCoordinateMessage(coordX,coordY)){
+           cout<<"error in sending coordinate"<<endl;
+           return;
+       }
+
+       cout << "coordinate message sent correctly, waiting for the next move.." << endl;
+
+       if(!this->waitForCoordinateMessage(coordY,coordY)){
+           cout<<"error in receiving coordinate"<<endl;
+           return;
+       }
+       cout<<"received coordinate x="<<coordX<<" Y= "<<coordY<<endl;
+
+   }
 
 }
 
@@ -573,10 +799,15 @@ bool P2PConnectionManager::connectToChallengedUser() {
 
     ret = connect(this->opponentSocket, (struct sockaddr*)&this->myAddr, sizeof(this->myAddr));
     if(ret < 0){
-        cerr<<"Error during TCP connection with server\n";
+        cerr<<"Error during TCP connection with challenged user\n";
         return false;
     }
     return true;
 }
+
+
+
+
+
 
 

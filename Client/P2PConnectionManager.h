@@ -41,7 +41,6 @@ private:
     uint32_t counter;
 
     bool waitForChallengeRConnection();
-    bool connectToChallengeD();
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
     bool sendCoordinateMessage(uint8_t, uint8_t);
@@ -56,8 +55,11 @@ private:
     bool challengeDGame(bool&);
     void createSessionKey();
     bool connectToChallengedUser();
+    bool sendMyPubKey();
+    bool waitForPeerPubkey();
 
     unsigned char* createCoordinateMessage(uint8_t,uint8_t);
+    unsigned char* createPubKeyMessage(size_t&);
 
 public:
     P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*);
