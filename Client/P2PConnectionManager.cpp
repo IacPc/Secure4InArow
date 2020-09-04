@@ -762,7 +762,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
        while (!tryParseY(&y, coordY)) {
            cout << "coordinate not valid, insert it again: ";
            cin >> coordY;
-           x.replace(0, 1, (char *) &coordY);
+           y.replace(0, 1, (char *) &coordY);
            cout << endl;
        }
 
@@ -775,7 +775,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
 
        cout << "coordinate message sent correctly, waiting for the next move.." << endl;
 
-       if(!this->waitForCoordinateMessage(coordY,coordY)){
+       if(!this->waitForCoordinateMessage(coordX,coordY)){
            cout<<"error in receiving coordinate"<<endl;
            return;
        }
