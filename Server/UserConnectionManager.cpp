@@ -400,7 +400,7 @@ bool UserConnectionManager::sharePlayersList() {
                 case CHALLENGEDRESPONSEMESSAGECODE: {
                     bool stillWait;
                     opponent = waitForChallengedResponse(buffer, ret, stillWait);
-
+                    cout<<"The client has answered"<<endl;
                     if (opponent == nullptr) {
                         delete opponent;
                         return false;
@@ -763,6 +763,7 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
     //copio counter
     challengedUCM->counter++;
+    cout<<"COUNTER IS "<<challengedUCM<<endl;
     memcpy(AAD+1+iv_len, &challengedUCM->counter, COUNTERLENGTH);
 
     auto*tag = new unsigned char[AESGCMTAGLENGTH];
@@ -829,20 +830,19 @@ string* UserConnectionManager::waitForChallengedResponse(unsigned char*buffer, s
     memcpy(&cont, aad + OPCODELENGTH + AESGCMIVLENGTH, COUNTERLENGTH);
     if(cont != this->counter+1){
         cout<<"The counter value was not the expencted one"<<endl;
-        delete [] buffer;
         delete [] aad;
         stillWaiting = false;
+        cout<<"THE Counter is "<<this->counter+1<<endl;
+        cout<<"THE Counter received is "<<cont<<endl;
         return nullptr;
     }
 
     this->counter++;
-
     //controllo opcode
     if(aad[0] != CHALLENGEDRESPONSEMESSAGECODE){
         cout<<"Wrong message"<<endl;
         stillWaiting = false;
         delete [] aad;
-        delete [] buffer;
         return nullptr;
     }else
         cout<<"WaitForChallengedResponse message opcode verified"<<endl;
@@ -859,7 +859,6 @@ string* UserConnectionManager::waitForChallengedResponse(unsigned char*buffer, s
     auto *tag = new unsigned char[AESGCMTAGLENGTH];
     memcpy(tag, buffer+pos, AESGCMTAGLENGTH);
 
-    delete [] buffer;
     unsigned char*plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
 
     delete [] aad;
@@ -879,23 +878,84 @@ string* UserConnectionManager::waitForChallengedResponse(unsigned char*buffer, s
     if(response == 'Y'){
         cout<<"The player accepted the challenge\n";
         stillWaiting = false;
-        return opponent;
+
     }else {
         cout<<"The player refused the challenge\n";
         stillWaiting = true;
         this->busy = false;
         UserConnectionManager *ucm = server->getUserConnection(opponent->c_str());
         ucm->busy = false;
-        return opponent;
+
     }
+    if(!sendResponseToChallenger(opponent, response)){
+        return nullptr;
+    }
+    return opponent;
 }
+bool UserConnectionManager::sendResponseToChallenger(string *challenger, char response) {
+
+    unsigned char buffer[2048];
+    UserConnectionManager *challengerUCM = server->getUserConnection(challenger->c_str());
+    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    auto *aad = new unsigned char[aad_len];
+    aad[0] = CHALLENGEDRESPONSEMESSAGECODE;
+
+    size_t iv_len = AESGCMIVLENGTH;
+    auto * iv = new unsigned char[iv_len];
+    RAND_bytes(iv, iv_len);
+
+    challengerUCM->counter++;
+
+    memcpy(aad+1, iv, iv_len);
+    memcpy(aad+iv_len+1, &challengerUCM->counter, COUNTERLENGTH);
+
+    auto* plainMsg = new unsigned char[challenger->length()+2];
+    plainMsg[0] = response;
+    strcpy((char*)plainMsg+1, challenger->c_str());
+
+    size_t encrypted_len = challenger->length()+2;
+    auto*tag = new unsigned char[AESGCMTAGLENGTH];
+    unsigned char *encrypted = challengerUCM->symmetricEncryptionManager->encryptThisMessage(plainMsg, encrypted_len, aad, aad_len, iv, iv_len, tag);
+
+    delete [] iv;
+    delete [] plainMsg;
+
+    if(!encrypted){
+        cout<<"Error encrypting challenged response message"<<endl;
+        delete [] aad;
+        delete [] encrypted;
+        delete [] tag;
+        return false;
+    }
+
+    size_t pos = 0;
+    memcpy(buffer, aad, aad_len);
+    pos += aad_len;
+    delete [] aad;
+
+    memcpy(buffer+pos, encrypted, encrypted_len);
+    pos += encrypted_len;
+    delete [] encrypted;
+
+    memcpy(buffer+pos, tag, AESGCMTAGLENGTH);
+    pos += AESGCMTAGLENGTH;
+    delete [] tag;
+
+    size_t ret = send(challengerUCM->userSocket, buffer, pos, 0);
+    if(ret <= 0) {
+        cout<<"Error sending challenged response message"<<endl;
+        return false;
+    }
+    cout<<"Challenged Response sent correctly to the challenger"<<endl;
+    return true;
+}
+
 bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32_t opponentPort) {
 
     size_t key_len;
     unsigned char *opponentPubKey = getUserPubKey(opponent, key_len);
     if(opponentPubKey == nullptr){
         cout<<"Error retrieving the opponent pubkey"<<endl;
-        delete [] opponentPubKey;
         return false;
     }
 
@@ -916,7 +976,6 @@ bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32
     pos += port_len;
 
     memcpy(plainMsg + pos, opponentPubKey, key_len);
-    delete [] opponentPubKey;
     pos+= key_len;
 
     size_t plain_len = pos;

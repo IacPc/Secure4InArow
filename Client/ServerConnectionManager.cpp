@@ -405,6 +405,7 @@ bool ServerConnectionManager::waitForPeerPubkey() {
     cout<<"Signature verified correctly"<<endl;
     size_t pubKeyPosition = 1 +2*sizeof(this->serverNonce)+ sizeof(recvPubKeyLen);
 
+
     auto* peerpubkeyBuf = new unsigned char[recvPubKeyLen];
     memcpy(peerpubkeyBuf,&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
     size_t len = recvPubKeyLen;
@@ -879,6 +880,7 @@ bool ServerConnectionManager::waitForChallengedResponseMessage() {
         return false;
     }
     else{
+        cout<<"Challenged response message received correctly"<<endl;
         if ((const char)answer[0] == 'Y')
             return true;
         else
@@ -978,7 +980,7 @@ bool ServerConnectionManager::sendChallengedResponse(string *opponent, char resp
     unsigned char * iv = new unsigned char[iv_len];
     RAND_bytes(iv, iv_len);
 
-    this->counter++;
+    cout<<"COUNTER: "<<this->counter<<endl;
 
     memcpy(aad+1, iv, iv_len);
     memcpy(aad+iv_len+1, &this->counter, COUNTERLENGTH);
@@ -1020,6 +1022,7 @@ bool ServerConnectionManager::sendChallengedResponse(string *opponent, char resp
         cout<<"Error sending challenged response message"<<endl;
         return false;
     }
+    this->counter++;
 
     return true;
 }

@@ -58,6 +58,7 @@ private:
     bool waitForPlayersRequest(unsigned char*, size_t);
     bool sendPlayerList();
     bool sendChallengerRequest(string*);
+    bool sendResponseToChallenger(string*, char);
     bool sendOpponentKeyToChallenged(string *opponent, uint32_t opponentPort);
     bool waitForChallengedReady(unsigned char*, size_t, uint32_t&, string*);
     bool sendMyKeyToChallenger(string*, uint32_t);
