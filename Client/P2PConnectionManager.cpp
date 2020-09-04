@@ -324,19 +324,16 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
 
     if (::bind(mySocket, (struct sockaddr *) &myAddr, sizeof(myAddr)) == -1) {
         cerr << "Error during bind" << endl;
-        delete this;
         return;
     }
 
     if (!waitForChallengeRConnection()) {
         cerr << "Error during connection with challenger" << endl;
-        delete this;
         return;
     }
 
     if (!establishSecureConnectionWithChallengeR()) {
         cerr << "Secure Connection not established" << endl;
-        delete this;
         return;
     }
     cout << "Secure connection has been established. The game can start. " << endl;
@@ -353,13 +350,16 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
         cout<<"Error during the match. The game cannot be finished"<<endl;
     }
 
-    delete this;
-    return;
 }
 
 bool P2PConnectionManager::waitForChallengeRConnection() {
 
     listen(this->mySocket, 10);
+
+    if(!serverConnectionManager->sendCHallengedReadyMessage()){
+        cout<<"Error sending challenged readiness message"<<endl;
+        return false;
+    }
 
     int len;
     len = sizeof(this->opponentAddr);
@@ -380,7 +380,6 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
 
     if(!waitForHelloMessage()){
         cerr<<"Error in receiving the peer Hello Message"<<endl;
-        delete this;
         return false;
     }
 
@@ -394,13 +393,11 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
 
     if(!sendHelloMessage()){
         cerr<<"Error in sending my Hello Message"<<endl;
-        delete this;
         return false;
     }
 
     if(!waitForChallengeRPubKey()){
         cerr<<"Error in receiving challenger pubkey"<<endl;
-        delete this;
         return false;
     }else{
         cout<<"Challenger public key received successfully"<<endl;
@@ -409,7 +406,6 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
 
     if(!sendChallengeDPubKey()){
         cerr<<"Error in sending my pubkey"<<endl;
-        delete this;
         return false;
     }else{
         cout<<"PubKey sent successfully"<<endl;

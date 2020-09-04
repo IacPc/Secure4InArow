@@ -94,16 +94,14 @@ SignatureManager::SignatureManager(std::string *prvkey_file_name) {
         }
 
         std::string pwd;
-        std::cout << "Enter your prvkey file password" << std::endl;
-        getline(std::cin, pwd);
-        prvkey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
-        while (!prvkey) {
+        do {
             pwd.clear();
-            std::cout << "Error:Enter your prvkey file password" << std::endl;
+            std::cout << "Enter your prvkey file password" << std::endl;
             getline(std::cin, pwd);
             prvkey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
-        }
-
+            if(prvkey == nullptr)
+                std::cout<<"Error! Wrong prvkey file password"<<std::endl;
+        }while(prvkey== nullptr);
     }
     this->prvKey = prvkey;
     std::cout << "private key set correctly" << std::endl;

@@ -53,7 +53,7 @@ private:
     bool sendLogOutMessage();
     bool sendEndGameMessage();
     bool waitForPlayers(std::vector<std::string*>*&);
-    bool sendCHallengedReadyMessage();
+    bool sendChallengedResponse(string*, char);
     //PARSER
     bool tryParsePlayerChoice(std::string* input, unsigned int& output,size_t limit);
 
@@ -70,10 +70,11 @@ private:
 
 public:
 
-    bool waitForOpponentCredentials(EVP_PKEY*&,struct in_addr&);
     ServerConnectionManager(const char* server_addr, int port, string* user);
+    bool waitForOpponentCredentials(EVP_PKEY*&,struct in_addr&);
     bool connectToServer();
     bool secureTheConnection();
+    bool sendCHallengedReadyMessage();
     void enterThegame();
     ~ServerConnectionManager();
     void createConnectionWithServer();

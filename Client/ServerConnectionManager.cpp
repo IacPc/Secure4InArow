@@ -67,9 +67,28 @@ void ServerConnectionManager::enterThegame() {
             if (!(challenger = this->waitForChallengeRequest()))
                 return;
             cout << challenger->c_str() << " wants to play with you, do you accept?" << endl;
-            auto *p2pConnMan = new P2PConnectionManager(this->signatureManager->getPrvkey(), this);
-            std::thread t(&P2PConnectionManager::startTheGameAsChallengeD, p2pConnMan);
-            t.join();
+
+            char response;
+            cin>>response;
+            while(response != 'Y' && response != 'N'){
+                cout<<"wrong input\n";
+                cin>>response;
+            }
+
+            if(!sendChallengedResponse(challenger, response))
+                return;
+
+            if(response == 'Y') {
+                EVP_PKEY* pb;
+                in_addr ip;
+                if(!this->waitForOpponentCredentials(pb,ip)) {
+                    cout<<"error in receiving challenger pubkey. The game cannot start"<<endl;
+                }
+                auto *p2pConnMan = new P2PConnectionManager(pb, this);
+                p2pConnMan->setOpponentIp(ip);
+                std::thread t(&P2PConnectionManager::startTheGameAsChallengeD, p2pConnMan);
+                t.join();
+            }
         }
 
         if (out != -1) {
@@ -84,6 +103,8 @@ void ServerConnectionManager::enterThegame() {
             bool challengedSaidYes = this->waitForChallengedResponseMessage();
             if (challengedSaidYes) {
                 cout << selectedPlayer->c_str() << " has accepted" << endl;
+
+
                 auto *p2pConnMan = new P2PConnectionManager(this->signatureManager->getPrvkey(), this);
                 std::thread t(&P2PConnectionManager::startTheGameAsChallengeR, p2pConnMan);
                 t.join();
@@ -943,6 +964,64 @@ bool ServerConnectionManager::sendCHallengedReadyMessage() {
         return false;
     else
         return true;
+}
+
+bool ServerConnectionManager::sendChallengedResponse(string *opponent, char response) {
+
+    unsigned char buffer[2048];
+
+    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    unsigned char *aad = new unsigned char[aad_len];
+    aad[0] = CHALLENGEDRESPONSEMESSAGECODE;
+
+    size_t iv_len = AESGCMIVLENGTH;
+    unsigned char * iv = new unsigned char[iv_len];
+    RAND_bytes(iv, iv_len);
+
+    this->counter++;
+
+    memcpy(aad+1, iv, iv_len);
+    memcpy(aad+iv_len+1, &this->counter, COUNTERLENGTH);
+
+    auto* plainMsg = new unsigned char[opponent->length()+2];
+    plainMsg[0] = response;
+    strcpy((char*)plainMsg+1, opponent->c_str());
+
+    size_t encrypted_len = opponent->length()+2;
+    auto*tag = new unsigned char[AESGCMTAGLENGTH];
+    unsigned char *encrypted = symmetricEncryptionManager->encryptThisMessage(plainMsg, encrypted_len, aad, aad_len, iv, iv_len, tag);
+
+    delete [] iv;
+    delete [] plainMsg;
+
+    if(!encrypted){
+        cout<<"Error encrypting challenged response message"<<endl;
+        delete [] aad;
+        delete [] encrypted;
+        delete [] tag;
+        return false;
+    }
+
+    size_t pos = 0;
+    memcpy(buffer, aad, aad_len);
+    pos += aad_len;
+    delete [] aad;
+
+    memcpy(buffer+pos, encrypted, encrypted_len);
+    pos += encrypted_len;
+    delete [] encrypted;
+
+    memcpy(buffer+pos, tag, AESGCMTAGLENGTH);
+    pos += AESGCMTAGLENGTH;
+    delete [] tag;
+
+    size_t ret = send(this->serverSocket, buffer, pos, 0);
+    if(ret <= 0) {
+        cout<<"Error sending challenged response message"<<endl;
+        return false;
+    }
+
+    return true;
 }
 
 

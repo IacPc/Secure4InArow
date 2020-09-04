@@ -468,8 +468,8 @@ bool UserConnectionManager::sharePlayersList() {
                 }
 
             }
-            memset(buffer, 0x00, 4096);
-            opponent->clear();
+            //memset(buffer, 0x00, 4096);
+            //opponent->clear();
         }
 
     }
