@@ -22,14 +22,12 @@ void UserConnectionManager::openNewconnectionwithClient() {
 
     if(!this->establishSecureConnection()){
         server->removeUser(this->userName);
-        delete this;
         return;
     }else
-        cout<<"Secure connection established"<<std::endl;
+        cout<<"NEW CONNECTION ESTABLISHED WITH "<<this->userName->c_str()<<std::endl;
 
     if(!sharePlayersList()){
         cout<<"The game cannot start. Failed the players credential sharing"<<endl;
-        delete this;
         return;
     }
 
@@ -47,7 +45,7 @@ bool UserConnectionManager::establishSecureConnection() {
 
     if(!waitForHelloMessage()){
         cerr<<"Error in receiving Hello Message"<<endl;
-        delete this;
+
         return false;
     }
 
@@ -60,7 +58,7 @@ bool UserConnectionManager::establishSecureConnection() {
     //sending certificate message
     if(!sendCertificate(certificateMsg, cert_msg_len)){
         cerr<<"Error in sending certificate"<<endl;
-        delete this;
+
         return false;
     }else{
         cout<<"Certificate sent successfully"<<endl;
@@ -68,7 +66,7 @@ bool UserConnectionManager::establishSecureConnection() {
 
     if(!waitForClientPubKey()){
         cerr<<"Error in receiving client pubkey"<<endl;
-        delete this;
+
         return false;
     }else{
         cout<<"PubKey received successfully"<<endl;
@@ -76,7 +74,7 @@ bool UserConnectionManager::establishSecureConnection() {
 
     if(!sendMyPubKey()){
         cerr<<"Error in sending my pubkey"<<endl;
-        delete this;
+
         return false;
     }else{
         cout<<"PubKey sent successfully"<<endl;
@@ -123,7 +121,6 @@ bool UserConnectionManager::waitForHelloMessage(){
 }
 bool UserConnectionManager::sendCertificate(unsigned char* msg, size_t msg_len){
     cout<<"sendCertificate\n";
-    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     size_t ret;
     ret = send(userSocket, msg, msg_len, 0);
     if(ret < msg_len){
@@ -296,7 +293,6 @@ bool UserConnectionManager::sendMyPubKey() {
     pos += signature_len;
 
     //invio
-    const std::lock_guard<std::mutex> lock(this->ucmMutex);
     size_t ret = send(userSocket, buffer, pos, 0);
     if(ret != pos){
         cout<<"Error in sending my pubkey"<<endl;
@@ -343,16 +339,14 @@ bool UserConnectionManager::sharePlayersList() {
     bool waiting = true;
     bool waitingForReadiness = false;
     bool waitingForEndGame = false;
-    auto *buffer = new unsigned char[4096];
+    unsigned char buffer[4096];
     string *opponent;
 
     while(1) {
 
-        const std::lock_guard<std::mutex> lock(this->ucmMutex);
-
         size_t ret = recv(userSocket, buffer, 4096, 0);
         if (ret <= 0) {
-            cout << "Error in receiving message" << endl;
+            cout << "Error in receiving sharePlayersList message" << endl;
             return false;
         }
 
@@ -360,6 +354,7 @@ bool UserConnectionManager::sharePlayersList() {
 
         switch(opcode){
             case LISTREQUESTMESSAGE: {
+                cout<<"Received LISTRESQUESTMESSAGE from "<<this->userName->c_str()<<endl;
                 if (!waitForPlayersRequest(buffer, ret)) {
                     cout << "Error in players list request" << endl;
                     return false;
@@ -380,10 +375,8 @@ bool UserConnectionManager::sharePlayersList() {
                 return false;
             }
         }
-        const std::lock_guard<std::mutex> unlock(this->ucmMutex);
 
         while(waiting){
-            const std::lock_guard<std::mutex> lock(this->ucmMutex);
             size_t ret = recv(userSocket, buffer, 4096, 0);
             if (ret <= 0) {
                 cout << "Error in receiving message" << endl;
@@ -396,11 +389,9 @@ bool UserConnectionManager::sharePlayersList() {
                 case PLAYERCHOSENMESSAGECODE: {
                     string *choice = waitForClientChoice(buffer, ret);
                     if (choice == nullptr) {
-                        delete[] buffer;
                         return false;
                     }
                     if (!sendChallengerRequest(choice)) {
-                        delete[] buffer;
                         delete choice;
                         return false;
                     }
@@ -413,13 +404,11 @@ bool UserConnectionManager::sharePlayersList() {
                     opponent = waitForChallengedResponse(buffer, ret, stillWait);
 
                     if (opponent == nullptr) {
-                        delete[] buffer;
                         delete opponent;
                         return false;
                     }
                     if (!stillWait) {
                         if (!sendOpponentKeyToChallenged(opponent, 0)) {
-                            delete[] buffer;
                             delete opponent;
                             return false;
                         }
@@ -437,14 +426,12 @@ bool UserConnectionManager::sharePlayersList() {
                     uint32_t challenged_port;
                     if (!waitForChallengedReady(buffer, ret, challenged_port, opponent)) {
                         waitingForReadiness = false;
-                        delete[] buffer;
                         delete opponent;
                         return false;
                     }
                     //invio la mia chiave al challenger
                     if (!sendMyKeyToChallenger(opponent, challenged_port)) {
                         waitingForReadiness = false;
-                        delete[] buffer;
                         delete opponent;
                         return false;
                     }
@@ -455,7 +442,6 @@ bool UserConnectionManager::sharePlayersList() {
 
                 case ENDGAMEMESSAGECODE: {
                     if (!endGame(buffer, ret)) {
-                        delete[] buffer;
                         delete opponent;
                         return false;
                     }
@@ -489,13 +475,11 @@ bool UserConnectionManager::sharePlayersList() {
         }
 
     }
-    delete [] buffer;
     delete opponent;
     return true;
 }
 bool UserConnectionManager::waitForPlayersRequest(unsigned char*buffer, size_t buffer_len) {
 
-    const std::lock_guard<std::mutex> lock(this->ucmMutex);
 
     if(buffer_len <= 0){
         cout<<"Error receiving Players Request Message"<<endl;
@@ -579,7 +563,6 @@ bool UserConnectionManager::sendPlayerList() {
    size_t msg_len;
    unsigned char *buffer = createPlayerListMsg(list, msg_len);
 
-   const std::lock_guard<std::mutex> lock(this->ucmMutex);
    size_t ret = send(userSocket, buffer, msg_len, 0);
    if (ret < 0) {
        cerr << "Error in sending players list\n";
@@ -1210,13 +1193,13 @@ void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
     uint32_t cont;
     if(buffer_len < AADLENGTH+AESGCMTAGLENGTH+AESBLOCKLENGTH){
         cout<<"Error in receiving logout message"<<endl;
-        delete this;
+
         return;
     }
     memcpy(&cont, &buffer[1+AESGCMIVLENGTH], COUNTERLENGTH);
     if(cont != this->counter+1){
         cout<<"Error! Wrong counter value"<<endl;
-        delete this;
+
         return;
     }
     this->counter++;
@@ -1250,7 +1233,7 @@ void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
     }
 
     delete [] plaintext;
-    delete this;
+
 }
 
 

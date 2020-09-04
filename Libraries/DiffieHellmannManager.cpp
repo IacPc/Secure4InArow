@@ -147,11 +147,11 @@ unsigned char *DiffieHellmannManager::getSharedSecret(size_t & len) {
 
 void DiffieHellmannManager::setPeerPubKey(unsigned char* pubkey_buf, size_t pubkey_size) {
 
-    if (d2i_PUBKEY(&this->peerPubKey,(const unsigned char**) &pubkey_buf, pubkey_size) == NULL){
+    if (!d2i_PUBKEY(&this->peerPubKey,(const unsigned char**) &pubkey_buf,(long) pubkey_size) ){
         std::cout<<"d2i_PUBKEY failed"<<std::endl;
         return;
     }
-
+    std::cout<<"calcolo il segreto"<<std::endl;
     this->computeSharedSecret();
     std::cout<<"shared secret computed succesfully "<<std::endl;
 

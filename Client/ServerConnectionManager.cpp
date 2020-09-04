@@ -39,27 +39,27 @@ void ServerConnectionManager::enterThegame() {
         unsigned int i = 0;
         unsigned int out = 0;
 
-        if (playerList) {
+        string choice;
+
+        if (playerList != nullptr) {
             cout << "The following players are available" << endl;
             for (auto &p : *playerList) {
-                std::cout << i << ")" << p << endl;
+                std::cout << i+1 << ")" << p->c_str() << endl;
                 i++;
             }
 
+            do {
+                choice.clear();
+                cout << "choose one player between 1 and " << i
+                     << ",press enter to wait for a challenge request either 0 to exit the game" << endl;
+                getline(cin, choice);
+                if (choice.length() == 0) {
+                    break;
+                }
+            } while (!tryParsePlayerChoice(&choice, out, playerList->size()));
+
         }
-
-        string choice;
-        do {
-            choice.clear();
-            cout << "choose one player between 1 and " << i - 1
-                 << ",press enter to wait for a challenge request or 0 to logout" << endl;
-            getline(cin, choice);
-            if (choice.length() == 0) {
-                break;
-            }
-        } while (!tryParsePlayerChoice(&choice, out, i - 1));
-
-
+        out--;
         if (choice.length() == 0) {
             string *challenger = NULL;
             string yn;
@@ -127,6 +127,7 @@ void ServerConnectionManager::createConnectionWithServer() {
 
    if(!ok)
        return;
+   cout<<"created secure channel with server, players list request ongoing"<<endl;
    ok= this->sendPlayersListRequest();
    if(!ok) {
        cout<<"error in sending Player list request"<<endl;
@@ -161,13 +162,12 @@ bool ServerConnectionManager::secureTheConnection(){
     int certLen = MAXCERTIFICATELENGTH;
     //wait for server certificate
     unsigned char *serializedCertificate = waitForCertificate(certLen);
-    if(serializedCertificate == NULL){
+    if(serializedCertificate == nullptr){
         cerr<<"Error receiving certificate\n";
         return false;
     }
 
     certificateManager = new CertificateManager();
-    cout<<"The certificate has been received\n";
     EVP_PKEY* serverPubkey;
     if(certificateManager->verifyCertificate(serializedCertificate,certLen)){
         cout<<"The certificate has been verified correcly\n";
@@ -181,11 +181,8 @@ bool ServerConnectionManager::secureTheConnection(){
     path->append(userName->c_str());
     path->append("_prvkey.pem");
     this->signatureManager = new SignatureManager(path);
-    cout<<"private key set correctly"<<endl;
     this->signatureManager->setPubkey(serverPubkey);
-    cout<<"server public key set correctly"<<endl;
     this->diffieHellmannManager = new DiffieHellmannManager();
-    cout<<"DH created correctly"<<endl;
 
     //send the readiness msg
     if(!sendMyPubKey()){
@@ -199,6 +196,8 @@ bool ServerConnectionManager::secureTheConnection(){
         cerr<<"Error in receiving peer key\n";
         return false;
     }
+    cout<<"Peer pubkey obtained succesfully"<<endl;
+
     auto* HashedSecret = new unsigned char[EVP_MD_size(EVP_sha256())];
     size_t dhSecretLen = 0;
     unsigned char* dhSecret = this->diffieHellmannManager->getSharedSecret(dhSecretLen);
@@ -206,6 +205,7 @@ bool ServerConnectionManager::secureTheConnection(){
     SHA256(dhSecret,dhSecretLen,HashedSecret);
 
     delete diffieHellmannManager;
+    diffieHellmannManager = nullptr;
 
     auto* simmetricKeyBuffer = new unsigned char[EVP_CIPHER_key_length(EVP_aes_128_gcm())];
     memcpy(&simmetricKeyBuffer[0],&HashedSecret[0],EVP_CIPHER_key_length(EVP_aes_128_gcm()));
@@ -267,7 +267,6 @@ unsigned char *ServerConnectionManager::waitForCertificate(int & len) {
 
         delete [] buffer;
         len = certLen;
-        cout<<"Certificate has been received\n";
         return cert;
     }
 
@@ -276,7 +275,6 @@ unsigned char *ServerConnectionManager::waitForCertificate(int & len) {
 unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     size_t pubKeyLength = 0;
     unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
-    cout<<"PUBKEY LENGTH "<<pubKeyLength<<endl;
 
     size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + sizeof(uint16_t) + pubKeyLength;
 
@@ -289,7 +287,6 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     memcpy(&pubKeyMessageToSignBuffer[step],&this->serverNonce,sizeof(this->serverNonce));
     step += sizeof(this->serverNonce);
     uint16_t len_16t = pubKeyLength;
-    std::cout<<"len_16t ="<<len_16t<<std::endl;
     memcpy(&pubKeyMessageToSignBuffer[step], &len_16t, sizeof(len_16t));
     step += sizeof(len_16t);
     memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,len_16t);
@@ -302,7 +299,6 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
         delete [] pubKeyMessageToSignBuffer;
         return nullptr;
     }
-    cout<<"SIGNATURE LEN "<<signatureLength<<endl;
     size_t pubKeyMessageLength = step + sizeof(len_16t) + signatureLength;
     auto* pubKeyMessageBuffer = new unsigned char[pubKeyMessageLength];
     memcpy(pubKeyMessageBuffer,pubKeyMessageToSignBuffer,step);
@@ -315,8 +311,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
 
     delete [] signature;
     delete [] pubKeyMessageToSignBuffer;
-    std::cout<<"PubKeyLen="<<pubKeyLength<<endl;
-    std::cout<<"SignatureLen="<<signatureLength<<endl;
+
     len = pubKeyMessageLength;
     cout<<"Creation of PubKeyMessage of size "<<len<<" finished correctly "<<endl;
 
@@ -340,18 +335,16 @@ bool ServerConnectionManager::sendMyPubKey() {
 
 bool ServerConnectionManager::waitForPeerPubkey() {
 
-    auto *peerPubKeyMessageBuffer = new unsigned char[2048];
-    int ret = recv(this->serverSocket, peerPubKeyMessageBuffer, 2048, 0);
+    unsigned char peerPubKeyMessageBuffer[4096];
+    int ret = recv(this->serverSocket, peerPubKeyMessageBuffer, 4096, 0);
 
     if (ret <= 0) {
         cout<<"received "<<ret << " bytes"<<endl;
-        delete [] peerPubKeyMessageBuffer;
         return false;
     }
 
     if(peerPubKeyMessageBuffer[0] != PUBKEYMESSAGECODE){
         cout<<"wrong opcode "<<endl;
-        delete [] peerPubKeyMessageBuffer;
         return false;
     }
     uint32_t nonceRecv = 0;
@@ -359,7 +352,6 @@ bool ServerConnectionManager::waitForPeerPubkey() {
 
     if(nonceRecv != this->myNonce){
         cout<<"wrong client nonce "<<endl;
-        delete [] peerPubKeyMessageBuffer;
         return false;
     }
 
@@ -367,9 +359,9 @@ bool ServerConnectionManager::waitForPeerPubkey() {
 
     if(nonceRecv != this->serverNonce){
         cout<<"wrong server nonce "<<endl;
-        delete [] peerPubKeyMessageBuffer;
         return false;
     }
+
 
     uint16_t recvSignatureLen = 0;
     uint16_t recvPubKeyLen = 0;
@@ -383,16 +375,21 @@ bool ServerConnectionManager::waitForPeerPubkey() {
     bool signCheck = signatureManager->verifyThisSignature(recvSignatureBuffer, recvSignatureLen,
                                                            peerPubKeyMessageBuffer, messageToBeVErifiedLength);
     delete [] recvSignatureBuffer;
+
+    cout<<"received peer pubkey COPIATA AMMODO"<<endl;
+
     if(!signCheck){
         cout<<"Uncorrect signature"<<endl;
-        delete [] peerPubKeyMessageBuffer;
         return false;
     }
     size_t pubKeyPosition = 1 +2*sizeof(this->serverNonce)+ sizeof(recvPubKeyLen);
 
-    this->diffieHellmannManager->setPeerPubKey(&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
-    delete [] peerPubKeyMessageBuffer;
-
+    auto* peerpubkeyBuf = new unsigned char[recvPubKeyLen];
+    memcpy(peerpubkeyBuf,&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
+    size_t len = recvPubKeyLen;
+    this->diffieHellmannManager->setPeerPubKey(peerpubkeyBuf,len);
+    cout<<"DH FATTO  BENE"<<endl;
+    delete [] peerpubkeyBuf;
     return true;
 }
 
@@ -448,7 +445,7 @@ bool ServerConnectionManager::sendPlayersListRequest() {
 }
 
 bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
-    size_t playersListMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 + MAXUSERNAMELENGTH*MAXPLAYERSONLINE + AESGCMTAGLENGTH;
+    size_t playersListMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 + MAXUSERNAMELENGTH*MAXPLAYERSONLINE + AESGCMTAGLENGTH + AESBLOCKLENGTH;
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
     unsigned char aadBuf[aadLen];
     unsigned char ivBuf[AESGCMIVLENGTH];
@@ -458,6 +455,7 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     auto* playerListBuffer = new unsigned char[playersListMessageLen];
     cout<<"waiting for Players list message"<<endl;
     int ret = recv(this->serverSocket,playerListBuffer,playersListMessageLen,0);
+
     if(ret<=0) {
         cout<<"Error in receiving Players list message"<<endl;
         return false;
@@ -477,6 +475,7 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     }
     this->counter++;
 
+
     memcpy(ivBuf,&playerListBuffer[1],AESGCMIVLENGTH);
     memcpy(tagBuf,&playerListBuffer[ret -AESGCMTAGLENGTH],AESGCMTAGLENGTH);
     memcpy(aadBuf,playerListBuffer,aadLen);
@@ -484,6 +483,7 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     unsigned char* cipherText = new unsigned char[cipherTextLen];
     memcpy(cipherText,&playerListBuffer[1 + AESGCMIVLENGTH + sizeof(this->counter)],cipherTextLen);
 
+    cout<<" PLAYERSLISTMESSAGECODE COPIATO BENE"<<endl;
 
     unsigned char* decryptedPlayersList = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,
                                                                                                aadBuf,aadLen,tagBuf,ivBuf);
@@ -494,6 +494,7 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
         cout<<"error in decrypting Player list"<<endl;
         return false;
     }
+    cout<<" Player list decrypted correctly"<<endl;
 
     uint16_t playersNumb;
     memcpy(&playersNumb,decryptedPlayersList,sizeof(uint16_t));
@@ -507,7 +508,9 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
 
     size_t step = 0;
     char* players = (char*)&decryptedPlayersList[sizeof(playersNumb)];
-    for(std::size_t i = 0; i < playersNumb || step<cipherTextLen;i++){
+    cout<<"There are "<<playersNumb<<"players On line"<<endl;
+
+    for(std::size_t i = 0; i < playersNumb && step<cipherTextLen;i++){
         string* toInsert = new std::string(players);
         playerList->push_back(toInsert);
         step += toInsert->length() + 1;
@@ -806,9 +809,10 @@ bool ServerConnectionManager::tryParsePlayerChoice(std::string* input, unsigned 
     try{
         temp = std::stoi(input->c_str());
     } catch (std::invalid_argument) {
+        cout<<"Not a valid Number"<<endl;
         return false;
     }
-    if(temp<-1 || temp > limit)
+    if(temp<0 || temp > limit)
         return false;
     output = temp;
     return true;
