@@ -37,7 +37,7 @@ private:
     int serverSocket;
     int serverNonce;
     int myNonce;
-    int P2Pport;
+    unsigned int P2Pport;
     unsigned int counter;
     struct sockaddr_in serverAddr;
     SymmetricEncryptionManager* symmetricEncryptionManager;

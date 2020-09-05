@@ -24,7 +24,7 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
     unsigned char* ciphertext = new unsigned char[plaintext_len + EVP_CIPHER_block_size(this->cipher)];
     iv_len = AESGCMIVLENGTH ;
     tag = new unsigned char[AESGCMTAGLENGTH];
-
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(this->aesKey), aesKeyLen);
 
     // Create and initialise the context
     if(!(ctx = EVP_CIPHER_CTX_new())) {
@@ -78,13 +78,12 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
 unsigned char *
 SymmetricEncryptionManager::decryptThisMessage(unsigned char *ciphertext, size_t &ciphertext_len, unsigned char *aad,
                                                size_t aad_len, unsigned char *tag, unsigned char *iv) {
-    unsigned char * plaintext = new unsigned char[ciphertext_len];
+    auto * plaintext = new unsigned char[ciphertext_len];
     EVP_CIPHER_CTX *ctx;
     int len;
-    int plaintext_len;
-    int ret;
+    size_t plaintext_len;
 
-
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(this->aesKey), aesKeyLen);
     /* Create and initialise the context */
     if(!(ctx = EVP_CIPHER_CTX_new())){
         std::cout<<" Error in creating the context for decryption"<<std::endl;
@@ -127,7 +126,7 @@ SymmetricEncryptionManager::decryptThisMessage(unsigned char *ciphertext, size_t
 
     DECRYPTIONERROR:
         EVP_CIPHER_CTX_cleanup(ctx);
-        delete [] plaintext;
+        //delete [] plaintext;
         return nullptr;
 }
 

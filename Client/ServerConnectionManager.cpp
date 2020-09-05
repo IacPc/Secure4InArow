@@ -693,8 +693,10 @@ bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY** pubkey,struc
     memcpy(cipherText,&msgReceivingBuf[aadLen],cipherTextLen);
 
     size_t plainTextLen = cipherTextLen;
+
+
     unsigned char* opponentCredentials = this->symmetricEncryptionManager->decryptThisMessage(cipherText,plainTextLen,aadBuf,aadLen,tagBuf,ivBuf);
-    cout<<"cipherTextLen = "<<plainTextLen<<endl;
+
     cout<<"creating opponent credentials"<<endl;
     memcpy(&ip,opponentCredentials,sizeof(ip));
 
@@ -966,8 +968,8 @@ unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len
 
     size_t plainTextLen = sizeof(this->getP2PPort()) + this->userName->length() + 1;
     auto* plainTextBuf = new unsigned char[plainTextLen];
-    int port = this->getP2PPort();
-    memcpy(plainTextBuf,(unsigned char*)&port, sizeof(port));
+    unsigned int port = this->getP2PPort();
+    memcpy(plainTextBuf,&port, sizeof(port));
     strcpy((char*)&plainTextBuf[sizeof(port)], this->userName->c_str());
     aadBuf[0] = CHALLENGEDREADYFORCHALLENGEMESSAGECODE;
     RAND_bytes(ivBuf,AESGCMIVLENGTH);
@@ -977,6 +979,7 @@ unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len
     memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
     step += sizeof(this->counter);
     size_t ctLen = plainTextLen;
+
     unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(plainTextBuf, ctLen,
                                                                                      aadBuf, aadLen, ivBuf, ivLen, tagBuf);
 
@@ -988,11 +991,11 @@ unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len
     size_t challengedReadyMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + ctLen + AESGCMTAGLENGTH;
     auto* challengedReadyMessageBuf = new unsigned char[challengedReadyMessageLen];
 
-    memcpy(challengedReadyMessageBuf, aadBuf, step);
-    memcpy(&challengedReadyMessageBuf[step], encPayload, ctLen);
+    memcpy(challengedReadyMessageBuf, aadBuf, aadLen);
+    memcpy(&challengedReadyMessageBuf[aadLen], encPayload, ctLen);
     delete [] encPayload;
 
-    step += ctLen;
+    step = aadLen + ctLen;
     memcpy(&challengedReadyMessageBuf[step], tagBuf, AESGCMTAGLENGTH);
 
     len = challengedReadyMessageLen;
@@ -1010,6 +1013,7 @@ bool ServerConnectionManager::sendCHallengedReadyMessage() {
     }
 
     int ret = send(this->serverSocket, challengedReadyMessageBuffer, challengedReadyMessageLength, 0);
+
     this->counter++;
     delete [] challengedReadyMessageBuffer;
     if(ret != challengedReadyMessageLength)
@@ -1030,7 +1034,6 @@ bool ServerConnectionManager::sendChallengedResponse(string *opponent, char resp
     unsigned char * iv = new unsigned char[iv_len];
     RAND_bytes(iv, iv_len);
 
-    cout<<"COUNTER: "<<this->counter<<endl;
 
     memcpy(aad+1, iv, iv_len);
     memcpy(aad+iv_len+1, &this->counter, COUNTERLENGTH);

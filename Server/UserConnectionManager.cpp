@@ -28,6 +28,7 @@ void UserConnectionManager::openNewconnectionwithClient() {
 
     if(!sharePlayersList()){
         cout<<"The game cannot start. Failed the players credential sharing"<<endl;
+        server->removeUser(this->userName);
         return;
     }
 
@@ -424,9 +425,11 @@ bool UserConnectionManager::sharePlayersList() {
                     uint32_t challenged_port;
                     if (!waitForChallengedReady(buffer, ret, challenged_port, opponent)) {
                         waitingForReadiness = false;
+                        cout<<"CHALLENGEDREADYFORCHALLENGEMESSAGE Returned false"<<endl;
                         delete opponent;
                         return false;
                     }
+                    cout<<"CHALLENGEDREADYFORCHALLENGEMESSAGE Returned true"<<endl;
                     //invio la mia chiave al challenger
                     if (!sendMyKeyToChallenger(opponent, challenged_port)) {
                         waitingForReadiness = false;
@@ -745,7 +748,6 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     size_t plain_len = userName->length()+1;
     auto* plainMsg = new unsigned char[plain_len];
     memcpy(plainMsg, userName->c_str(), plain_len);
-    cout<<plainMsg<<endl;
     UserConnectionManager * challengedUCM = server->getUserConnection(*challenged);
     const std::lock_guard<std::mutex> lock(challengedUCM->ucmMutex);
     //AAD
@@ -763,7 +765,6 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
 
     //copio counter
     challengedUCM->counter++;
-    cout<<"COUNTER IS "<<challengedUCM<<endl;
     memcpy(AAD+1+iv_len, &challengedUCM->counter, COUNTERLENGTH);
 
     auto*tag = new unsigned char[AESGCMTAGLENGTH];
@@ -771,7 +772,6 @@ bool UserConnectionManager::sendChallengerRequest(string *challenged) {
     delete [] plainMsg;
     delete [] iv;
 
-    cout<<"encrypted len is "<<plain_len<<endl;
     if(plain_len < 0){
         cout<<"Error in encrypting the username"<<endl;
         delete [] encrypted;
@@ -832,8 +832,6 @@ string* UserConnectionManager::waitForChallengedResponse(unsigned char*buffer, s
         cout<<"The counter value was not the expencted one"<<endl;
         delete [] aad;
         stillWaiting = false;
-        cout<<"THE Counter is "<<this->counter+1<<endl;
-        cout<<"THE Counter received is "<<cont<<endl;
         return nullptr;
     }
 
@@ -1024,7 +1022,7 @@ bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32
         cerr<<"Error sending opponent key\n";
         return false;
     }
-    cout<<"Adversary key and address sent correctly\n";
+    cout<<"Adversary key and address sent correctly to challenged\n";
     return true;
 }
 unsigned char *UserConnectionManager::getUserPubKey(string* opponent, size_t& pubkey_len){
@@ -1034,19 +1032,17 @@ unsigned char *UserConnectionManager::getUserPubKey(string* opponent, size_t& pu
 }
 bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t buffer_len, uint32_t& port, string* opponent) {
 
-
     if(buffer_len <=0){
         cerr<<"Error in receving Challenged Ready message,received "<<buffer_len<<" bytes"<<endl;
         server->removeUser((this->userName));
         delete [] buffer;
         return false;
     }
-
+    cout<<"IO SONO: "<<this->userName->c_str()<<endl;
     uint32_t cont;
     memcpy(&cont, &buffer[1+AESGCMIVLENGTH], COUNTERLENGTH);
     if(cont != this->counter+1){
         cout<<"Different counter value expected"<<endl;
-        delete [] buffer;
         return false;
     }
     this->counter++;
@@ -1055,8 +1051,9 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
         cout<<"Wrong message"<<endl;
         delete [] buffer;
         return false;
-    }else
-        cout<<"Challenged readiness message opcode verified"<<endl;
+    }
+
+    cout<<"Challenged readiness message opcode verified"<<endl;
 
     //copio iv
     size_t iv_len = AESGCMIVLENGTH;
@@ -1068,18 +1065,18 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
     auto *aad = new unsigned char[aad_len];
     memcpy(aad, buffer, aad_len);
 
+
     //copio encrypted message
     size_t encrypted_len = buffer_len-aad_len-AESGCMTAGLENGTH;
     auto *encrypted = new unsigned char[encrypted_len];
     memcpy(encrypted, (buffer+aad_len), encrypted_len);
 
+
     //copio tag
     auto *tag = new unsigned char[AESGCMTAGLENGTH];
     memcpy(tag, (buffer+aad_len+encrypted_len), AESGCMTAGLENGTH);
 
-    delete [] buffer;
-
-    unsigned char *plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
+    unsigned char *plainMessage = this->symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
 
     delete [] encrypted;
     delete [] iv;
@@ -1088,9 +1085,9 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
 
     size_t port_len = sizeof(port);
 
-    if(encrypted_len != port_len + opponent->length()+1){
+    if(encrypted_len != port_len + this->userName->length()+1){
 
-        cout<<"Decrypt returned a wrong value"<<endl;
+        cout<<"Decrypt returned a wrong value "<<encrypted_len<<endl;
         delete [] plainMessage;
         return false;
     }
@@ -1103,13 +1100,13 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
     plainMessage[encrypted_len-1] = '\0';
     auto *user = new string(reinterpret_cast<const char *>(&plainMessage[port_len]));
 
-    delete [] plainMessage;
-    if(strcmp(user->c_str(), opponent->c_str()) != 0){
+    if(strcmp(user->c_str(), userName->c_str()) != 0){
         delete user;
         cout<<"Received username was not expected"<<endl;
         return false;
     }
 
+    cout<<"Username received expected"<<endl;
     delete user;
     return true;
 }
@@ -1190,7 +1187,7 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
         cerr<<"Error sending opponent key\n";
         return false;
     }
-    cout<<"Adversary key and address sent correctly\n";
+    cout<<"Adversary key and address sent correctly to challenger\n";
     return true;
 }
 bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
