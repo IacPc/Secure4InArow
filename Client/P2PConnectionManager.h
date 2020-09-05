@@ -32,6 +32,7 @@ private:
     int mySocket;
     string *myUsername;
     string *opponentUsername;
+    string *pwd;
     SignatureManager* signatureManager;
     SymmetricEncryptionManager* symmetricEncryptionManager;
     DiffieHellmannManager *diffieHellmannManager;
@@ -62,7 +63,7 @@ private:
     unsigned char* createPubKeyMessage(size_t&);
 
 public:
-    P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*);
+    P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*,string*);
 
     void startTheGameAsChallengeR();
     void startTheGameAsChallengeD();

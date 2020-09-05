@@ -965,12 +965,12 @@ bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32
 
 
     //Preparo messaggio in chiaro.
-    auto *plainMsg = new unsigned char[key_len + IPLENGTH + port_len];
+    auto *plainMsg = new unsigned char[key_len + sizeof(ipOpponent) + port_len];
 
 
     int pos = 0;
-    memcpy(plainMsg+pos, (void*)&ipOpponent, IPLENGTH);
-    pos += IPLENGTH;
+    memcpy(plainMsg+pos, (void*)&ipOpponent, sizeof(ipOpponent));
+    pos += sizeof(ipOpponent);
 
     memcpy(plainMsg+pos, &opponentPort, port_len);
     pos += port_len;
@@ -1019,7 +1019,7 @@ bool UserConnectionManager::sendOpponentKeyToChallenged(string *opponent, uint32
 
     size_t ret = send(userSocket, buffer, msg_len, 0);
     delete [] buffer;
-
+    cout<<"sent opponent key message to challenged of size:"<<ret<<endl;
     if(ret != msg_len){
         cerr<<"Error sending opponent key\n";
         return false;
@@ -1037,6 +1037,7 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
 
     if(buffer_len <=0){
         cerr<<"Error in receving Challenged Ready message,received "<<buffer_len<<" bytes"<<endl;
+        server->removeUser((this->userName));
         delete [] buffer;
         return false;
     }
@@ -1129,12 +1130,12 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
 
 
     //Preparo messaggio in chiaro.
-    auto *plainMsg = new unsigned char[key_len + IPLENGTH + port_len];
+    auto *plainMsg = new unsigned char[key_len + sizeof(in_addr) + port_len];
 
 
     int pos = 0;
-    memcpy(plainMsg+pos, (void*)&myIP, IPLENGTH);
-    pos += IPLENGTH;
+    memcpy(plainMsg+pos, (void*)&myIP, sizeof(in_addr));
+    pos += sizeof(in_addr);
 
     memcpy(plainMsg+pos, &port, port_len);
     pos += port_len;

@@ -20,6 +20,10 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
 
     inet_pton(AF_INET, (const char*)&server_addr, &serverAddr.sin_addr);
 
+
+    std::cout << "Enter your prvkey file password" << std::endl;
+    getline(std::cin, this->pwd);
+
     RAND_poll();
 
     cout<<"ServerConnectionManager created successfully"<<endl;
@@ -81,10 +85,10 @@ void ServerConnectionManager::enterThegame() {
             if(response == 'Y') {
                 EVP_PKEY* pb;
                 in_addr ip;
-                if(!this->waitForOpponentCredentials(pb,ip)) {
+                if(!this->waitForOpponentCredentials(&pb,ip)) {
                     cout<<"error in receiving challenger pubkey. The game cannot start"<<endl;
                 }
-                auto *p2pConnMan = new P2PConnectionManager(pb, this);
+                auto *p2pConnMan = new P2PConnectionManager(pb, this,&this->pwd);
                 p2pConnMan->setOpponentIp(ip);
                 std::thread t(&P2PConnectionManager::startTheGameAsChallengeD, p2pConnMan);
                 t.join();
@@ -104,8 +108,7 @@ void ServerConnectionManager::enterThegame() {
             if (challengedSaidYes) {
                 cout << selectedPlayer->c_str() << " has accepted" << endl;
 
-
-                auto *p2pConnMan = new P2PConnectionManager(this->signatureManager->getPrvkey(), this);
+                auto *p2pConnMan = new P2PConnectionManager(nullptr, this,&this->pwd);
                 std::thread t(&P2PConnectionManager::startTheGameAsChallengeR, p2pConnMan);
                 t.join();
             } else {
@@ -202,7 +205,7 @@ bool ServerConnectionManager::secureTheConnection(){
     string* path = new string("../Client/Client_Key/");
     path->append(userName->c_str());
     path->append("_prvkey.pem");
-    this->signatureManager = new SignatureManager(path);
+    this->signatureManager = new SignatureManager(path,&this->pwd);
     this->signatureManager->setPubkey(serverPubkey);
     this->diffieHellmannManager = new DiffieHellmannManager();
     //send the readiness msg
@@ -317,6 +320,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     size_t signatureLength = step;
     unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,signatureLength);
     if(!signature) {
+        cout<<"signature failed"<<endl;
         delete [] pubKeyMessageToSignBuffer;
         return nullptr;
     }
@@ -648,19 +652,21 @@ bool ServerConnectionManager::sendEndGameMessage() {
     return true;
 }
 
-bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY*& pubkey,struct in_addr& ip) {
+bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY** pubkey,struct in_addr& ip) {
     size_t opponentCredentialsMessageLen = 512;
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
     unsigned char aadBuf[aadLen];
     unsigned char ivBuf[AESGCMIVLENGTH];
     unsigned char tagBuf[AESGCMTAGLENGTH];
+    unsigned char* keyBuf;
 
     auto* msgReceivingBuf = new unsigned char[opponentCredentialsMessageLen];
     int ret = recv(this->serverSocket,msgReceivingBuf,opponentCredentialsMessageLen,0);
     if(ret <= 0){
         cout<<"ERROR in receiving opponent credentials message"<<endl;
         return false;
-    }
+    }else
+        cout<<"received "<<ret<< " bytes as opponent credentials"<<endl;
     if(msgReceivingBuf[0]!= OPPONENTKEYMESSAGECODE ){
         cout<<"wrong opcode "<<endl;
         delete [] msgReceivingBuf;
@@ -686,20 +692,29 @@ bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY*& pubkey,struc
     auto* cipherText = new unsigned char[cipherTextLen];
     memcpy(cipherText,&msgReceivingBuf[aadLen],cipherTextLen);
 
-    unsigned char* opponentCredentials = this->symmetricEncryptionManager->decryptThisMessage(cipherText,cipherTextLen,aadBuf,aadLen,tagBuf,ivBuf);
-
+    size_t plainTextLen = cipherTextLen;
+    unsigned char* opponentCredentials = this->symmetricEncryptionManager->decryptThisMessage(cipherText,plainTextLen,aadBuf,aadLen,tagBuf,ivBuf);
+    cout<<"cipherTextLen = "<<plainTextLen<<endl;
+    cout<<"creating opponent credentials"<<endl;
     memcpy(&ip,opponentCredentials,sizeof(ip));
+
     memcpy(&this->P2Pport,&opponentCredentials[4],sizeof(P2Pport));
-    BIO *mbio = BIO_new(BIO_s_mem());
-    if(!mbio) return false;
-    BIO_write(mbio,&opponentCredentials[2*sizeof(int)],cipherTextLen- 2*sizeof(int));
-    pubkey = PEM_read_bio_PUBKEY(mbio,NULL,NULL,NULL);
+
+    long pubkeyLen = plainTextLen -(sizeof(int)+ sizeof(in_addr));
+
+    keyBuf = new unsigned char[pubkeyLen];
+    memcpy(&keyBuf[0],&opponentCredentials[8],pubkeyLen);
+
+    if (!d2i_PUBKEY(pubkey,(const unsigned char**) &keyBuf,pubkeyLen) ){
+        std::cout<<"d2i_PUBKEY failed"<<std::endl;
+        return false;
+    }
+
     if(!pubkey){
         cout<<"error in deserializing pubkey"<<endl;
         return false;
     }
-    BIO_free(mbio);
-
+    cout<<"credentials obtained succefully"<<endl;
     return true;
 }
 
@@ -890,11 +905,16 @@ bool ServerConnectionManager::waitForChallengedResponseMessage() {
 }
 
 ServerConnectionManager::~ServerConnectionManager() {
+    long len = this->pwd.length();
+    this->pwd.replace(0,len,"0");
+    cout<<pwd.c_str()<<endl;
+    pwd.clear();
     delete userName;
     delete symmetricEncryptionManager;
     delete signatureManager;
     delete certificateManager;
     delete diffieHellmannManager;
+
 }
 
 string *ServerConnectionManager::getUsername() {
@@ -908,7 +928,6 @@ int ServerConnectionManager::getP2PPort() {
 bool tryParse(std::string* input, unsigned int& output) {
     unsigned int temp;
     try{
-        cout<<"SONO DENTRO IL TRY"<<endl;
         temp = std::stoi(input->c_str());
     } catch (std::invalid_argument) {
         return false;

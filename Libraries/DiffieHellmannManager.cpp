@@ -60,39 +60,34 @@ DiffieHellmannManager::DiffieHellmannManager() {
         std::cout<<"ERROR IN Generating params"<<std::endl;
         return;
     }
-    std::cout<<"DH parameters generated correctly"<<std::endl;
     DH* temp = get_dh2048_auto();
     if(!temp){
         std::cout<<"ERROR IN setting params"<<std::endl;
         return;
     }
-    std::cout<<"DH parameters set correctly"<<std::endl;
     if(1 != EVP_PKEY_set1_DH(params,temp)) {
         std::cout<<"ERROR IN Generating params"<<std::endl;
         return;
     }
     DH_free(temp);
-    std::cout<<"DH parameters 2 set correctly"<<std::endl;
     /* Create context for the key generation */
     EVP_PKEY_CTX *DHctx;
     if(!(DHctx = EVP_PKEY_CTX_new(params, NULL))){
         std::cout<<"ERROR IN Generating the key ctx"<<std::endl;
         return;
     }
-    std::cout<<"DH key generated correctly"<<std::endl;
     /* Generate a new key */
     EVP_PKEY *my_dhkey = NULL;
     if(1 != EVP_PKEY_keygen_init(DHctx)) {
         std::cout<<"ERROR IN initializing key generation"<<std::endl;
         return;
     }
-    std::cout<<"DH key inizializated correctly"<<std::endl;
     if(1 != EVP_PKEY_keygen(DHctx, &my_dhkey)) {
         std::cout<<"ERROR in key generation"<<std::endl;
         return;
     }
     this->myPubKey = my_dhkey;
-    std::cout<<"DH key generated2 correctly"<<std::endl;
+    std::cout<<"DH key generated correctly"<<std::endl;
     EVP_PKEY_free(params);
     EVP_PKEY_CTX_free(DHctx);
 
@@ -132,7 +127,7 @@ void DiffieHellmannManager::computeSharedSecret() {
     this->secret_len = skeylen;
 }
 
-unsigned char *DiffieHellmannManager::getMyPubKey(size_t & pklen) {
+unsigned char* DiffieHellmannManager::getMyPubKey(size_t & pklen) {
 
     unsigned char* i2dbuff = NULL;
     int size = i2d_PUBKEY(this->myPubKey, &i2dbuff);

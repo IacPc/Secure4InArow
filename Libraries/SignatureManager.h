@@ -19,8 +19,8 @@ private:
     EVP_PKEY* prvKey; // contains the prvKey of the entity(server or client) who owns the instance of this class
     EVP_PKEY* pubKey; // contains the server pubKey in order to verify his signature (server ha this field NULL)
 public:
+    SignatureManager(std::string*,std::string*,std::string*);
     SignatureManager(std::string*,std::string*);
-    SignatureManager(std::string*);
     explicit SignatureManager(EVP_PKEY*,EVP_PKEY*);
 
     SignatureManager();

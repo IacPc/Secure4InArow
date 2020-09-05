@@ -33,6 +33,7 @@ class ServerConnectionManager {
 
 private:
     string* userName;
+    string pwd;
     int serverSocket;
     int serverNonce;
     int myNonce;
@@ -71,7 +72,7 @@ private:
 public:
 
     ServerConnectionManager(const char* server_addr, int port, string* user);
-    bool waitForOpponentCredentials(EVP_PKEY*&,struct in_addr&);
+    bool waitForOpponentCredentials(EVP_PKEY**,struct in_addr&);
     bool connectToServer();
     bool secureTheConnection();
     bool sendCHallengedReadyMessage();

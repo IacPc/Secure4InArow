@@ -4,28 +4,23 @@
 
 #include "SignatureManager.h"
 
-SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* pubkey_file_name) {
+SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* pubkey_file_name,std::string* pwd) {
 
-    EVP_PKEY* prvkey= nullptr;
     if (prvkey_file_name) {
         FILE *prvkey_file = fopen(prvkey_file_name->c_str(), "r");
         if (!prvkey_file) {
             std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
+            return;
         }
+        if(pwd)
+            this->prvKey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd->c_str());
+        else
+            this->prvKey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL,NULL);
 
-        std::string pwd;
-        std::cout << "Enter your prvkey file password" << std::endl;
-        getline(std::cin, pwd);
-        prvkey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
-   /*     while (!prvkey) {
-            pwd.clear();
-            std::cout << "Error:Enter your prvkey file password" << std::endl;
-            getline(std::cin, pwd);
-            prvkey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
-        }   */
+        if(!this->prvKey)
+            std::cout<<"Error! Wrong prvkey file password"<<std::endl;
 
     }
-    this->prvKey = prvkey;
     std::cout << "private key set correctly" << std::endl;
 
     if (pubkey_file_name) {
@@ -74,7 +69,7 @@ SignatureManager::SignatureManager(EVP_PKEY* pb , EVP_PKEY* pv) {
             std::cout << "Error in creating RSAManager->prvkey" << std::endl;
             return;
         }
-        if(!(this->pubKey = PEM_read_bio_PrivateKey(mbio, nullptr, nullptr, nullptr))){
+        if(!(this->prvKey = PEM_read_bio_PrivateKey(mbio, nullptr, nullptr, nullptr))){
             std::cout << "Error in creating RSAManager->pubkey" << std::endl;
             BIO_free(mbio);
             return;
@@ -84,27 +79,26 @@ SignatureManager::SignatureManager(EVP_PKEY* pb , EVP_PKEY* pv) {
     std::cout << "Signature Manager keys created succesfully" << std::endl;
 }
 
-SignatureManager::SignatureManager(std::string *prvkey_file_name) {
+SignatureManager::SignatureManager(std::string *prvkey_file_name,std::string* pwd) {
 
-    EVP_PKEY* prvkey= nullptr;
     if (prvkey_file_name) {
         FILE *prvkey_file = fopen(prvkey_file_name->c_str(), "r");
         if (!prvkey_file) {
             std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
         }
 
-        std::string pwd;
-        do {
-            pwd.clear();
-            std::cout << "Enter your prvkey file password" << std::endl;
-            getline(std::cin, pwd);
-            prvkey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
-            if(prvkey == nullptr)
-                std::cout<<"Error! Wrong prvkey file password"<<std::endl;
-        }while(prvkey== nullptr);
+        if(pwd)
+            this->prvKey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd->c_str());
+        else
+            this->prvKey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL,NULL);
+
+        if(!this->prvKey) {
+            std::cout << "Error! Wrong prvkey file password: " << pwd->c_str() << std::endl;
+            return;
+        }
+        std::cout << "private key set correctly" << std::endl;
     }
-    this->prvKey = prvkey;
-    std::cout << "private key set correctly" << std::endl;
+
 }
 
 SignatureManager::SignatureManager() {
@@ -214,14 +208,16 @@ SignatureManager::~SignatureManager() {
 }
 
 unsigned char *SignatureManager::getPubkey(size_t& pblen) {
-    BIO *mbio = BIO_new(BIO_s_mem());
-    if(!mbio) return nullptr;
-    PEM_write_bio_PUBKEY(mbio, this->pubKey);
-    unsigned char* pubkey_buf;
-    long pubkey_size = BIO_get_mem_data(mbio, &pubkey_buf);
-    BIO_free(mbio);
-    pblen = pubkey_size;
-    return pubkey_buf;
+    unsigned char* i2dbuff = NULL;
+    int size = i2d_PUBKEY(this->pubKey, &i2dbuff);
+
+    if(size <= 0 ){
+        std::cout<<"i2d_PUBKEY failed"<<std::endl;
+        return nullptr;
+    }
+    pblen = size;
+    std::cout<<"Serialized key length is:"<< size<<std::endl;
+    return i2dbuff;
 }
 
 EVP_PKEY* SignatureManager::getPrvkey() {

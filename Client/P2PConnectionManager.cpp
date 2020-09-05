@@ -5,25 +5,23 @@
 #include "P2PConnectionManager.h"
 #include "ServerConnectionManager.h"
 
-P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnectionManager *srvcnm) {
+P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnectionManager *srvcnm,string* p) {
 
     this->serverConnectionManager = srvcnm;
 
-    std::string* prvkPath = new std::string();
-    prvkPath->append("../Client/Client_Key/");
-    prvkPath->append(this->serverConnectionManager->getUsername()->c_str());
+    std::string* prvkPath = new std::string("../Client/Client_Key/");
+    prvkPath->append(srvcnm->getUsername()->c_str());
     prvkPath->append("_prvkey.pem");
+
+    this->pwd = new string (p->c_str());
 
     myUsername = new string(this->serverConnectionManager->getUsername()->c_str());
 
-    signatureManager = new SignatureManager(prvkPath);
-    delete prvkPath;
+
+    signatureManager = new SignatureManager(prvkPath,pwd);
     signatureManager->setPubkey(opponentKey);
 
-    string* path = new std::string ("../Client/Client_Key/");
-    path->append(this->myUsername->c_str());
-    path->append("_prvkey.pem");
-    this->signatureManager = new SignatureManager(path, nullptr);
+    delete prvkPath;
 
     memset(&this->opponentAddr,0X00,sizeof(struct sockaddr_in));
 
@@ -35,7 +33,9 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
 }
 
 P2PConnectionManager::~P2PConnectionManager() {
-
+    long len = this->pwd->length();
+    this->pwd->replace(0,len,"0");
+    this->pwd->clear();
     delete serverConnectionManager;
     delete signatureManager;
     delete symmetricEncryptionManager;
@@ -671,7 +671,7 @@ bool P2PConnectionManager::waitForPeerPubkey() {
 bool P2PConnectionManager::establishSecureConnectionWithChallengeD() {
     EVP_PKEY* pb;
     in_addr ip;
-    if(!this->serverConnectionManager->waitForOpponentCredentials(pb,ip)) {
+    if(!this->serverConnectionManager->waitForOpponentCredentials(&pb,ip)) {
         cout<<"error in receiving challenged pubkey"<<endl;
         return false;
     }
