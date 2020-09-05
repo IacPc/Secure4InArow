@@ -350,12 +350,20 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
 
     cout<<"Port has been given"<<endl;
     serverConnectionManager->setP2Pport(htons(input_port));
-    cout<<"Port set"<<endl;
+
 
     mySocket = socket(AF_INET, SOCK_STREAM, 0);
     myAddr.sin_family = AF_INET;
-    myAddr.sin_port = htons(this->serverConnectionManager->getP2PPort());
-    myAddr.sin_addr = this->serverConnectionManager->getMyAddr();
+    myAddr.sin_port = (unsigned short)this->serverConnectionManager->getP2PPort();
+
+    //myAddr.sin_addr.s_addr = INADDR_ANY;
+    inet_pton(AF_INET, "127.0.0.1", &myAddr.sin_addr);
+
+    char buffer[INET_ADDRSTRLEN];
+    inet_ntop( AF_INET, &myAddr.sin_addr.s_addr, buffer, sizeof( buffer ));
+    printf( "Opponent address:%s\n", buffer );
+
+    cout<<"Challenged address built"<<endl;
 
     if (::bind(mySocket, (struct sockaddr *) &myAddr, sizeof(myAddr)) == -1) {
         cerr << "Error during bind" << endl;
@@ -636,7 +644,7 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
         string y_coordinate;
         do {
             y_coordinate.clear();
-            cout << "Type the coordinate x: choose a number between 1 and 7" << endl;
+            cout << "Type the coordinate y: choose a number between 1 and 7" << endl;
             getline(cin, y_coordinate);
         } while (!tryParseY(&y_coordinate, x));
 
@@ -827,7 +835,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
 void P2PConnectionManager::setOpponentIp(struct in_addr ip) {
 
     this->opponentAddr.sin_family = AF_INET;
-    this->opponentAddr.sin_port = this->serverConnectionManager->getP2PPort();
+    this->opponentAddr.sin_port = htons((unsigned short )this->serverConnectionManager->getP2PPort());
     this->opponentAddr.sin_addr = ip;
 
     char buffer[INET_ADDRSTRLEN];
@@ -841,7 +849,7 @@ bool P2PConnectionManager::connectToChallengedUser() {
     int ret;
     this->opponentSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-    ret = connect(this->opponentSocket, (struct sockaddr*)&this->myAddr, sizeof(this->myAddr));
+    ret = connect(this->opponentSocket, (struct sockaddr*)&this->opponentAddr, sizeof(this->opponentAddr));
     if(ret < 0){
         cerr<<"Error during TCP connection with challenged user\n";
         return false;

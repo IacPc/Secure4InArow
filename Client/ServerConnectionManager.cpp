@@ -1059,8 +1059,3 @@ void ServerConnectionManager::setP2Pport(uint32_t port){
 uint32_t ServerConnectionManager::getServerPort(){
     return this->serverAddr.sin_port;
 }
-
-struct in_addr ServerConnectionManager::getMyAddr() {
-
-    return this->getMyAddr();
-}
