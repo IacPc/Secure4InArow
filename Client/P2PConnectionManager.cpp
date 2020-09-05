@@ -315,17 +315,53 @@ bool P2PConnectionManager::sendMyPubKey() {
 //////                                        CHALLENGED FUNCTIONS                                              ////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+bool tryParse(std::string* input, unsigned int& output) {
+    unsigned int temp;
+    try{
+        temp = std::stoi(input->c_str());
+    } catch (std::invalid_argument) {
+        return false;
+    }
+    output = temp;
+    return true;
+}
+
 void P2PConnectionManager::startTheGameAsChallengeD() {
+
+    //SET p2pPort for the challenged
+    string *port_input = new string();
+    bool valid;
+    uint32_t input_port;
+
+    uint32_t serverPort = htons(serverConnectionManager->getServerPort());
+    do{
+        valid = true;
+        cout<<"Insert a port for the P2P communication"<<endl;
+        getline(std::cin, *port_input);
+        valid = tryParse(port_input, input_port);
+        if((input_port > 65535) || (input_port < 2000) || (input_port == serverPort )) {
+            valid = false;
+            cout << "Error! Type a valid port number" << endl;
+            port_input->clear();
+        }
+
+    }while(!valid);
+
+    cout<<"Port has been given"<<endl;
+    serverConnectionManager->setP2Pport(htons(input_port));
+    cout<<"Port set"<<endl;
 
     mySocket = socket(AF_INET, SOCK_STREAM, 0);
     myAddr.sin_family = AF_INET;
     myAddr.sin_port = htons(this->serverConnectionManager->getP2PPort());
-    myAddr.sin_addr.s_addr = INADDR_ANY;
+    myAddr.sin_addr = this->serverConnectionManager->getMyAddr();
 
     if (::bind(mySocket, (struct sockaddr *) &myAddr, sizeof(myAddr)) == -1) {
         cerr << "Error during bind" << endl;
         return;
     }
+
 
     if (!waitForChallengeRConnection()) {
         cerr << "Error during connection with challenger" << endl;
@@ -360,6 +396,11 @@ bool P2PConnectionManager::waitForChallengeRConnection() {
         cout<<"Error sending challenged readiness message"<<endl;
         return false;
     }
+
+    char buffer[INET_ADDRSTRLEN];
+    inet_ntop( AF_INET, &this->myAddr.sin_addr, buffer, sizeof( buffer ));
+    printf( "address:%s\n", buffer );
+    cout<<"PORT "<<this->myAddr.sin_port<<endl;
 
     int len;
     len = sizeof(this->opponentAddr);
@@ -675,6 +716,7 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeD() {
         cout<<"error in receiving challenged pubkey"<<endl;
         return false;
     }
+    cout<<"I've received the opponent credentials"<<endl;
     this->signatureManager->setPubkey(pb);
     this->setOpponentIp(ip);
 
@@ -787,6 +829,11 @@ void P2PConnectionManager::setOpponentIp(struct in_addr ip) {
     this->opponentAddr.sin_family = AF_INET;
     this->opponentAddr.sin_port = this->serverConnectionManager->getP2PPort();
     this->opponentAddr.sin_addr = ip;
+
+    char buffer[INET_ADDRSTRLEN];
+    inet_ntop( AF_INET, &ip, buffer, sizeof( buffer ));
+    printf( "Opponent address:%s\n", buffer );
+    cout<<"Opponent PORT "<<this->opponentAddr.sin_port<<endl;
 
 }
 

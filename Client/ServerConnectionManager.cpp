@@ -700,7 +700,10 @@ bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY** pubkey,struc
     cout<<"creating opponent credentials"<<endl;
     memcpy(&ip,opponentCredentials,sizeof(ip));
 
-    memcpy(&this->P2Pport,&opponentCredentials[4],sizeof(P2Pport));
+    uint32_t port;
+    memcpy(&port,&opponentCredentials[4],sizeof(P2Pport));
+
+    this->P2Pport = htons(port);
 
     long pubkeyLen = plainTextLen -(sizeof(int)+ sizeof(in_addr));
 
@@ -927,17 +930,6 @@ int ServerConnectionManager::getP2PPort() {
     return this->P2Pport;
 }
 
-bool tryParse(std::string* input, unsigned int& output) {
-    unsigned int temp;
-    try{
-        temp = std::stoi(input->c_str());
-    } catch (std::invalid_argument) {
-        return false;
-    }
-    output = temp;
-    return true;
-}
-
 unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len) {
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
     unsigned char aadBuf[aadLen];
@@ -946,25 +938,6 @@ unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len
     unsigned char ivBuf[ivLen];
     unsigned char counterBuf[sizeof(this->counter)];
     unsigned char* tagBuf;
-
-    //SET p2pPort for the challenged
-    string *port_input = new string();
-    bool valid;
-    uint32_t input_port;
-    do{
-        valid = true;
-        cout<<"Insert a port for the P2P communication"<<endl;
-        getline(std::cin, *port_input);
-        valid = tryParse(port_input, input_port);
-        if((input_port > 65535) || (input_port < 2000) || (input_port == this->serverAddr.sin_port) ) {
-            valid = false;
-            cout << "Error! Type a valid port number" << endl;
-            port_input->clear();
-        }
-
-    }while(!valid);
-
-    P2Pport = htons(input_port);
 
     size_t plainTextLen = sizeof(this->getP2PPort()) + this->userName->length() + 1;
     auto* plainTextBuf = new unsigned char[plainTextLen];
@@ -1080,4 +1053,14 @@ bool ServerConnectionManager::sendChallengedResponse(string *opponent, char resp
     return true;
 }
 
+void ServerConnectionManager::setP2Pport(uint32_t port){
+    this->P2Pport = port;
+}
+uint32_t ServerConnectionManager::getServerPort(){
+    return this->serverAddr.sin_port;
+}
 
+struct in_addr ServerConnectionManager::getMyAddr() {
+
+    return this->getMyAddr();
+}

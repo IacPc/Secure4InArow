@@ -429,7 +429,7 @@ bool UserConnectionManager::sharePlayersList() {
                         delete opponent;
                         return false;
                     }
-                    cout<<"CHALLENGEDREADYFORCHALLENGEMESSAGE Returned true"<<endl;
+
                     //invio la mia chiave al challenger
                     if (!sendMyKeyToChallenger(opponent, challenged_port)) {
                         waitingForReadiness = false;
@@ -476,7 +476,7 @@ bool UserConnectionManager::sharePlayersList() {
         }
 
     }
-    delete opponent;
+    //delete opponent;
     return true;
 }
 bool UserConnectionManager::waitForPlayersRequest(unsigned char*buffer, size_t buffer_len) {
@@ -1038,7 +1038,7 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
         delete [] buffer;
         return false;
     }
-    cout<<"IO SONO: "<<this->userName->c_str()<<endl;
+
     uint32_t cont;
     memcpy(&cont, &buffer[1+AESGCMIVLENGTH], COUNTERLENGTH);
     if(cont != this->counter+1){
@@ -1106,7 +1106,6 @@ bool UserConnectionManager::waitForChallengedReady(unsigned char*buffer, size_t 
         return false;
     }
 
-    cout<<"Username received expected"<<endl;
     delete user;
     return true;
 }
@@ -1138,7 +1137,6 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
     pos += port_len;
 
     memcpy(plainMsg + pos, myPubKey, key_len);
-    delete [] myPubKey;
     pos+= key_len;
 
     size_t plain_len = pos;
@@ -1291,6 +1289,9 @@ void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
 
 }
 
+struct in_addr UserConnectionManager::getClientAddr() {
+    return this->clAdd.sin_addr;
+}
 
 UserConnectionManager::~UserConnectionManager() {
 

@@ -69,6 +69,7 @@ private:
     unsigned char* createEndGameMessage(size_t&);
     unsigned char* createCHallengedReadyMessage(size_t&);
 
+
 public:
 
     ServerConnectionManager(const char* server_addr, int port, string* user);
@@ -81,6 +82,9 @@ public:
     void createConnectionWithServer();
     string *getUsername();
     int getP2PPort();
+    void setP2Pport(uint32_t);
+    uint32_t getServerPort();
+    struct in_addr getMyAddr();
 
 };
 
