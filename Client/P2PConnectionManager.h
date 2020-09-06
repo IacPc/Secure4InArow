@@ -45,7 +45,7 @@ private:
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
     bool sendCoordinateMessage(uint8_t, uint8_t);
-
+    bool waitForFirstCoordinateMessage(uint8_t&,uint8_t&);
     bool waitForHelloMessage();         //valido per entrambi
     bool sendHelloMessage();            //valido per entrambi
     bool waitForChallengeRPubKey();
