@@ -12,10 +12,6 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
         return;
     }
 
-    if(!this){
-        cout<<"ACCENDI LA BESTEMMIATRICE"<<endl;
-    }else
-        cout<<"SI PUÒ ANDARE AVANTI"<<endl;
 
     this->serverConnectionManager = srvcnm;
 
@@ -285,6 +281,7 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
     step += len_16t;
 
     //delete [] pubKeyBuf;
+    std::cout<<"STO PER FIRMARE IL MESSAGGIO"<<endl;
     size_t signatureLength = step;
     unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,signatureLength);
     if(!signature) {
@@ -321,7 +318,7 @@ bool P2PConnectionManager::sendMyPubKey() {
     delete [] pKeyMsg;
     if(ret!= len)
         return false;
-
+    cout<<"PUBKEY MESSAGE: HO INVIATO "<<ret<<" BYTES"<<endl;
     return true;
 }
 
@@ -649,8 +646,9 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
         if(!waitForCoordinateMessage(x, y,isFirstMEssage))
             return false;
         isFirstMEssage = false;
-
+        //TESTARE LA FINE DEL GIOCO
         string x_coordinate;
+        x = y = 0;
         do {
             x_coordinate.clear();
             cout << "Type the coordinate x: choose a number between 1 and 6" << endl;
@@ -662,18 +660,19 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             y_coordinate.clear();
             cout << "Type the coordinate y: choose a number between 1 and 7" << endl;
             getline(cin, y_coordinate);
-        } while (!tryParseY(&y_coordinate, x));
+        } while (!tryParseY(&y_coordinate, y));
 
+        cout << "Your coordinate => X= " << (unsigned int)x << ",Y=" << (unsigned int)y << endl;
         if(!sendCoordinateMessage(x, y)){
             cout<<"Error: Coordinate message has not been sent"<<endl;
             return false;
         }
 
-        //TESTARE LA FINE DEL GIOCO
 
         //TESTARE LA FINE DELLA PARTITA
 
     }
+    return true;
 }
 
 bool P2PConnectionManager::waitForPeerPubkey() {
@@ -682,7 +681,7 @@ bool P2PConnectionManager::waitForPeerPubkey() {
     int ret = recv(this->opponentSocket, peerPubKeyMessageBuffer, 2048, 0);
 
     if (ret <= 0) {
-        cout<<"received "<<ret << " bytes"<<endl;
+        cout<<"PeerPubKey received "<<ret << " bytes"<<endl;
         return false;
     }
 
@@ -800,9 +799,8 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
        return;
    }
 
-   //uint8_t coordX,coordY;
    uint8_t coordX,coordY;
-   int ret, status = 1;
+   int ret;
    auto* encryptedCoordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
    unsigned char* clearTextCoordinateMessageBuffer;
    unsigned char *encryptedChallengeMessageBuffer;
@@ -837,7 +835,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
            cout<<"error in receiving coordinate"<<endl;
            return;
        }
-       cout<<"received coordinate x="<<(unsigned int)coordX<<" Y= "<<(unsigned int)coordY<<endl;
+       cout<<"received coordinate X="<<(unsigned int)coordX<<" Y= "<<(unsigned int)coordY<<endl;
 
    }
 
