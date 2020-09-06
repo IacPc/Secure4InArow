@@ -158,7 +158,7 @@ bool P2PConnectionManager::sendCoordinateMessage(uint8_t x, uint8_t y) {
     }
     int ret = send(this->opponentSocket,message,len,0);
 
-    cout<<"THE WHOLE MESSAGE IS"<<endl;
+    cout<<"THE WHOLE MESSAGE IS "<<ret<<endl;
     BIO_dump_fp(stdout, (const char*)message, len);
 
     if(ret != len){
@@ -235,7 +235,7 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t& x,uint8_t& y) {
     memcpy(ivBuf, &coordinateMessagebuf[step],ivLength);
     memcpy(aadBuf,coordinateMessagebuf,aadLen);
     step += ivLength +sizeof(receivedCounter);
-    size_t cipherTextLen = AESBLOCKLENGTH;
+    size_t cipherTextLen = 2;
     memcpy(cipherText,&coordinateMessagebuf[step],cipherTextLen);
     step += cipherTextLen;
     memcpy(tagBuf,&coordinateMessagebuf[step],tagLen);
@@ -740,7 +740,7 @@ bool P2PConnectionManager::waitForFirstCoordinateMessage(uint8_t& x,uint8_t& y) 
     auto* coordinateMessagebuf = new unsigned char[len];
     int ret = recv(this->opponentSocket,coordinateMessagebuf,len,0);
     if(ret!= len){
-        cout<<"Error in receiving coordiante message"<<endl;
+        cout<<"Error in receiving coordinate message"<<endl;
         return false;
     }
     if(coordinateMessagebuf[0] != COORDINATEMESSAGECODE){
@@ -758,15 +758,13 @@ bool P2PConnectionManager::waitForFirstCoordinateMessage(uint8_t& x,uint8_t& y) 
     memcpy(ivBuf, &coordinateMessagebuf[step],ivLength);
     memcpy(aadBuf,coordinateMessagebuf,aadLen);
     step += ivLength +sizeof(receivedCounter);
-    size_t cipherTextLen = ret-aadLen-tagLen;
+    size_t cipherTextLen = 2;
     memcpy(cipherText,&coordinateMessagebuf[step],cipherTextLen);
     step += cipherTextLen;
     memcpy(tagBuf,&coordinateMessagebuf[step],tagLen);
 
-    cout<<"THE WHOLE MESSAGE IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(coordinateMessagebuf), ret);
 
-    cout<<"THE ENCRYPTED PART IS"<<cipherTextLen<<endl;
+    cout<<"THE ENCRYPTED PART IS "<<cipherTextLen<<endl;
     BIO_dump_fp(stdout, reinterpret_cast<const char *>(cipherText), cipherTextLen);
 
     cout<<"THE AAD PART IS"<<endl;
@@ -774,6 +772,9 @@ bool P2PConnectionManager::waitForFirstCoordinateMessage(uint8_t& x,uint8_t& y) 
 
     cout<<"THE TAG PART IS"<<endl;
     BIO_dump_fp(stdout, reinterpret_cast<const char *>(tagBuf), tagLen);
+
+    cout<<"THE WHOLE MESSAGE IS "<<ret<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(coordinateMessagebuf), ret);
 
     size_t plainTextLen = cipherTextLen;
     unsigned char* clearText = this->symmetricEncryptionManager->decryptThisMessage(cipherText,plainTextLen,aadBuf,
