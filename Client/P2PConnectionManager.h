@@ -32,6 +32,7 @@ private:
     int mySocket;
     string myUsername;
     string *opponentUsername;
+    string *pwd;
     SignatureManager* signatureManager;
     SymmetricEncryptionManager* symmetricEncryptionManager;
     DiffieHellmannManager *diffieHellmannManager;
