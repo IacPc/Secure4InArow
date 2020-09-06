@@ -45,12 +45,11 @@ private:
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
     bool sendCoordinateMessage(unsigned int, unsigned int);
-    bool waitForFirstCoordinateMessage(unsigned int&,unsigned int&);
     bool waitForHelloMessage();         //valido per entrambi
     bool sendHelloMessage();            //valido per entrambi
     bool waitForChallengeRPubKey();
     bool sendChallengeDPubKey();
-    bool waitForCoordinateMessage(unsigned int&,unsigned int&);
+    bool waitForCoordinateMessage(unsigned int&,unsigned int&, bool);
     bool tryParseX(std::string* , unsigned int& );
     bool tryParseY(std::string* , unsigned int& );
     bool challengeDGame(bool&);
