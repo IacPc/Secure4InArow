@@ -21,9 +21,6 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
     inet_pton(AF_INET, (const char*)&server_addr, &serverAddr.sin_addr);
 
 
-    std::cout << "Enter your prvkey file password" << std::endl;
-    getline(std::cin, this->pwd);
-
     RAND_poll();
 
     cout<<"ServerConnectionManager created successfully"<<endl;
@@ -32,7 +29,8 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
 
 void ServerConnectionManager::enterThegame() {
 
-    createConnectionWithServer();
+    if(!createConnectionWithServer())
+        return;
 
     while(true){
         std::vector<std::string*>* playerList = nullptr;
@@ -87,8 +85,10 @@ void ServerConnectionManager::enterThegame() {
                 in_addr ip;
                 if(!this->waitForOpponentCredentials(&pb,ip)) {
                     cout<<"error in receiving challenger pubkey. The game cannot start"<<endl;
-                }
-                auto *p2pConnMan = new P2PConnectionManager(pb, this,&this->pwd);
+                }else
+                    cout<<"challenger pubkey received correctly"<<endl;
+
+                auto *p2pConnMan = new P2PConnectionManager(pb, this);
                 p2pConnMan->setOpponentIp(ip);
                 std::thread t(&P2PConnectionManager::startTheGameAsChallengeD, p2pConnMan);
                 t.join();
@@ -108,7 +108,7 @@ void ServerConnectionManager::enterThegame() {
             if (challengedSaidYes) {
                 cout << selectedPlayer->c_str() << " has accepted" << endl;
 
-                auto *p2pConnMan = new P2PConnectionManager(nullptr, this,&this->pwd);
+                auto *p2pConnMan = new P2PConnectionManager(nullptr, this);
                 std::thread t(&P2PConnectionManager::startTheGameAsChallengeR, p2pConnMan);
                 t.join();
             } else {
@@ -144,21 +144,21 @@ bool ServerConnectionManager::connectToServer(){
 
 }
 
-void ServerConnectionManager::createConnectionWithServer() {
+bool ServerConnectionManager::createConnectionWithServer() {
    bool ok = this->connectToServer();
    if(!ok)
-       return;
+       return ok;
    ok = secureTheConnection();
 
    if(!ok)
-       return;
+       return ok;
    cout<<"created secure channel with server, players list request ongoing"<<endl;
    ok= this->sendPlayersListRequest();
    if(!ok) {
        cout<<"error in sending Player list request"<<endl;
-       return;
+       return ok;
    }
-
+   return ok;
 }
 
 bool ServerConnectionManager::secureTheConnection(){
@@ -205,7 +205,7 @@ bool ServerConnectionManager::secureTheConnection(){
     string* path = new string("../Client/Client_Key/");
     path->append(userName->c_str());
     path->append("_prvkey.pem");
-    this->signatureManager = new SignatureManager(path,&this->pwd);
+    this->signatureManager = new SignatureManager(path);
     this->signatureManager->setPubkey(serverPubkey);
     this->diffieHellmannManager = new DiffieHellmannManager();
     //send the readiness msg
@@ -910,10 +910,7 @@ bool ServerConnectionManager::waitForChallengedResponseMessage() {
 }
 
 ServerConnectionManager::~ServerConnectionManager() {
-    long len = this->pwd.length();
-    this->pwd.replace(0,len,"0");
-    cout<<pwd.c_str()<<endl;
-    pwd.clear();
+
     delete userName;
     delete symmetricEncryptionManager;
     delete signatureManager;

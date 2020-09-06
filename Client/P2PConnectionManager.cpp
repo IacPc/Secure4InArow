@@ -5,27 +5,36 @@
 #include "P2PConnectionManager.h"
 #include "ServerConnectionManager.h"
 
-P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnectionManager *srvcnm,string* p) {
+P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnectionManager *srvcnm) {
+
+    if(!srvcnm){
+        cout<<"not valid serverconnectionmanager"<<endl;
+        return;
+    }
+
+    if(!this){
+        cout<<"ACCENDI LA BESTEMMIATRICE"<<endl;
+    }else
+        cout<<"SI PUÒ ANDARE AVANTI"<<endl;
 
     this->serverConnectionManager = srvcnm;
 
-    std::string* prvkPath = new std::string("../Client/Client_Key/");
-    prvkPath->append(srvcnm->getUsername()->c_str());
-    prvkPath->append("_prvkey.pem");
+    std::string prvkPath("../Client/Client_Key/");
+    prvkPath.append(srvcnm->getUsername()->c_str());
+    prvkPath.append("_prvkey.pem");
+    cout<<"PRVKPATH= "<<prvkPath.c_str()<<endl;
 
-    this->pwd = new string (p->c_str());
+    myUsername.append(srvcnm->getUsername()->c_str());
+    cout<<"CREATING MY USERNAME"<<endl;
+    cout<<"CREATING SIGNATURE MANAGER"<<endl;
 
-    myUsername = new string(this->serverConnectionManager->getUsername()->c_str());
-
-
-    signatureManager = new SignatureManager(prvkPath,pwd);
+    signatureManager = new SignatureManager(&prvkPath);
     signatureManager->setPubkey(opponentKey);
-
-    delete prvkPath;
 
     memset(&this->opponentAddr,0X00,sizeof(struct sockaddr_in));
 
     RAND_poll();
+    cout<<"CREATING DH MANAGER"<<endl;
 
     diffieHellmannManager = new DiffieHellmannManager();
 
@@ -33,10 +42,7 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
 }
 
 P2PConnectionManager::~P2PConnectionManager() {
-    long len = this->pwd->length();
-    this->pwd->replace(0,len,"0");
-    this->pwd->clear();
-    delete serverConnectionManager;
+
     delete signatureManager;
     delete symmetricEncryptionManager;
 
@@ -80,13 +86,13 @@ bool P2PConnectionManager::waitForHelloMessage() {
 
 bool P2PConnectionManager::sendHelloMessage() {
 
-    size_t msg_len = 1 + NONCELENGTH + strlen(this->myUsername->c_str())+1;
+    size_t msg_len = 1 + NONCELENGTH + strlen(this->myUsername.c_str())+1;
     auto* buffer = new unsigned char[msg_len];
 
     buffer[0] = HELLOMSGCODE;
     RAND_bytes((unsigned char*)&this->myNonce, sizeof(this->myNonce));
     memcpy(&buffer[1], (unsigned char*)&this->myNonce, NONCELENGTH);
-    strcpy((char*)&buffer[1 + NONCELENGTH], this->myUsername->c_str());
+    strcpy((char*)&buffer[1 + NONCELENGTH], this->myUsername.c_str());
 
     size_t ret = send(this->opponentSocket, buffer, msg_len, 0);
     if(ret != msg_len){
@@ -97,7 +103,7 @@ bool P2PConnectionManager::sendHelloMessage() {
     return true;
 }
 
-unsigned char *P2PConnectionManager::createCoordinateMessage(unsigned int x, unsigned int y) {
+unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t y) {
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
     unsigned char aadBuf[aadLen];
     size_t ivLen = AESGCMIVLENGTH;
@@ -106,7 +112,7 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(unsigned int x, uns
     auto* tagBuf = new unsigned char[AESGCMTAGLENGTH];
 
     size_t coordinatesBufLen = 2 * sizeof(uint8_t);
-    auto* coordinatesBuf = new unsigned char[coordinatesBufLen];
+    unsigned char coordinatesBuf[2];
     coordinatesBuf[0] = x;
     coordinatesBuf[1] = y;
     aadBuf[0] = COORDINATEMESSAGECODE;
@@ -120,22 +126,11 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(unsigned int x, uns
 
     unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(coordinatesBuf, coordinatesBufLen,
                                                                                      aadBuf, aadLen, ivBuf, ivLen, tagBuf);
-    coordinatesBuf[0] =coordinatesBuf[1] = 0XFF;
-    delete [] coordinatesBuf;
+
     if(!encPayload){
         return nullptr;
     }
-
-    cout<<"THE ENCRYPTED PART IS "<<coordinatesBufLen<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(encPayload), coordinatesBufLen);
-
-    cout<<"THE AAD PART IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(aadBuf), aadLen);
-
-    cout<<"THE TAG PART IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(tagBuf), AESGCMTAGLENGTH);
-
-
+    cout<<"coordinatesBufLen="<<coordinatesBufLen<<endl;
     auto* coordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
     step = 0;
     memcpy(&coordinateMessageBuffer[step],aadBuf,aadLen);
@@ -149,7 +144,7 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(unsigned int x, uns
 
 }
 
-bool P2PConnectionManager::sendCoordinateMessage(unsigned int x, unsigned int y) {
+bool P2PConnectionManager::sendCoordinateMessage(uint8_t x, uint8_t y) {
     size_t len = COORDINATEMESSAGELENGTH;
     unsigned char* message = this->createCoordinateMessage(x, y);
     if(!message){
@@ -158,8 +153,6 @@ bool P2PConnectionManager::sendCoordinateMessage(unsigned int x, unsigned int y)
     }
     int ret = send(this->opponentSocket,message,len,0);
 
-    cout<<"THE WHOLE MESSAGE IS "<<ret<<endl;
-    BIO_dump_fp(stdout, (const char*)message, len);
 
     if(ret != len){
         cout<<"Challenge message buffer not sent"<<endl;
@@ -170,7 +163,7 @@ bool P2PConnectionManager::sendCoordinateMessage(unsigned int x, unsigned int y)
 
 }
 
-bool P2PConnectionManager::tryParseY(std::string * input, unsigned int& output) {
+bool P2PConnectionManager::tryParseY(std::string * input, uint8_t & output) {
     unsigned int temp;
     try{
         temp = std::stoi(input->c_str());
@@ -185,7 +178,7 @@ bool P2PConnectionManager::tryParseY(std::string * input, unsigned int& output) 
     }
 }
 
-bool P2PConnectionManager::tryParseX(std::string * input, unsigned int& output) {
+bool P2PConnectionManager::tryParseX(std::string * input, uint8_t& output) {
     unsigned int temp;
     try{
         temp = std::stoi(input->c_str());
@@ -200,7 +193,7 @@ bool P2PConnectionManager::tryParseX(std::string * input, unsigned int& output) 
     }
 }
 
-bool P2PConnectionManager::waitForCoordinateMessage(unsigned int& x,unsigned int& y) {
+bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool isFirstMessage) {
     size_t len = COORDINATEMESSAGELENGTH;
     size_t ivLength = AESGCMIVLENGTH;
     unsigned char ivBuf[AESGCMIVLENGTH];
@@ -212,6 +205,10 @@ bool P2PConnectionManager::waitForCoordinateMessage(unsigned int& x,unsigned int
 
     auto* coordinateMessagebuf = new unsigned char[len];
     int ret = recv(this->opponentSocket,coordinateMessagebuf,len,0);
+    if(ret<=0){
+        cout<<"opponentn disconnected"<<endl;
+        return false;
+    }
     if(ret!= len){
         cout<<"Error in receiving coordinate message"<<endl;
         return false;
@@ -225,17 +222,22 @@ bool P2PConnectionManager::waitForCoordinateMessage(unsigned int& x,unsigned int
     uint32_t receivedCounter;
     memcpy(&receivedCounter,&coordinateMessagebuf[1 +AESGCMIVLENGTH],sizeof(receivedCounter));
 
-    if(this->counter != receivedCounter){
-        cout<<"Wrong counter, expected "<<this->counter<<", received "<<receivedCounter<<endl;
-        delete [] coordinateMessagebuf;
-        return false;
+    if(!isFirstMessage){
+        if (this->counter != receivedCounter) {
+            cout << "Wrong counter, expected " << this->counter << ", received " << receivedCounter << endl;
+            delete[] coordinateMessagebuf;
+            return false;
+        }
+    }else{
+        this->counter= receivedCounter;
     }
+
     this->counter++;
+
     size_t step = 1;
     memcpy(ivBuf, &coordinateMessagebuf[step],ivLength);
     memcpy(aadBuf,coordinateMessagebuf,aadLen);
     step += ivLength +sizeof(receivedCounter);
-    //size_t cipherTextLen = AESBLOCKLENGTH;
     size_t cipherTextLen = 2;
     memcpy(cipherText,&coordinateMessagebuf[step],cipherTextLen);
     step += cipherTextLen;
@@ -248,12 +250,12 @@ bool P2PConnectionManager::waitForCoordinateMessage(unsigned int& x,unsigned int
         cout<<"error in decrypting coordinate message"<<endl;
         return false;
     }
-    x = clearText[0];
-    y = clearText[1];
+    x =(uint8_t) clearText[0];
+    y =(uint8_t) clearText[1];
 
-    cout<<"The received coordinates are: X = "<<x<<", Y = "<<y<<endl;
+    cout<<"The received coordinates are: X = "<<(unsigned int)x<<", Y = "<<(unsigned int)y<<endl;
 
-    if(x<0 || x>5 || y<0 || y>6){
+    if(x<1 || x>6 || y<1 || y>7){
         cout<<"NOT VALID coordinates!"<<endl;
         return false;
     }
@@ -451,7 +453,7 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
     FILE* pubkeyUser = fopen(path->c_str(),"r");
     EVP_PKEY* pubkey = PEM_read_PUBKEY(pubkeyUser,NULL,NULL,NULL);
     this->signatureManager->setPubkey(pubkey);
-
+    fclose(pubkeyUser);
     if(!sendHelloMessage()){
         cerr<<"Error in sending my Hello Message"<<endl;
         return false;
@@ -639,11 +641,14 @@ void P2PConnectionManager::createSessionKey() {
 bool P2PConnectionManager::challengeDGame(bool& win) {
 
     bool finish = false;
-    unsigned int x;
-    unsigned int y;
-    waitForFirstCoordinateMessage(x, y);
-
+    uint8_t x;
+    uint8_t y;
+    bool isFirstMEssage = true;
     while(!finish){
+
+        if(!waitForCoordinateMessage(x, y,isFirstMEssage))
+            return false;
+        isFirstMEssage = false;
 
         string x_coordinate;
         do {
@@ -659,18 +664,16 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             getline(cin, y_coordinate);
         } while (!tryParseY(&y_coordinate, x));
 
-        if(!sendCoordinateMessage(x-1, y-1)){
+        if(!sendCoordinateMessage(x, y)){
             cout<<"Error: Coordinate message has not been sent"<<endl;
             return false;
         }
 
         //TESTARE LA FINE DEL GIOCO
 
-        waitForCoordinateMessage(x, y);
         //TESTARE LA FINE DELLA PARTITA
 
     }
-    return true;
 }
 
 bool P2PConnectionManager::waitForPeerPubkey() {
@@ -723,75 +726,6 @@ bool P2PConnectionManager::waitForPeerPubkey() {
     size_t pubKeyPosition = 1 + 2*sizeof(this->opponentNonce) + sizeof(recvPubKeyLen);
 
     this->diffieHellmannManager->setPeerPubKey(&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
-
-    return true;
-}
-
-bool P2PConnectionManager::waitForFirstCoordinateMessage(unsigned int& x,unsigned int& y) {
-    size_t len = COORDINATEMESSAGELENGTH;
-    size_t ivLength = AESGCMIVLENGTH;
-    unsigned char ivBuf[AESGCMIVLENGTH];
-    unsigned char cipherText[AESBLOCKLENGTH];
-    size_t tagLen = AESGCMTAGLENGTH;
-    unsigned char tagBuf[AESGCMTAGLENGTH];
-    size_t aadLen = 1 +AESGCMIVLENGTH  +sizeof(this->counter);
-    unsigned char aadBuf[aadLen];
-
-    auto* coordinateMessagebuf = new unsigned char[len];
-    int ret = recv(this->opponentSocket,coordinateMessagebuf,len,0);
-    if(ret!= len){
-        cout<<"Error in receiving coordinate message"<<endl;
-        return false;
-    }
-    if(coordinateMessagebuf[0] != COORDINATEMESSAGECODE){
-        cout<<"wrong message,expected coordinate message"<<endl;
-        delete [] coordinateMessagebuf;
-        return false;
-    }
-
-    uint32_t receivedCounter;
-    memcpy(&receivedCounter,&coordinateMessagebuf[1 +AESGCMIVLENGTH],sizeof(receivedCounter));
-
-    this->counter = receivedCounter;
-    this->counter++;
-    size_t step = 1;
-    memcpy(ivBuf, &coordinateMessagebuf[step],ivLength);
-    memcpy(aadBuf,coordinateMessagebuf,aadLen);
-    step += ivLength +sizeof(receivedCounter);
-    //size_t cipherTextLen = AESBLOCKLENGTH;
-    size_t cipherTextLen = 2;
-    memcpy(cipherText,&coordinateMessagebuf[step],cipherTextLen);
-    step += cipherTextLen;
-    memcpy(tagBuf,&coordinateMessagebuf[step],tagLen);
-
-
-    cout<<"THE ENCRYPTED PART IS "<<cipherTextLen<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(cipherText), cipherTextLen);
-
-    cout<<"THE AAD PART IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(aadBuf), aadLen);
-
-    cout<<"THE TAG PART IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(tagBuf), tagLen);
-
-    cout<<"THE WHOLE MESSAGE IS "<<ret<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(coordinateMessagebuf), ret);
-
-    size_t plainTextLen = cipherTextLen;
-    unsigned char* clearText = this->symmetricEncryptionManager->decryptThisMessage(cipherText,plainTextLen,aadBuf,
-                                                                                    aadLen,tagBuf,ivBuf);
-    if(!clearText){
-        cout<<"error in decrypting coordinate message"<<endl;
-        return false;
-    }
-    x = clearText[0];
-    y = clearText[1];
-
-    cout<<"The received coordinates are: X = "<<x<<", Y = "<<y<<endl;
-    if(x<0 || x>5 || y<0 || y>6){
-        cout<<"NOT VALID coordinates!"<<endl;
-        return false;
-    }
 
     return true;
 }
@@ -867,53 +801,30 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
    }
 
    //uint8_t coordX,coordY;
-   unsigned int coordX,coordY;
+   uint8_t coordX,coordY;
    int ret, status = 1;
    auto* encryptedCoordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
    unsigned char* clearTextCoordinateMessageBuffer;
    unsigned char *encryptedChallengeMessageBuffer;
    RAND_bytes((unsigned char*)&this->counter,sizeof(this->counter));
-   while (true){
-/*       cout << "insert your coordinate X:";
-       cin >> coordX;
-       cout << endl;
+   string x_coordinate,y_coordinate;
 
-       string x;
-       x += (char) coordX;
+    while (true){
 
-       while (!tryParseX(&x, coordX)) {
-           cout << "coordinate not valid, insert it again: ";
-           cin >> coordX;
-           x.replace(0, 1, (char *) &coordX);
-           cout << endl;
-       }
-
-       cout << "insert your coordinate Y:";
-       string y;
-       y += (char) coordY;
-
-       while (!tryParseY(&y, coordY)) {
-           cout << "coordinate not valid, insert it again: ";
-           cin >> coordY;
-           y.replace(0, 1, (char *) &coordY);
-           cout << endl;
-       }
-*/
-       string x_coordinate;
        do {
            x_coordinate.clear();
            cout << "Type the coordinate x: choose a number between 1 and 6" << endl;
            getline(cin, x_coordinate);
        } while (!tryParseX(&x_coordinate, coordX));
 
-       string y_coordinate;
        do {
            y_coordinate.clear();
            cout << "Type the coordinate y: choose a number between 1 and 7" << endl;
            getline(cin, y_coordinate);
        } while (!tryParseY(&y_coordinate, coordY));
 
-       cout << "Your coordinate => X= " << coordX << ",Y=" << coordY << endl;
+       cout << "Your coordinate => X= " << (unsigned int)coordX << ",Y=" << (unsigned int)coordY << endl;
+
 
        if(!sendCoordinateMessage(coordX,coordY)){
            cout<<"error in sending coordinate"<<endl;
@@ -921,12 +832,12 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
        }
 
        cout << "coordinate message sent correctly, waiting for the next move.." << endl;
-
-       if(!this->waitForCoordinateMessage(coordX,coordY)){
+       coordX = coordY = 0;
+       if(!this->waitForCoordinateMessage(coordX,coordY,false)){
            cout<<"error in receiving coordinate"<<endl;
            return;
        }
-       cout<<"received coordinate x="<<coordX<<" Y= "<<coordY<<endl;
+       cout<<"received coordinate x="<<(unsigned int)coordX<<" Y= "<<(unsigned int)coordY<<endl;
 
    }
 

@@ -10,9 +10,7 @@ UserConnectionManager::UserConnectionManager(Server *srv, sockaddr_in client_add
     server = srv;
     clAdd = client_addr;
     userSocket = clSocket;
-
     RAND_poll();
-
     diffieHellmannManager = new DiffieHellmannManager();
     cout<<"UserConnectionManager created successfully"<<endl;
 
@@ -217,7 +215,7 @@ bool UserConnectionManager::waitForClientPubKey() {
     memcpy(signature, (buffer+pos), signature_len);
 
     string* path = new std::string ("../Server/Server_Keys/4InARowServerPrvkey.pem");
-    this->signatureManager = new SignatureManager(path, nullptr);
+    this->signatureManager = new SignatureManager(path);
     path->clear();
     path->append("../Server/Users_Public_Keys/");
     path->append(this->userName->c_str());
@@ -1292,10 +1290,9 @@ void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
 UserConnectionManager::~UserConnectionManager() {
 
     close(userSocket);
-    delete [] server;
     delete userName;
-    delete [] symmetricEncryptionManager;
-    delete [] signatureManager;
+    delete symmetricEncryptionManager;
+    delete signatureManager;
     delete diffieHellmannManager;
 }
 

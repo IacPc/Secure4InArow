@@ -41,8 +41,6 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
         goto ENCRYPTIONERROR;
     }
 
-
-
     if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)){
         std::cout<<"Error in performing encryption"<<std::endl;
         goto ENCRYPTIONERROR;
@@ -54,7 +52,7 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
         goto ENCRYPTIONERROR;
     }
     ciphertext_len += len;
-
+    std::cout<<"ciphertext_len="<<ciphertext_len<<std::endl;
     /* Get the tag */
     if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, AESGCMTAGLENGTH, tag)){
         std::cout<<"Error in retrieving the tag "<<std::endl;
@@ -62,8 +60,8 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
     }
     /* Clean up */
 
-    EVP_CIPHER_CTX_free(ctx);
     plaintext_len = ciphertext_len;
+    EVP_CIPHER_CTX_cleanup(ctx);
     return ciphertext;
 
     ENCRYPTIONERROR:
@@ -124,11 +122,12 @@ SymmetricEncryptionManager::decryptThisMessage(unsigned char *ciphertext, size_t
 
     DECRYPTIONERROR:
         EVP_CIPHER_CTX_cleanup(ctx);
-        //delete [] plaintext;
         return nullptr;
 }
 
 SymmetricEncryptionManager::~SymmetricEncryptionManager() {
-    memset(this->aesKey,0X00,this->aesKeyLen);
+    #pragma optimize("", off)
+        memset(this->aesKey,0X00,this->aesKeyLen);
+    #pragma optimize("", on)
     delete [] this->aesKey;
 }

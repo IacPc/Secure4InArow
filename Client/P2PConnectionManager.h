@@ -30,9 +30,8 @@ private:
     struct sockaddr_in myAddr;
     int opponentSocket;
     int mySocket;
-    string *myUsername;
+    string myUsername;
     string *opponentUsername;
-    string *pwd;
     SignatureManager* signatureManager;
     SymmetricEncryptionManager* symmetricEncryptionManager;
     DiffieHellmannManager *diffieHellmannManager;
@@ -44,26 +43,25 @@ private:
     bool waitForChallengeRConnection();
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
-    bool sendCoordinateMessage(unsigned int, unsigned int);
-    bool waitForFirstCoordinateMessage(unsigned int&,unsigned int&);
+    bool sendCoordinateMessage(uint8_t, uint8_t);
     bool waitForHelloMessage();         //valido per entrambi
     bool sendHelloMessage();            //valido per entrambi
     bool waitForChallengeRPubKey();
     bool sendChallengeDPubKey();
-    bool waitForCoordinateMessage(unsigned int&,unsigned int&);
-    bool tryParseX(std::string* , unsigned int& );
-    bool tryParseY(std::string* , unsigned int& );
+    bool waitForCoordinateMessage(uint8_t&,uint8_t&,bool);
+    bool tryParseX(std::string* , uint8_t& );
+    bool tryParseY(std::string* , uint8_t& );
     bool challengeDGame(bool&);
     void createSessionKey();
     bool connectToChallengedUser();
     bool sendMyPubKey();
     bool waitForPeerPubkey();
 
-    unsigned char* createCoordinateMessage(unsigned int,unsigned int);
+    unsigned char* createCoordinateMessage(uint8_t,uint8_t);
     unsigned char* createPubKeyMessage(size_t&);
 
 public:
-    P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*,string*);
+    P2PConnectionManager(EVP_PKEY*,ServerConnectionManager*);
 
     void startTheGameAsChallengeR();
     void startTheGameAsChallengeD();

@@ -82,6 +82,8 @@ DiffieHellmannManager::DiffieHellmannManager() {
         std::cout<<"ERROR IN initializing key generation"<<std::endl;
         return;
     }
+    std::cout<<"DH key generation"<<std::endl;
+
     if(1 != EVP_PKEY_keygen(DHctx, &my_dhkey)) {
         std::cout<<"ERROR in key generation"<<std::endl;
         return;
@@ -159,7 +161,10 @@ void DiffieHellmannManager::setPeerPubKey(unsigned char* pubkey_buf, size_t pubk
 }
 
 DiffieHellmannManager::~DiffieHellmannManager() {
-    memset(this->sharedSecret,0X00,this->secret_len);
+    #pragma optimize("", off)
+        memset(this->sharedSecret,0X00,this->secret_len);
+    #pragma optimize("", on)
+
     delete [] this->sharedSecret;
     EVP_PKEY_free(this->peerPubKey);
     EVP_PKEY_free(this->myPubKey);

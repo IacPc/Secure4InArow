@@ -33,7 +33,6 @@ class ServerConnectionManager {
 
 private:
     string* userName;
-    string pwd;
     int serverSocket;
     int serverNonce;
     int myNonce;
@@ -79,7 +78,7 @@ public:
     bool sendCHallengedReadyMessage();
     void enterThegame();
     ~ServerConnectionManager();
-    void createConnectionWithServer();
+    bool createConnectionWithServer();
     string *getUsername();
     int getP2PPort();
     void setP2Pport(uint32_t);
