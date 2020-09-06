@@ -256,7 +256,7 @@ bool P2PConnectionManager::waitForCoordinateMessage(unsigned int& x,unsigned int
 
     cout<<"The received coordinates are: X = "<<x<<", Y = "<<y<<endl;
 
-    if(x<0 || x>5 || y<0 || y>6){
+    if(x<1 || x>6 || y<1 || y>7){
         cout<<"NOT VALID coordinates!"<<endl;
         return false;
     }
@@ -667,7 +667,8 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             getline(cin, y_coordinate);
         } while (!tryParseY(&y_coordinate, x));
 
-        if(!sendCoordinateMessage(x-1, y-1)){
+        cout<<"Typed coordinates: X = "<<x<<", Y = "<<y<<endl;
+        if(!sendCoordinateMessage(x, y)){
             cout<<"Error: Coordinate message has not been sent"<<endl;
             return false;
         }
