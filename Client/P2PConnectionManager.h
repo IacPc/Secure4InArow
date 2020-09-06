@@ -44,22 +44,22 @@ private:
     bool waitForChallengeRConnection();
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
-    bool sendCoordinateMessage(uint8_t, uint8_t);
-    bool waitForFirstCoordinateMessage(uint8_t&,uint8_t&);
+    bool sendCoordinateMessage(unsigned int, unsigned int);
+    bool waitForFirstCoordinateMessage(unsigned int&,unsigned int&);
     bool waitForHelloMessage();         //valido per entrambi
     bool sendHelloMessage();            //valido per entrambi
     bool waitForChallengeRPubKey();
     bool sendChallengeDPubKey();
-    bool waitForCoordinateMessage(uint8_t&,uint8_t&);
-    bool tryParseX(std::string* , uint8_t& );
-    bool tryParseY(std::string* , uint8_t& );
+    bool waitForCoordinateMessage(unsigned int&,unsigned int&);
+    bool tryParseX(std::string* , unsigned int& );
+    bool tryParseY(std::string* , unsigned int& );
     bool challengeDGame(bool&);
     void createSessionKey();
     bool connectToChallengedUser();
     bool sendMyPubKey();
     bool waitForPeerPubkey();
 
-    unsigned char* createCoordinateMessage(uint8_t,uint8_t);
+    unsigned char* createCoordinateMessage(unsigned int,unsigned int);
     unsigned char* createPubKeyMessage(size_t&);
 
 public:

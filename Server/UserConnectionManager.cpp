@@ -1289,10 +1289,6 @@ void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
 
 }
 
-struct in_addr UserConnectionManager::getClientAddr() {
-    return this->clAdd.sin_addr;
-}
-
 UserConnectionManager::~UserConnectionManager() {
 
     close(userSocket);

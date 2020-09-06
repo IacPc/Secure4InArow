@@ -78,8 +78,6 @@ private:
 public:
     UserConnectionManager(Server*, sockaddr_in, int);
     void openNewconnectionwithClient();
-    struct in_addr getClientAddr();
-
 
     ~UserConnectionManager();
 };

@@ -97,7 +97,7 @@ bool P2PConnectionManager::sendHelloMessage() {
     return true;
 }
 
-unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t y) {
+unsigned char *P2PConnectionManager::createCoordinateMessage(unsigned int x, unsigned int y) {
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
     unsigned char aadBuf[aadLen];
     size_t ivLen = AESGCMIVLENGTH;
@@ -149,7 +149,7 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t 
 
 }
 
-bool P2PConnectionManager::sendCoordinateMessage(uint8_t x, uint8_t y) {
+bool P2PConnectionManager::sendCoordinateMessage(unsigned int x, unsigned int y) {
     size_t len = COORDINATEMESSAGELENGTH;
     unsigned char* message = this->createCoordinateMessage(x, y);
     if(!message){
@@ -170,8 +170,8 @@ bool P2PConnectionManager::sendCoordinateMessage(uint8_t x, uint8_t y) {
 
 }
 
-bool P2PConnectionManager::tryParseY(std::string * input, uint8_t& output) {
-    uint8_t temp;
+bool P2PConnectionManager::tryParseY(std::string * input, unsigned int& output) {
+    unsigned int temp;
     try{
         temp = std::stoi(input->c_str());
     } catch (std::invalid_argument) {
@@ -185,8 +185,8 @@ bool P2PConnectionManager::tryParseY(std::string * input, uint8_t& output) {
     }
 }
 
-bool P2PConnectionManager::tryParseX(std::string * input, uint8_t& output) {
-    uint8_t temp;
+bool P2PConnectionManager::tryParseX(std::string * input, unsigned int& output) {
+    unsigned int temp;
     try{
         temp = std::stoi(input->c_str());
     } catch (std::invalid_argument) {
@@ -200,7 +200,7 @@ bool P2PConnectionManager::tryParseX(std::string * input, uint8_t& output) {
     }
 }
 
-bool P2PConnectionManager::waitForCoordinateMessage(uint8_t& x,uint8_t& y) {
+bool P2PConnectionManager::waitForCoordinateMessage(unsigned int& x,unsigned int& y) {
     size_t len = COORDINATEMESSAGELENGTH;
     size_t ivLength = AESGCMIVLENGTH;
     unsigned char ivBuf[AESGCMIVLENGTH];
@@ -235,6 +235,7 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t& x,uint8_t& y) {
     memcpy(ivBuf, &coordinateMessagebuf[step],ivLength);
     memcpy(aadBuf,coordinateMessagebuf,aadLen);
     step += ivLength +sizeof(receivedCounter);
+    //size_t cipherTextLen = AESBLOCKLENGTH;
     size_t cipherTextLen = 2;
     memcpy(cipherText,&coordinateMessagebuf[step],cipherTextLen);
     step += cipherTextLen;
@@ -249,6 +250,8 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t& x,uint8_t& y) {
     }
     x = clearText[0];
     y = clearText[1];
+
+    cout<<"The received coordinates are: X = "<<x<<", Y = "<<y<<endl;
 
     if(x<0 || x>5 || y<0 || y>6){
         cout<<"NOT VALID coordinates!"<<endl;
@@ -274,7 +277,6 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
     memcpy(&pubKeyMessageToSignBuffer[step],&this->opponentNonce,sizeof(this->opponentNonce));
     step += sizeof(this->opponentNonce);
     uint16_t len_16t = pubKeyLength;
-    std::cout<<"len_16t ="<<len_16t<<std::endl;
     memcpy(&pubKeyMessageToSignBuffer[step], &len_16t, sizeof(len_16t));
     step += sizeof(len_16t);
     memcpy(&pubKeyMessageToSignBuffer[step],pubKeyBuf,len_16t);
@@ -287,7 +289,6 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
         delete [] pubKeyMessageToSignBuffer;
         return nullptr;
     }
-    cout<<"SIGNATURE LEN "<<signatureLength<<endl;
     size_t pubKeyMessageLength = step + sizeof(len_16t) + signatureLength;
     auto* pubKeyMessageBuffer = new unsigned char[pubKeyMessageLength];
     memcpy(pubKeyMessageBuffer,pubKeyMessageToSignBuffer,step);
@@ -300,8 +301,7 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
 
     delete [] signature;
     delete [] pubKeyMessageToSignBuffer;
-    std::cout<<"PubKeyLen="<<pubKeyLength<<endl;
-    std::cout<<"SignatureLen="<<signatureLength<<endl;
+
     len = pubKeyMessageLength;
     cout<<"Creation of PubKeyMessage of size "<<len<<" finished correctly "<<endl;
 
@@ -639,8 +639,8 @@ void P2PConnectionManager::createSessionKey() {
 bool P2PConnectionManager::challengeDGame(bool& win) {
 
     bool finish = false;
-    uint8_t x;
-    uint8_t y;
+    unsigned int x;
+    unsigned int y;
     waitForFirstCoordinateMessage(x, y);
 
     while(!finish){
@@ -727,7 +727,7 @@ bool P2PConnectionManager::waitForPeerPubkey() {
     return true;
 }
 
-bool P2PConnectionManager::waitForFirstCoordinateMessage(uint8_t& x,uint8_t& y) {
+bool P2PConnectionManager::waitForFirstCoordinateMessage(unsigned int& x,unsigned int& y) {
     size_t len = COORDINATEMESSAGELENGTH;
     size_t ivLength = AESGCMIVLENGTH;
     unsigned char ivBuf[AESGCMIVLENGTH];
@@ -758,6 +758,7 @@ bool P2PConnectionManager::waitForFirstCoordinateMessage(uint8_t& x,uint8_t& y) 
     memcpy(ivBuf, &coordinateMessagebuf[step],ivLength);
     memcpy(aadBuf,coordinateMessagebuf,aadLen);
     step += ivLength +sizeof(receivedCounter);
+    //size_t cipherTextLen = AESBLOCKLENGTH;
     size_t cipherTextLen = 2;
     memcpy(cipherText,&coordinateMessagebuf[step],cipherTextLen);
     step += cipherTextLen;
@@ -786,7 +787,8 @@ bool P2PConnectionManager::waitForFirstCoordinateMessage(uint8_t& x,uint8_t& y) 
     x = clearText[0];
     y = clearText[1];
 
-    if(x>5 || y>6){
+    cout<<"The received coordinates are: X = "<<x<<", Y = "<<y<<endl;
+    if(x<0 || x>5 || y<0 || y>6){
         cout<<"NOT VALID coordinates!"<<endl;
         return false;
     }
@@ -864,7 +866,8 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
        return;
    }
 
-   uint8_t coordX,coordY;
+   //uint8_t coordX,coordY;
+   unsigned int coordX,coordY;
    int ret, status = 1;
    auto* encryptedCoordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
    unsigned char* clearTextCoordinateMessageBuffer;
@@ -910,7 +913,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
            getline(cin, y_coordinate);
        } while (!tryParseY(&y_coordinate, coordY));
 
-       cout << "Your coordinate => X=" << coordX << ",Y=" << coordY << endl;
+       cout << "Your coordinate => X= " << coordX << ",Y=" << coordY << endl;
 
        if(!sendCoordinateMessage(coordX,coordY)){
            cout<<"error in sending coordinate"<<endl;
