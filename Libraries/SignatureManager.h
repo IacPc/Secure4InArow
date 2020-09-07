@@ -17,11 +17,11 @@ class SignatureManager {
 private:
     const EVP_MD* hashMD = EVP_sha256();
     EVP_PKEY* prvKey; // contains the prvKey of the entity(server or client) who owns the instance of this class
-    EVP_PKEY* pubKey; // contains the server pubKey in order to verify his signature (server ha this field NULL)
+    EVP_PKEY* pubKey; // contains the server/peer pubKey in order to verify his signature (server has this field NULL)
 public:
     SignatureManager(std::string*,std::string*);
     SignatureManager(std::string*);
-    explicit SignatureManager(EVP_PKEY*,EVP_PKEY*);
+    SignatureManager(EVP_PKEY*,EVP_PKEY*);
 
     SignatureManager();
     ~SignatureManager();

@@ -7,16 +7,18 @@
 SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* pubkey_file_name) {
 
     if (prvkey_file_name) {
-        FILE *prvkey_file = fopen(prvkey_file_name->c_str(), "r");
-        if (!prvkey_file) {
-            std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
-            return;
-        }
-        this->prvKey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL,NULL);
-        fclose(prvkey_file);
-        if(!this->prvKey)
-            std::cout<<"Error! Wrong prvkey file password"<<std::endl;
+        std::string pwd;
 
+        while (!this->prvKey ) {
+            FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
+            pwd.clear();
+            std::cout << "Enter your prvkey file password" << std::endl;
+            getline(std::cin, pwd);
+            this->prvKey  = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
+            fclose(prvkey_file);
+        }
+
+        std::cout << "private key set correctly" << std::endl;
     }
     std::cout << "private key set correctly" << std::endl;
 
@@ -77,30 +79,22 @@ SignatureManager::SignatureManager(EVP_PKEY* pb , EVP_PKEY* pv) {
 }
 
 SignatureManager::SignatureManager(std::string *prvkey_file_name) {
-    EVP_PKEY* pv = nullptr;
     if (prvkey_file_name) {
         std::cout << "APRO IL FILE CON LA PRV KEY " << std::endl;
 
-        FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
+        std::string pwd;
+        while (!this->prvKey ) {
+            FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
+            pwd.clear();
+            std::cout << "Enter your prvkey file password" << std::endl;
+            getline(std::cin, pwd);
+            this->prvKey  = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
+            fclose(prvkey_file);
 
-        if (prvkey_file == nullptr) {
-            std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
-            return;
-        }
-        std::cout << "STO PER SETTARE LA PRVKEY " << std::endl;
-
-        pv = PEM_read_PrivateKey(prvkey_file, NULL, NULL,NULL);
-        fclose(prvkey_file);
-        std::cout << "PRVKEY SETTATA NON SI SA SE BENE O MALE " << std::endl;
-
-        if(!pv) {
-            std::cout << "Error! Wrong prvkey file password" << std::endl;
-            return;
         }
         std::cout << "private key set correctly" << std::endl;
     }else
         std::cout << "private key left empty" << std::endl;
-    this->prvKey = pv;
 
 }
 
