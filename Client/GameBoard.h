@@ -11,13 +11,14 @@ class GameBoard {
 private:
     int **gameMatrix;
 
-    int insertCoordinateInBoard(uint8_t, uint8_t);
-    bool iHaveWon();
-    bool iHaveLost();
+    int insertCoordinateInBoard(uint8_t, uint8_t, int);
+    bool gameFinished(int);
 public:
     GameBoard();
     int insertOpponentMove(uint8_t, u_int8_t);
     int insertMyMove(uint8_t, uint8_t);
+
+    ~GameBoard();
 
 
 };

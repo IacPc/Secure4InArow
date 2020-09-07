@@ -19,21 +19,20 @@ private:
     EVP_PKEY* prvKey; // contains the prvKey of the entity(server or client) who owns the instance of this class
     EVP_PKEY* pubKey; // contains the server/peer pubKey in order to verify his signature (server has this field NULL)
 public:
-    SignatureManager(std::string*,std::string*);
-    SignatureManager(std::string*);
-    SignatureManager(EVP_PKEY*,EVP_PKEY*);
 
-    SignatureManager();
+    SignatureManager(std::string*);
+
+
+     SignatureManager();
     ~SignatureManager();
     unsigned char* signTHisMessage(unsigned char*, size_t&);
+    unsigned char* getPubkey(size_t&);
     bool verifyThisSignature(unsigned char* signature, size_t signatureLen,
                              unsigned char* messageToVerify, size_t messageToVerifyLength);
     void setPubkey(EVP_PKEY*);
-    void setPrvkey(EVP_PKEY*);
-    unsigned char* getPubkey(size_t&);
+
     EVP_PKEY* getPrvkey();
 
-    void setPrvkey(std::string*);
 
 };
 

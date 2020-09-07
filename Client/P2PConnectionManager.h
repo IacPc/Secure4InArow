@@ -8,6 +8,7 @@
 #include "../Libraries/SignatureManager.h"
 #include "../Libraries/SymmetricEncryptionManager.h"
 #include "../Libraries/DiffieHellmannManager.h"
+#include "GameBoard.h"
 #include <string>
 #include <vector>
 #include <thread>
@@ -32,10 +33,10 @@ private:
     int mySocket;
     string myUsername;
     string *opponentUsername;
-    string *pwd;
     SignatureManager* signatureManager;
     SymmetricEncryptionManager* symmetricEncryptionManager;
     DiffieHellmannManager *diffieHellmannManager;
+    GameBoard * gameBoard;
 
     uint32_t opponentNonce;
     uint32_t myNonce;

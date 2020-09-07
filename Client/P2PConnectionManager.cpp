@@ -393,7 +393,7 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
     }
     cout << "Secure connection has been established. The game can start. " << endl;
     cout << "Wait for the challenger's first move" << endl;
-
+    gameBoard = new GameBoard();
     bool win;
     if (challengeDGame(win)) {
         if(win) {
@@ -798,12 +798,9 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
    if(!establishSecureConnectionWithChallengeD()){
        return;
    }
-   cout<<"estblished secure connection with challenged"<<endl;
+   cout<<"established secure connection with challenged"<<endl;
+   gameBoard = new GameBoard();
    uint8_t coordX,coordY;
-   int ret;
-   auto* encryptedCoordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
-   unsigned char* clearTextCoordinateMessageBuffer;
-   unsigned char *encryptedChallengeMessageBuffer;
    RAND_bytes((unsigned char*)&this->counter,sizeof(this->counter));
    string x_coordinate,y_coordinate;
 

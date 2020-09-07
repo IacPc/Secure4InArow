@@ -9,17 +9,17 @@
 #define OPCODELENGTH 1
 #define COUNTERLENGTH 4
 
-#define AESKEYLENGTH 16
 #define AESBLOCKLENGTH 16
 #define AESGCMIVLENGTH 12
 #define AESGCMTAGLENGTH 16 // RFC 5116
 #define AADLENGTH OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH
 #define NONCELENGTH 4
 #define MAXUSERNAMELENGTH 17
-#define MAXENCRYPTEDUSERNAMELENGTH 32
 #define MAXCERTIFICATELENGTH 4096
 #define SIZETLENGTH 2
 
+#define ROWSNUMBER 6
+#define COLUMNSNUMBER 7
 ////////////////////////////////////////////////////////////////////
 //                      MESSAGE LENGTH                          ////
 ////////////////////////////////////////////////////////////////////
