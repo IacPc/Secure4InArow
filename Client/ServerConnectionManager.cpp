@@ -208,6 +208,7 @@ bool ServerConnectionManager::secureTheConnection(){
     this->signatureManager = new SignatureManager(path);
     this->signatureManager->setPubkey(serverPubkey);
     this->diffieHellmannManager = new DiffieHellmannManager();
+    cout<<"SCM DH OK"<<endl;
     //send the readiness msg
     if(!sendMyPubKey()){
         cerr<<"Error during sending my pubkey\n";

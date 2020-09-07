@@ -150,6 +150,7 @@ unsigned char *DiffieHellmannManager::getSharedSecret(size_t & len) {
 
 void DiffieHellmannManager::setPeerPubKey(unsigned char* pubkey_buf, size_t pubkey_size) {
 
+    std::cout<<"STO SETTANDO LA PEER PUBKEY"<<std::endl;
     if (!d2i_PUBKEY(&this->peerPubKey,(const unsigned char**) &pubkey_buf,(long) pubkey_size) ){
         std::cout<<"d2i_PUBKEY failed"<<std::endl;
         return;
