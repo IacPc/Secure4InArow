@@ -15,13 +15,10 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
     this->serverConnectionManager = srvcnm;
     myUsername.append(srvcnm->getUsername()->c_str());
 
-    cout<<"CREATING MY USERNAME"<<endl;
-    cout<<"CREATING SIGNATURE MANAGER"<<endl;
 
     std::string prvkPath("../Client/Client_Key/");
     prvkPath.append(srvcnm->getUsername()->c_str());
     prvkPath.append("_prvkey.pem");
-    cout<<"PRVKPATH= "<<prvkPath.c_str()<<endl;
     signatureManager = new SignatureManager(&prvkPath);
     signatureManager->setPubkey(opponentKey);
 
@@ -30,7 +27,6 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
     memset(&this->opponentAddr,0X00,sizeof(struct sockaddr_in));
 
     RAND_poll();
-    cout<<"CREATING DH MANAGER"<<endl;
 
     diffieHellmannManager = new DiffieHellmannManager();
 
@@ -126,7 +122,6 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t 
     if(!encPayload){
         return nullptr;
     }
-    cout<<"coordinatesBufLen="<<coordinatesBufLen<<endl;
     auto* coordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
     step = 0;
     memcpy(&coordinateMessageBuffer[step],aadBuf,aadLen);
@@ -262,7 +257,6 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
 unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
     size_t pubKeyLength = 0;
     unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
-    cout<<"PUBKEY LENGTH "<<pubKeyLength<<endl;
 
     size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->opponentNonce) + sizeof(uint16_t) + pubKeyLength;
 
@@ -281,7 +275,6 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
     step += len_16t;
 
     //delete [] pubKeyBuf;
-    std::cout<<"STO PER FIRMARE IL MESSAGGIO"<<endl;
     size_t signatureLength = step;
     unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,signatureLength);
     if(!signature) {
@@ -318,7 +311,6 @@ bool P2PConnectionManager::sendMyPubKey() {
     delete [] pKeyMsg;
     if(ret!= len)
         return false;
-    cout<<"PUBKEY MESSAGE: HO INVIATO "<<ret<<" BYTES"<<endl;
     return true;
 }
 
@@ -416,10 +408,8 @@ bool P2PConnectionManager::waitForChallengeRConnection() {
         return false;
     }
 
-    char buffer[INET_ADDRSTRLEN];
-    inet_ntop( AF_INET, &this->myAddr.sin_addr, buffer, sizeof( buffer ));
-    printf( "address:%s\n", buffer );
-    cout<<"PORT "<<this->myAddr.sin_port<<endl;
+    //char buffer[INET_ADDRSTRLEN];
+    //inet_ntop( AF_INET, &this->myAddr.sin_addr, buffer, sizeof( buffer ));
 
     int len;
     len = sizeof(this->opponentAddr);
@@ -519,7 +509,6 @@ bool P2PConnectionManager::waitForChallengeRPubKey() {
     uint16_t pubkey_len;
     memcpy(&pubkey_len, (buffer+pos), sizeof(pubkey_len));
     pos += sizeof(pubkey_len);
-    std::cout<<"pubkey_len="<<pubkey_len<<endl;
     //prelevo la pubkey
     auto* opponentPubKey = new unsigned char[pubkey_len];
     memcpy(opponentPubKey, (buffer+pos), pubkey_len);
@@ -538,7 +527,6 @@ bool P2PConnectionManager::waitForChallengeRPubKey() {
     memcpy(signature, (buffer+pos), signature_len);
 
 
-    cout<<signature_len<<endl;
     //verifico la firma
     if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, ret-signature_len-2)) {
         cout<<"Signature not verified"<<endl;
@@ -641,12 +629,26 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
     uint8_t x;
     uint8_t y;
     bool isFirstMEssage = true;
+    int ret = 0;
     while(!finish){
 
-        if(!waitForCoordinateMessage(x, y,isFirstMEssage))
+        if(!waitForCoordinateMessage(x, y,isFirstMEssage)) {
+            cout << "Error: Coordinate message has not been received correctly" << endl;
             return false;
+        }
         isFirstMEssage = false;
-        //TESTARE LA FINE DEL GIOCO
+        ret = gameBoard->insertOpponentMove(x, y);  /*
+        if(ret == -1)
+            return false;
+        if(ret == 1){
+            cout<<"You won!"<<endl;
+            finish = true;
+        }
+        if(ret == 2){
+            cout<<"You lost!"<<endl;
+            finish = true;
+        }
+*/
         string x_coordinate;
         x = y = 0;
         do {
@@ -668,8 +670,20 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             return false;
         }
 
+        ret = gameBoard->insertMyMove(x, y);    /*
+        if(ret == -1)
+            return false;
+        if(ret == 1){
+            cout<<"You won!"<<endl;
+            finish = true;
+        }
+        if(ret == 2){
+            cout<<"You lost!"<<endl;
+            finish = true;
+        }
 
-        //TESTARE LA FINE DELLA PARTITA
+*/
+
 
     }
     return true;
@@ -803,7 +817,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
    uint8_t coordX,coordY;
    RAND_bytes((unsigned char*)&this->counter,sizeof(this->counter));
    string x_coordinate,y_coordinate;
-
+    int ret = 0;
     while (true){
 
        do {
@@ -825,13 +839,34 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
            cout<<"error in sending coordinate"<<endl;
            return;
        }
-
+       ret = gameBoard->insertMyMove(coordX, coordY);   /*
+       if(ret == -1)
+            return;
+       if(ret == 1){
+            cout<<"You won!"<<endl;
+            break;
+       }
+       if(ret == 2){
+            cout<<"You lost!"<<endl;
+            break;
+       }    */
        cout << "coordinate message sent correctly, waiting for the next move.." << endl;
        coordX = coordY = 0;
        if(!this->waitForCoordinateMessage(coordX,coordY,false)){
            cout<<"error in receiving coordinate"<<endl;
            return;
        }
+        ret = gameBoard->insertOpponentMove(coordX, coordY);    /*
+        if(ret == -1)
+            return;
+        if(ret == 1){
+            cout<<"You won!"<<endl;
+            break;
+        }
+        if(ret == 2){
+            cout<<"You lost!"<<endl;
+            break;
+        }   */
        cout<<"received coordinate X="<<(unsigned int)coordX<<" Y= "<<(unsigned int)coordY<<endl;
 
    }
@@ -843,12 +878,12 @@ void P2PConnectionManager::setOpponentIp(struct in_addr ip) {
     this->opponentAddr.sin_family = AF_INET;
     this->opponentAddr.sin_port = htons((unsigned short )this->serverConnectionManager->getP2PPort());
     this->opponentAddr.sin_addr = ip;
-
+/*
     char buffer[INET_ADDRSTRLEN];
     inet_ntop( AF_INET, &ip, buffer, sizeof( buffer ));
     printf( "Opponent address:%s\n", buffer );
-    cout<<"Opponent PORT "<<this->opponentAddr.sin_port<<endl;
-
+    cout<<"Opponent PORT "<<ntohs(this->opponentAddr.sin_port)<<endl;
+*/
 }
 
 bool P2PConnectionManager::connectToChallengedUser() {

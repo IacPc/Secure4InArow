@@ -52,7 +52,6 @@ SymmetricEncryptionManager::encryptThisMessage(unsigned char *plaintext, size_t&
         goto ENCRYPTIONERROR;
     }
     ciphertext_len += len;
-    std::cout<<"ciphertext_len="<<ciphertext_len<<std::endl;
     /* Get the tag */
     if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, AESGCMTAGLENGTH, tag)){
         std::cout<<"Error in retrieving the tag "<<std::endl;
