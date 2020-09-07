@@ -78,6 +78,7 @@ private:
 public:
     UserConnectionManager(Server*, sockaddr_in, int);
     void openNewconnectionwithClient();
+    bool isBusy();
 
     ~UserConnectionManager();
 };

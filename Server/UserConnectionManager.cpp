@@ -1190,7 +1190,7 @@ bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
 
     if(buffer_len <= 0){
         cout<<"Error in receiving endGame message"<<endl;
-        delete [] buffer;
+        //delete [] buffer;
         return false;
     }
 
@@ -1285,6 +1285,10 @@ void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
 
     delete [] plaintext;
 
+}
+
+bool UserConnectionManager::isBusy() {
+    return this->busy;
 }
 
 UserConnectionManager::~UserConnectionManager() {

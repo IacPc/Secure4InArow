@@ -45,40 +45,32 @@ SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* p
 }
 
 SignatureManager::SignatureManager(EVP_PKEY* pb , EVP_PKEY* pv) {
+    this->pubKey= NULL;
     if(pb){
-        BIO *mbio = BIO_new(BIO_s_mem());
-        if (!mbio) {
-            std::cout << "Error in creating RSAManager" << std::endl;
-            return;
+        unsigned char* i2dbuff = NULL;
+        int size = i2d_PUBKEY(pb, &i2dbuff);
+        d2i_PUBKEY(&this->pubKey,(const unsigned char**) &i2dbuff,(long) size);
+        if(!this->pubKey){
+            std::cout << "error in setting public key" << std::endl;
+        }else{
+            std::cout << "public key set succesfully" << std::endl;
         }
-        if(PEM_write_bio_PUBKEY(mbio, pb)!=1){
-            std::cout << "Error in creating RSAManager->pubkey" << std::endl;
-            return;
-        }
-        if(!(this->pubKey = PEM_read_bio_PUBKEY(mbio, nullptr, nullptr, nullptr))){
-            std::cout << "Error in creating RSAManager->pubkey" << std::endl;
-            BIO_free(mbio);
-            return;
-        }
-        BIO_free(mbio);
-    }
 
+    }
+    this->prvKey = NULL;
     if(pv){
-        BIO *mbio = BIO_new(BIO_s_mem());
-        if (!mbio) {
-            std::cout << "Error in creating RSAManager" << std::endl;
+        unsigned char* i2dbuff = NULL;
+        int size = i2d_PrivateKey(pv, &i2dbuff);
+        if(size <=0){
+            std::cout<<"error in setting private key "<<std::endl;
             return;
         }
-        if(PEM_write_bio_PrivateKey(mbio, pv,NULL,NULL, 0, 0,NULL) != 1){
-            std::cout << "Error in creating RSAManager->prvkey" << std::endl;
-            return;
+        d2i_PrivateKey(EVP_PKEY_RSA,&this->prvKey,(const unsigned char**) &i2dbuff,(long) size);
+        if(!this->prvKey){
+            std::cout << "error in setting private key" << std::endl;
+        }else{
+            std::cout << "private key set succesfully" << std::endl;
         }
-        if(!(this->prvKey = PEM_read_bio_PrivateKey(mbio, nullptr, nullptr, nullptr))){
-            std::cout << "Error in creating RSAManager->pubkey" << std::endl;
-            BIO_free(mbio);
-            return;
-        }
-        BIO_free(mbio);
     }
     std::cout << "Signature Manager keys created succesfully" << std::endl;
 }
@@ -201,7 +193,7 @@ void SignatureManager::setPrvkey(std::string* prvkey_file_name) {
 
 
 void SignatureManager::setPubkey(EVP_PKEY* pb) {
-    this->pubKey = pb;
+   this->pubKey =pb;
 }
 
 void SignatureManager::setPrvkey(EVP_PKEY * pv) {

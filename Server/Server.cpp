@@ -95,25 +95,19 @@ UserConnectionManager* Server::getUserConnection(string user) {
 
 }
 
-
 std::vector<string> Server::getUserList(string *user) {
     const std::lock_guard<std::mutex> lock(this->mapMutex);
-
     vector<string> list;
     cout<<"Get Users List: \n";
     for (auto x = usersConnectedMap.begin(); x != usersConnectedMap.end(); ++x) {
-        if(strcmp(x->first.c_str(), user->c_str())!=0)
-            list.push_back(x->first.c_str());
+        if(strcmp(x->first.c_str(), user->c_str())!=0) {
+            if(!x->second->isBusy())
+                list.push_back(x->first.c_str());
+        }
     }
-/*
-    for(auto &v : list)
-        cout<<v.c_str()<<" ";
-    cout<<endl;
-*/
+
     return list;
-
 }
-
 bool Server::removeUser(string* user) {
 
     if(!user)

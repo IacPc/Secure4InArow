@@ -109,7 +109,9 @@ void ServerConnectionManager::enterThegame() {
                 cout << selectedPlayer->c_str() << " has accepted" << endl;
 
                 auto *p2pConnMan = new P2PConnectionManager(nullptr, this);
+
                 std::thread t(&P2PConnectionManager::startTheGameAsChallengeR, p2pConnMan);
+
                 t.join();
             } else {
                 cout << selectedPlayer->c_str() << " refused" << endl;
@@ -613,20 +615,20 @@ unsigned char *ServerConnectionManager::createEndGameMessage(size_t& len) {
     size_t ctLen = plainTextLen;
     unsigned char* cipherText = this->symmetricEncryptionManager->encryptThisMessage(plainText, ctLen, aadBuf,
                                                                                      aadLen, ivBUf, ivLen, tagBuf);
-    size_t logoutMessageBufferLen = aadLen + ctLen + AESGCMTAGLENGTH;
-    auto* logoutMessageBuffer = new unsigned char[logoutMessageBufferLen];
+    size_t endGameMessageBufferLen = aadLen + ctLen + AESGCMTAGLENGTH;
+    auto* endGameMessageBuffer = new unsigned char[endGameMessageBufferLen];
     step = 0;
-    memcpy(&logoutMessageBuffer[step],aadBuf,aadLen);
+    memcpy(&endGameMessageBuffer[step], aadBuf, aadLen);
     step += aadLen;
-    memcpy(&logoutMessageBuffer[step],cipherText,ctLen);
+    memcpy(&endGameMessageBuffer[step], cipherText, ctLen);
     step += ctLen;
-    memcpy(&logoutMessageBuffer[step],tagBuf,AESGCMTAGLENGTH);
+    memcpy(&endGameMessageBuffer[step], tagBuf, AESGCMTAGLENGTH);
 
     delete [] tagBuf;
     delete [] cipherText;
 
-    len = logoutMessageBufferLen;
-    return logoutMessageBuffer;
+    len = endGameMessageBufferLen;
+    return endGameMessageBuffer;
 }
 
 bool ServerConnectionManager::sendLogOutMessage() {
@@ -644,10 +646,14 @@ bool ServerConnectionManager::sendLogOutMessage() {
 bool ServerConnectionManager::sendEndGameMessage() {
     size_t endGameMessageBufferLen = 0;
     unsigned char * endGameMessageBuffer = this->createEndGameMessage(endGameMessageBufferLen);
+    if(!endGameMessageBuffer){
+        cout<<"error in creating endGameMessage"<<endl;
+        return false;
+    }
     int ret = send(this->serverSocket, endGameMessageBuffer, endGameMessageBufferLen, 0);
     delete [] endGameMessageBuffer;
     if(ret != endGameMessageBufferLen){
-        cout<<"error in sending LogOutMessage"<<endl;
+        cout<<"error in sending endGameMessage"<<endl;
         return false;
     }
     return true;
@@ -1056,4 +1062,8 @@ void ServerConnectionManager::setP2Pport(uint32_t port){
 }
 uint32_t ServerConnectionManager::getServerPort(){
     return this->serverAddr.sin_port;
+}
+
+EVP_PKEY *ServerConnectionManager::getPrvKey() {
+    return this->signatureManager->getPrvkey();
 }

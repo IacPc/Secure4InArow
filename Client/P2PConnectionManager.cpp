@@ -12,20 +12,13 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
         return;
     }
 
-
     this->serverConnectionManager = srvcnm;
-
-    std::string prvkPath("../Client/Client_Key/");
-    prvkPath.append(srvcnm->getUsername()->c_str());
-    prvkPath.append("_prvkey.pem");
-    cout<<"PRVKPATH= "<<prvkPath.c_str()<<endl;
-
     myUsername.append(srvcnm->getUsername()->c_str());
+
     cout<<"CREATING MY USERNAME"<<endl;
     cout<<"CREATING SIGNATURE MANAGER"<<endl;
 
-    signatureManager = new SignatureManager(&prvkPath);
-    signatureManager->setPubkey(opponentKey);
+    signatureManager = new SignatureManager(opponentKey,srvcnm->getPrvKey());
 
     memset(&this->opponentAddr,0X00,sizeof(struct sockaddr_in));
 
@@ -741,7 +734,7 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeD() {
         cout<<"error in receiving challenged pubkey"<<endl;
         return false;
     }
-    cout<<"I've received the opponent credentials"<<endl;
+    cout<<"Received the opponent credentials"<<endl;
     this->signatureManager->setPubkey(pb);
     this->setOpponentIp(ip);
 
@@ -798,7 +791,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
    if(!establishSecureConnectionWithChallengeD()){
        return;
    }
-
+   cout<<"estblished secure connection with challenged"<<endl;
    uint8_t coordX,coordY;
    int ret;
    auto* encryptedCoordinateMessageBuffer = new unsigned char[COORDINATEMESSAGELENGTH];
@@ -865,8 +858,6 @@ bool P2PConnectionManager::connectToChallengedUser() {
     }
     return true;
 }
-
-
 
 
 
