@@ -18,7 +18,14 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
     cout<<"CREATING MY USERNAME"<<endl;
     cout<<"CREATING SIGNATURE MANAGER"<<endl;
 
-    signatureManager = new SignatureManager(opponentKey,srvcnm->getPrvKey());
+    std::string prvkPath("../Client/Client_Key/");
+    prvkPath.append(srvcnm->getUsername()->c_str());
+    prvkPath.append("_prvkey.pem");
+    cout<<"PRVKPATH= "<<prvkPath.c_str()<<endl;
+    signatureManager = new SignatureManager(&prvkPath);
+    signatureManager->setPubkey(opponentKey);
+
+    //signatureManager = new SignatureManager(opponentKey,srvcnm->getPrvKey());
 
     memset(&this->opponentAddr,0X00,sizeof(struct sockaddr_in));
 

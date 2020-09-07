@@ -1,28 +1,18 @@
-//
-// Created by iacopo on 14/08/20.
-//
-
 #include "SignatureManager.h"
 
 SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* pubkey_file_name) {
 
     if (prvkey_file_name) {
-        std::string pwd;
-        this->prvKey= nullptr;
-        while (!this->prvKey ) {
-            FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
-            if(!prvkey_file){
-                std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
-                return;
-            }
-            pwd.clear();
-            std::cout << "Enter your prvkey file password" << std::endl;
-            getline(std::cin, pwd);
-            this->prvKey  = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
-            fclose(prvkey_file);
+        FILE *prvkey_file = fopen(prvkey_file_name->c_str(), "r");
+        if (!prvkey_file) {
+            std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
+            return;
         }
+        this->prvKey = PEM_read_PrivateKey(prvkey_file, nullptr, NULL,NULL);
+        fclose(prvkey_file);
+        if(!this->prvKey)
+            std::cout<<"Error! Wrong prvkey file password"<<std::endl;
 
-        std::cout << "private key set correctly" << std::endl;
     }
     std::cout << "private key set correctly" << std::endl;
 
@@ -31,8 +21,7 @@ SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* p
         // load the peer's public key:
         FILE *pubkey_file = fopen(pubkey_file_name->c_str(), "r");
         if (!pubkey_file) {
-            std::cout << "Error: cannot open file '" << pubkey_file_name->c_str() << "' (missing?)\n";
-
+            std::cout << "Error: cannot open file '" << prv.c_str() << "' (missing?)\n";
         }
         this->pubKey = PEM_read_PUBKEY(pubkey_file, nullptr, nullptr, nullptr);
         fclose(pubkey_file);
@@ -45,32 +34,40 @@ SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* p
 }
 
 SignatureManager::SignatureManager(EVP_PKEY* pb , EVP_PKEY* pv) {
-    this->pubKey= NULL;
     if(pb){
-        unsigned char* i2dbuff = NULL;
-        int size = i2d_PUBKEY(pb, &i2dbuff);
-        d2i_PUBKEY(&this->pubKey,(const unsigned char**) &i2dbuff,(long) size);
-        if(!this->pubKey){
-            std::cout << "error in setting public key" << std::endl;
-        }else{
-            std::cout << "public key set succesfully" << std::endl;
-        }
-
-    }
-    this->prvKey = NULL;
-    if(pv){
-        unsigned char* i2dbuff = NULL;
-        int size = i2d_PrivateKey(pv, &i2dbuff);
-        if(size <=0){
-            std::cout<<"error in setting private key "<<std::endl;
+        BIO *mbio = BIO_new(BIO_s_mem());
+        if (!mbio) {
+            std::cout << "Error in creating RSAManager" << std::endl;
             return;
         }
-        d2i_PrivateKey(EVP_PKEY_RSA,&this->prvKey,(const unsigned char**) &i2dbuff,(long) size);
-        if(!this->prvKey){
-            std::cout << "error in setting private key" << std::endl;
-        }else{
-            std::cout << "private key set succesfully" << std::endl;
+        if(PEM_write_bio_PUBKEY(mbio, pb)!=1){
+            std::cout << "Error in creating RSAManager->pubkey" << std::endl;
+            return;
         }
+        if(!(this->pubKey = PEM_read_bio_PUBKEY(mbio, nullptr, nullptr, nullptr))){
+            std::cout << "Error in creating RSAManager->pubkey" << std::endl;
+            BIO_free(mbio);
+            return;
+        }
+        BIO_free(mbio);
+    }
+
+    if(pv){
+        BIO *mbio = BIO_new(BIO_s_mem());
+        if (!mbio) {
+            std::cout << "Error in creating RSAManager" << std::endl;
+            return;
+        }
+        if(PEM_write_bio_PrivateKey(mbio, pv,NULL,NULL, 0, 0,NULL) != 1){
+            std::cout << "Error in creating RSAManager->prvkey" << std::endl;
+            return;
+        }
+        if(!(this->prvKey = PEM_read_bio_PrivateKey(mbio, nullptr, nullptr, nullptr))){
+            std::cout << "Error in creating RSAManager->pubkey" << std::endl;
+            BIO_free(mbio);
+            return;
+        }
+        BIO_free(mbio);
     }
     std::cout << "Signature Manager keys created succesfully" << std::endl;
 }
@@ -79,25 +76,28 @@ SignatureManager::SignatureManager(std::string *prvkey_file_name) {
     if (prvkey_file_name) {
         std::cout << "APRO IL FILE CON LA PRV KEY " << std::endl;
 
-        std::string pwd;
-        while (!this->prvKey ) {
-            FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
-            if(!prvkey_file){
-                std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
-                return;
-            }
-            pwd.clear();
-            std::cout << "Enter your prvkey file password" << std::endl;
-            getline(std::cin, pwd);
-            this->prvKey  = PEM_read_PrivateKey(prvkey_file, nullptr, NULL, (char *) pwd.c_str());
-            fclose(prvkey_file);
+        FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
 
+        if (prvkey_file == nullptr) {
+            std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
+            return;
         }
+        std::cout << "STO PER SETTARE LA PRVKEY " << std::endl;
+
+        EVP_PKEY* pv = PEM_read_PrivateKey(prvkey_file, NULL, NULL, NULL);
+        fclose(prvkey_file);
+        while(!pv){
+            std::cout << "Error: PEM_read_PrivateKey returned NULL. Try again"<<std::endl;
+            prvkey_file = fopen(prvkey_file_name->c_str(), "r");
+            pv = PEM_read_PrivateKey(prvkey_file, NULL, NULL, NULL);
+            fclose(prvkey_file);
+        }
+
         std::cout << "private key set correctly" << std::endl;
-    }else {
+        this->prvKey = pv;
+    }else
         std::cout << "private key left empty" << std::endl;
-        this->prvKey= nullptr;
-    }
+
 }
 
 SignatureManager::SignatureManager() {
@@ -117,9 +117,7 @@ unsigned char *SignatureManager::signTHisMessage(unsigned char *messageToBeSigne
         std::cerr << "private key is NULL in Signature Manager\n";
         return nullptr;
     }
-
     auto *sgnt_buf = new unsigned char[EVP_PKEY_size(this->prvKey)];
-
     unsigned int sgnt_size;
     int ret;
 
@@ -133,6 +131,7 @@ unsigned char *SignatureManager::signTHisMessage(unsigned char *messageToBeSigne
         std::cerr << "Error: EVP_SignUpdate returned " << ret << "\n";
         goto SIGNINGERROR;
     }
+
     ret = EVP_SignFinal(signatureCTX, sgnt_buf, &sgnt_size, this->prvKey);
     if (ret == 0) {
         std::cerr << "Error: EVP_SignFinal returned " << ret << "\n";
@@ -144,10 +143,10 @@ unsigned char *SignatureManager::signTHisMessage(unsigned char *messageToBeSigne
     return sgnt_buf;
 
     SIGNINGERROR:
-        EVP_MD_CTX_free(signatureCTX);
-        delete [] sgnt_buf;
-        messageToBeSignedLength = 0;
-        return nullptr;
+    EVP_MD_CTX_free(signatureCTX);
+    delete [] sgnt_buf;
+    messageToBeSignedLength = 0;
+    return nullptr;
 }
 
 bool SignatureManager::verifyThisSignature(unsigned char* signature, size_t signatureLen,
@@ -194,7 +193,7 @@ void SignatureManager::setPrvkey(std::string* prvkey_file_name) {
 
 
 void SignatureManager::setPubkey(EVP_PKEY* pb) {
-   this->pubKey =pb;
+    this->pubKey = pb;
 }
 
 void SignatureManager::setPrvkey(EVP_PKEY * pv) {
@@ -223,6 +222,3 @@ unsigned char *SignatureManager::getPubkey(size_t& pblen) {
 EVP_PKEY* SignatureManager::getPrvkey() {
     return this->prvKey;
 }
-
-
-
