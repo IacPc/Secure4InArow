@@ -21,7 +21,6 @@ private:
 public:
     Client(string* server_addr, int port, string* user);
     bool establishConnection();
-    bool establishP2PCommunication();
     string* getUsername();
     ~Client();
 

@@ -118,13 +118,12 @@ void DiffieHellmannManager::computeSharedSecret() {
     /*allocate buffer for the shared secret*/
 
     skey = new unsigned char[skeylen];
-
     /*Perform again the derivation and store it in skey buffer*/
     if (EVP_PKEY_derive(derive_ctx, skey, &skeylen) <= 0) {
         std::cout<<"ERROR in secret derivation"<<std::endl;
         return ;
     }
-
+    std::cout<<"SHARED SECRET COMPUTED SUCCESSFULLY"<<std::endl;
     this->sharedSecret =skey;
     this->secret_len = skeylen;
 }
@@ -151,10 +150,17 @@ unsigned char *DiffieHellmannManager::getSharedSecret(size_t & len) {
 void DiffieHellmannManager::setPeerPubKey(unsigned char* pubkey_buf, size_t pubkey_size) {
 
     std::cout<<"STO SETTANDO LA PEER PUBKEY"<<std::endl;
-    if (!d2i_PUBKEY(&this->peerPubKey,(const unsigned char**) &pubkey_buf,(long) pubkey_size) ){
+ /*  if (!d2i_PUBKEY(&this->peerPubKey,(const unsigned char**) &pubkey_buf,(long) pubkey_size) ){
+        std::cout<<"d2i_PUBKEY failed"<<std::endl;
+        return;
+   }
+*/
+    this->peerPubKey = d2i_PUBKEY(NULL, (const unsigned char **)(&pubkey_buf), pubkey_size);
+    if(!this->peerPubKey){
         std::cout<<"d2i_PUBKEY failed"<<std::endl;
         return;
     }
+
     std::cout<<"calcolo il segreto"<<std::endl;
     this->computeSharedSecret();
     std::cout<<"shared secret computed succesfully "<<std::endl;

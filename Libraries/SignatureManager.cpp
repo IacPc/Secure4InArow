@@ -117,7 +117,9 @@ unsigned char *SignatureManager::signTHisMessage(unsigned char *messageToBeSigne
         std::cerr << "private key is NULL in Signature Manager\n";
         return nullptr;
     }
+
     auto *sgnt_buf = new unsigned char[EVP_PKEY_size(this->prvKey)];
+
     unsigned int sgnt_size;
     int ret;
 
@@ -131,7 +133,6 @@ unsigned char *SignatureManager::signTHisMessage(unsigned char *messageToBeSigne
         std::cerr << "Error: EVP_SignUpdate returned " << ret << "\n";
         goto SIGNINGERROR;
     }
-
     ret = EVP_SignFinal(signatureCTX, sgnt_buf, &sgnt_size, this->prvKey);
     if (ret == 0) {
         std::cerr << "Error: EVP_SignFinal returned " << ret << "\n";

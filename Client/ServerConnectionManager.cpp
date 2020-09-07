@@ -301,6 +301,7 @@ unsigned char *ServerConnectionManager::waitForCertificate(int & len) {
 
 unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     size_t pubKeyLength = 0;
+
     unsigned char* pubKeyBuf = this->diffieHellmannManager->getMyPubKey(pubKeyLength);
 
     size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->serverNonce) + sizeof(uint16_t) + pubKeyLength;
@@ -327,6 +328,7 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
         delete [] pubKeyMessageToSignBuffer;
         return nullptr;
     }
+
     size_t pubKeyMessageLength = step + sizeof(len_16t) + signatureLength;
     auto* pubKeyMessageBuffer = new unsigned char[pubKeyMessageLength];
     memcpy(pubKeyMessageBuffer,pubKeyMessageToSignBuffer,step);
