@@ -8,9 +8,13 @@ SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* p
 
     if (prvkey_file_name) {
         std::string pwd;
-
+        this->prvKey= nullptr;
         while (!this->prvKey ) {
             FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
+            if(!prvkey_file){
+                std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
+                return;
+            }
             pwd.clear();
             std::cout << "Enter your prvkey file password" << std::endl;
             getline(std::cin, pwd);
@@ -27,7 +31,8 @@ SignatureManager::SignatureManager(std::string* prvkey_file_name, std::string* p
         // load the peer's public key:
         FILE *pubkey_file = fopen(pubkey_file_name->c_str(), "r");
         if (!pubkey_file) {
-            std::cout << "Error: cannot open file '" << prv.c_str() << "' (missing?)\n";
+            std::cout << "Error: cannot open file '" << pubkey_file_name->c_str() << "' (missing?)\n";
+
         }
         this->pubKey = PEM_read_PUBKEY(pubkey_file, nullptr, nullptr, nullptr);
         fclose(pubkey_file);
@@ -85,6 +90,10 @@ SignatureManager::SignatureManager(std::string *prvkey_file_name) {
         std::string pwd;
         while (!this->prvKey ) {
             FILE* prvkey_file = fopen(prvkey_file_name->c_str(), "r");
+            if(!prvkey_file){
+                std::cout << "Error: cannot open file '" << prvkey_file_name->c_str() << "' (missing?)\n";
+                return;
+            }
             pwd.clear();
             std::cout << "Enter your prvkey file password" << std::endl;
             getline(std::cin, pwd);
@@ -93,9 +102,10 @@ SignatureManager::SignatureManager(std::string *prvkey_file_name) {
 
         }
         std::cout << "private key set correctly" << std::endl;
-    }else
+    }else {
         std::cout << "private key left empty" << std::endl;
-
+        this->prvKey= nullptr;
+    }
 }
 
 SignatureManager::SignatureManager() {
