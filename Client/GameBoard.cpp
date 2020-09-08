@@ -40,12 +40,12 @@ int GameBoard::insertCoordinateInBoard(uint8_t x, uint8_t y, int value) {
     }
 
     gameMatrix[x][y] = value;
-
+/*
     for(int i = 0; i < ROWSNUMBER; i++) {
         for (int j = 0; j < COLUMNSNUMBER; j++)
             std::cout << gameMatrix[i][j]<< "  ";
         std::cout<<std::endl;
-    }
+    }*/
     return 0;
 
 }
@@ -134,3 +134,67 @@ bool GameBoard::gameFinished(int valueToCheck) {
     }
     return false;
 }
+
+
+
+std::ostream &operator<<(std::ostream &out,const GameBoard& g) {
+
+    string rowColors("echo \"||");
+
+    unsigned int index = 0;
+    unsigned int nextPos = g.CELLWIDTH-1;
+    unsigned int totalNumberOfequals = (g.CELLWIDTH +2)* g.GAMEBOARDCOLUMNS +2;
+
+    for(int j = 0;j < totalNumberOfequals;j++){
+        if(j == nextPos){
+            out<<index+1;
+            index++;
+            nextPos += 2*(g.CELLWIDTH-1) -1;
+        }
+        else{
+            out<<" ";
+        }
+
+    }
+    out<<endl;
+
+    for(int i =0;i< (g.CELLWIDTH +2)* g.GAMEBOARDCOLUMNS +2;i++){
+        out<<"=";
+    }
+    out<<endl;
+
+    for (int i = 0; i < g.GAMEBOARDROWS; ++i)
+    {
+        for (int j = 0; j < g.GAMEBOARDCOLUMNS; ++j){
+            switch(g.gameMatrix[i][j]){
+                case -1:rowColors.append(g.BLACKPIXEL);break;
+                case 0 :rowColors.append(g.GREENPIXEL);break;
+                case 1 :rowColors.append(g.REDPIXEL);break;
+            }
+        }
+
+        rowColors.append("\"");
+        system(rowColors.c_str());
+
+        string temp(rowColors);
+        temp.replace(temp.end()-1,temp.end(),std::to_string(i+1));
+        temp.append("\"");
+
+        system(temp.c_str());
+        system(rowColors.c_str());
+
+        rowColors.clear();
+        temp.clear();
+        rowColors.append("echo \"||");
+
+        for(int k =0;k< (g.CELLWIDTH +2)* g.GAMEBOARDCOLUMNS +2;k++){
+            out<<"=";
+        }
+        out<<endl;
+
+    }
+    return out;
+}
+
+
+

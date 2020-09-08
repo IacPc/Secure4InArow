@@ -631,6 +631,7 @@ bool P2PConnectionManager::challengeDGame() {
         }
         isFirstMEssage = false;
         ret = gameBoard->insertOpponentMove(x, y);
+        cout<<*gameBoard;
         if(ret == -1)
             return false;
         if(ret == 1){
@@ -666,6 +667,8 @@ bool P2PConnectionManager::challengeDGame() {
         }
 
         ret = gameBoard->insertMyMove(x, y);
+        cout<<*gameBoard;
+
         if(ret == -1)
             return false;
         if(ret == 1){
@@ -836,6 +839,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
            return;
        }
        ret = gameBoard->insertMyMove(coordX, coordY);
+       cout<<*gameBoard;
        if(ret == -1)
             return;
        if(ret == 1){
@@ -853,6 +857,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
            return;
        }
         ret = gameBoard->insertOpponentMove(coordX, coordY);
+        cout<<*gameBoard;
         if(ret == -1)
             return;
         if(ret == 1){
