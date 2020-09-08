@@ -637,7 +637,7 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             return false;
         }
         isFirstMEssage = false;
-        ret = gameBoard->insertOpponentMove(x, y);  /*
+        ret = gameBoard->insertOpponentMove(x, y);
         if(ret == -1)
             return false;
         if(ret == 1){
@@ -648,7 +648,7 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             cout<<"You lost!"<<endl;
             finish = true;
         }
-*/
+
         string x_coordinate;
         x = y = 0;
         do {
@@ -670,7 +670,7 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             return false;
         }
 
-        ret = gameBoard->insertMyMove(x, y);    /*
+        ret = gameBoard->insertMyMove(x, y);
         if(ret == -1)
             return false;
         if(ret == 1){
@@ -682,7 +682,7 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
             finish = true;
         }
 
-*/
+
 
 
     }
@@ -839,7 +839,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
            cout<<"error in sending coordinate"<<endl;
            return;
        }
-       ret = gameBoard->insertMyMove(coordX, coordY);   /*
+       ret = gameBoard->insertMyMove(coordX, coordY);
        if(ret == -1)
             return;
        if(ret == 1){
@@ -849,14 +849,14 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
        if(ret == 2){
             cout<<"You lost!"<<endl;
             break;
-       }    */
+       }
        cout << "coordinate message sent correctly, waiting for the next move.." << endl;
        coordX = coordY = 0;
        if(!this->waitForCoordinateMessage(coordX,coordY,false)){
            cout<<"error in receiving coordinate"<<endl;
            return;
        }
-        ret = gameBoard->insertOpponentMove(coordX, coordY);    /*
+        ret = gameBoard->insertOpponentMove(coordX, coordY);
         if(ret == -1)
             return;
         if(ret == 1){
@@ -866,7 +866,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
         if(ret == 2){
             cout<<"You lost!"<<endl;
             break;
-        }   */
+        }
        cout<<"received coordinate X="<<(unsigned int)coordX<<" Y= "<<(unsigned int)coordY<<endl;
 
    }

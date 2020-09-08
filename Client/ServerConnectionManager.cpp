@@ -646,6 +646,7 @@ bool ServerConnectionManager::sendLogOutMessage() {
 }
 
 bool ServerConnectionManager::sendEndGameMessage() {
+    cout<<"SENDING ENDGAME MESSAGE "<<endl;
     size_t endGameMessageBufferLen = 0;
     unsigned char * endGameMessageBuffer = this->createEndGameMessage(endGameMessageBufferLen);
     if(!endGameMessageBuffer){
@@ -658,6 +659,7 @@ bool ServerConnectionManager::sendEndGameMessage() {
         cout<<"error in sending endGameMessage"<<endl;
         return false;
     }
+    cout<<"ENDGAME MESSAGE SENT CORRECTLY"<<endl;
     return true;
 }
 
