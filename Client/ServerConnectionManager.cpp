@@ -63,6 +63,7 @@ void ServerConnectionManager::enterThegame() {
         }
         out--;
         if (choice.length() == 0) {
+
             string *challenger = NULL;
             string yn;
             cout << "Waiting for Challenge" << endl;
@@ -92,6 +93,10 @@ void ServerConnectionManager::enterThegame() {
                 p2pConnMan->setOpponentIp(ip);
                 std::thread t(&P2PConnectionManager::startTheGameAsChallengeD, p2pConnMan);
                 t.join();
+            }else{
+                this->sendLogOutMessage();
+                return;
+
             }
         }
 
@@ -119,17 +124,18 @@ void ServerConnectionManager::enterThegame() {
             }
         }
 
-        for (auto &i : *playerList) {
-            delete i;
+        if (playerList != nullptr) {
+            for (auto &i : *playerList)
+                delete i;
+            delete playerList;
         }
-        delete playerList;
 
-        if (out == -1) {
+
+        if (out == -1 && playerList != nullptr) {
             this->sendLogOutMessage();
             return;
         }
         this->sendEndGameMessage();
-
     }
 
 }
@@ -627,21 +633,6 @@ unsigned char *ServerConnectionManager::createEndGameMessage(size_t& len) {
     step += ctLen;
     memcpy(&endGameMessageBuffer[step], tagBuf, AESGCMTAGLENGTH);
 
-    cout<<"BUFFER IS "<<endGameMessageBufferLen<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(endGameMessageBuffer), endGameMessageBufferLen);
-
-    cout<<"THE ADD IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(aadBuf), aadLen);
-
-    cout<<"THE IV IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(ivBUf), ivLen);
-
-    cout<<"THE ENC IS "<<ctLen<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(cipherText), ctLen);
-
-    cout<<"THE TAG IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(tagBuf), AESGCMTAGLENGTH);
-
     delete [] tagBuf;
     delete [] cipherText;
 
@@ -662,7 +653,6 @@ bool ServerConnectionManager::sendLogOutMessage() {
 }
 
 bool ServerConnectionManager::sendEndGameMessage() {
-    cout<<"SENDING ENDGAME MESSAGE "<<endl;
     size_t endGameMessageBufferLen = 0;
     unsigned char * endGameMessageBuffer = this->createEndGameMessage(endGameMessageBufferLen);
     if(!endGameMessageBuffer){
@@ -675,7 +665,7 @@ bool ServerConnectionManager::sendEndGameMessage() {
         cout<<"error in sending endGameMessage"<<endl;
         return false;
     }
-    cout<<"ENDGAME MESSAGE SENT CORRECTLY"<<endl;
+
     return true;
 }
 
@@ -808,6 +798,128 @@ std::string* ServerConnectionManager::waitForChallengeRequest() {
 
     return challengerName;
 
+}
+unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len) {
+    const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
+    unsigned char aadBuf[aadLen];
+    size_t ivLen = AESGCMIVLENGTH;
+
+    unsigned char ivBuf[ivLen];
+    unsigned char counterBuf[sizeof(this->counter)];
+    unsigned char* tagBuf;
+
+    size_t plainTextLen = sizeof(this->getP2PPort()) + this->userName->length() + 1;
+    auto* plainTextBuf = new unsigned char[plainTextLen];
+    unsigned int port = this->getP2PPort();
+    memcpy(plainTextBuf,&port, sizeof(port));
+    strcpy((char*)&plainTextBuf[sizeof(port)], this->userName->c_str());
+    aadBuf[0] = CHALLENGEDREADYFORCHALLENGEMESSAGECODE;
+    RAND_bytes(ivBuf,AESGCMIVLENGTH);
+    size_t step = 1 ;
+    memcpy(&aadBuf[step],ivBuf,AESGCMIVLENGTH);
+    step += AESGCMIVLENGTH;
+    memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
+    step += sizeof(this->counter);
+    size_t ctLen = plainTextLen;
+
+    unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(plainTextBuf, ctLen,
+                                                                                     aadBuf, aadLen, ivBuf, ivLen, tagBuf);
+
+    if(!encPayload) {
+        cout<<"Challenged ready message encryption Failed"<<endl;
+        return nullptr;
+    }
+
+    size_t challengedReadyMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + ctLen + AESGCMTAGLENGTH;
+    auto* challengedReadyMessageBuf = new unsigned char[challengedReadyMessageLen];
+
+    memcpy(challengedReadyMessageBuf, aadBuf, aadLen);
+    memcpy(&challengedReadyMessageBuf[aadLen], encPayload, ctLen);
+    delete [] encPayload;
+
+    step = aadLen + ctLen;
+    memcpy(&challengedReadyMessageBuf[step], tagBuf, AESGCMTAGLENGTH);
+
+    len = challengedReadyMessageLen;
+
+    return challengedReadyMessageBuf;
+
+}
+
+bool ServerConnectionManager::sendCHallengedReadyMessage() {
+    std::size_t challengedReadyMessageLength=0;
+    unsigned char* challengedReadyMessageBuffer = this->createCHallengedReadyMessage(challengedReadyMessageLength);
+    if(!challengedReadyMessageBuffer){
+        cout<<"ERROR in creating CHallengedReadyMessage"<<endl;
+        return false;
+    }
+
+    int ret = send(this->serverSocket, challengedReadyMessageBuffer, challengedReadyMessageLength, 0);
+
+    this->counter++;
+    delete [] challengedReadyMessageBuffer;
+    if(ret != challengedReadyMessageLength)
+        return false;
+    else
+        return true;
+}
+
+bool ServerConnectionManager::sendChallengedResponse(string *opponent, char response) {
+
+    unsigned char buffer[2048];
+
+    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
+    unsigned char *aad = new unsigned char[aad_len];
+    aad[0] = CHALLENGEDRESPONSEMESSAGECODE;
+
+    size_t iv_len = AESGCMIVLENGTH;
+    unsigned char * iv = new unsigned char[iv_len];
+    RAND_bytes(iv, iv_len);
+
+
+    memcpy(aad+1, iv, iv_len);
+    memcpy(aad+iv_len+1, &this->counter, COUNTERLENGTH);
+
+    auto* plainMsg = new unsigned char[opponent->length()+2];
+    plainMsg[0] = response;
+    strcpy((char*)plainMsg+1, opponent->c_str());
+
+    size_t encrypted_len = opponent->length()+2;
+    auto*tag = new unsigned char[AESGCMTAGLENGTH];
+    unsigned char *encrypted = symmetricEncryptionManager->encryptThisMessage(plainMsg, encrypted_len, aad, aad_len, iv, iv_len, tag);
+
+    delete [] iv;
+    delete [] plainMsg;
+
+    if(!encrypted){
+        cout<<"Error encrypting challenged response message"<<endl;
+        delete [] aad;
+        delete [] encrypted;
+        delete [] tag;
+        return false;
+    }
+
+    size_t pos = 0;
+    memcpy(buffer, aad, aad_len);
+    pos += aad_len;
+    delete [] aad;
+
+    memcpy(buffer+pos, encrypted, encrypted_len);
+    pos += encrypted_len;
+    delete [] encrypted;
+
+    memcpy(buffer+pos, tag, AESGCMTAGLENGTH);
+    pos += AESGCMTAGLENGTH;
+    delete [] tag;
+
+    size_t ret = send(this->serverSocket, buffer, pos, 0);
+    if(ret <= 0) {
+        cout<<"Error sending challenged response message"<<endl;
+        return false;
+    }
+    this->counter++;
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -952,129 +1064,6 @@ string *ServerConnectionManager::getUsername() {
 
 int ServerConnectionManager::getP2PPort() {
     return this->P2Pport;
-}
-
-unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len) {
-    const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
-    unsigned char aadBuf[aadLen];
-    size_t ivLen = AESGCMIVLENGTH;
-
-    unsigned char ivBuf[ivLen];
-    unsigned char counterBuf[sizeof(this->counter)];
-    unsigned char* tagBuf;
-
-    size_t plainTextLen = sizeof(this->getP2PPort()) + this->userName->length() + 1;
-    auto* plainTextBuf = new unsigned char[plainTextLen];
-    unsigned int port = this->getP2PPort();
-    memcpy(plainTextBuf,&port, sizeof(port));
-    strcpy((char*)&plainTextBuf[sizeof(port)], this->userName->c_str());
-    aadBuf[0] = CHALLENGEDREADYFORCHALLENGEMESSAGECODE;
-    RAND_bytes(ivBuf,AESGCMIVLENGTH);
-    size_t step = 1 ;
-    memcpy(&aadBuf[step],ivBuf,AESGCMIVLENGTH);
-    step += AESGCMIVLENGTH;
-    memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
-    step += sizeof(this->counter);
-    size_t ctLen = plainTextLen;
-
-    unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(plainTextBuf, ctLen,
-                                                                                     aadBuf, aadLen, ivBuf, ivLen, tagBuf);
-
-    if(!encPayload) {
-        cout<<"Challenged ready message encryption Failed"<<endl;
-        return nullptr;
-    }
-
-    size_t challengedReadyMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + ctLen + AESGCMTAGLENGTH;
-    auto* challengedReadyMessageBuf = new unsigned char[challengedReadyMessageLen];
-
-    memcpy(challengedReadyMessageBuf, aadBuf, aadLen);
-    memcpy(&challengedReadyMessageBuf[aadLen], encPayload, ctLen);
-    delete [] encPayload;
-
-    step = aadLen + ctLen;
-    memcpy(&challengedReadyMessageBuf[step], tagBuf, AESGCMTAGLENGTH);
-
-    len = challengedReadyMessageLen;
-
-    return challengedReadyMessageBuf;
-
-}
-
-bool ServerConnectionManager::sendCHallengedReadyMessage() {
-    std::size_t challengedReadyMessageLength=0;
-    unsigned char* challengedReadyMessageBuffer = this->createCHallengedReadyMessage(challengedReadyMessageLength);
-    if(!challengedReadyMessageBuffer){
-        cout<<"ERROR in creating CHallengedReadyMessage"<<endl;
-        return false;
-    }
-
-    int ret = send(this->serverSocket, challengedReadyMessageBuffer, challengedReadyMessageLength, 0);
-
-    this->counter++;
-    delete [] challengedReadyMessageBuffer;
-    if(ret != challengedReadyMessageLength)
-        return false;
-    else
-        return true;
-}
-
-bool ServerConnectionManager::sendChallengedResponse(string *opponent, char response) {
-
-    unsigned char buffer[2048];
-
-    size_t aad_len = OPCODELENGTH + AESGCMIVLENGTH + COUNTERLENGTH;
-    unsigned char *aad = new unsigned char[aad_len];
-    aad[0] = CHALLENGEDRESPONSEMESSAGECODE;
-
-    size_t iv_len = AESGCMIVLENGTH;
-    unsigned char * iv = new unsigned char[iv_len];
-    RAND_bytes(iv, iv_len);
-
-
-    memcpy(aad+1, iv, iv_len);
-    memcpy(aad+iv_len+1, &this->counter, COUNTERLENGTH);
-
-    auto* plainMsg = new unsigned char[opponent->length()+2];
-    plainMsg[0] = response;
-    strcpy((char*)plainMsg+1, opponent->c_str());
-
-    size_t encrypted_len = opponent->length()+2;
-    auto*tag = new unsigned char[AESGCMTAGLENGTH];
-    unsigned char *encrypted = symmetricEncryptionManager->encryptThisMessage(plainMsg, encrypted_len, aad, aad_len, iv, iv_len, tag);
-
-    delete [] iv;
-    delete [] plainMsg;
-
-    if(!encrypted){
-        cout<<"Error encrypting challenged response message"<<endl;
-        delete [] aad;
-        delete [] encrypted;
-        delete [] tag;
-        return false;
-    }
-
-    size_t pos = 0;
-    memcpy(buffer, aad, aad_len);
-    pos += aad_len;
-    delete [] aad;
-
-    memcpy(buffer+pos, encrypted, encrypted_len);
-    pos += encrypted_len;
-    delete [] encrypted;
-
-    memcpy(buffer+pos, tag, AESGCMTAGLENGTH);
-    pos += AESGCMTAGLENGTH;
-    delete [] tag;
-
-    size_t ret = send(this->serverSocket, buffer, pos, 0);
-    if(ret <= 0) {
-        cout<<"Error sending challenged response message"<<endl;
-        return false;
-    }
-    this->counter++;
-
-    return true;
 }
 
 void ServerConnectionManager::setP2Pport(uint32_t port){

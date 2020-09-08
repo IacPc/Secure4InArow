@@ -53,7 +53,7 @@ private:
     bool waitForCoordinateMessage(uint8_t&,uint8_t&,bool);
     bool tryParseX(std::string* , uint8_t& );
     bool tryParseY(std::string* , uint8_t& );
-    bool challengeDGame(bool&);
+    bool challengeDGame();
     void createSessionKey();
     bool connectToChallengedUser();
     bool sendMyPubKey();

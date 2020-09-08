@@ -1222,20 +1222,7 @@ bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
     auto *tag = new unsigned char[AESGCMTAGLENGTH];
     memcpy(tag, &buffer[AADLENGTH+encrypted_len], AESGCMTAGLENGTH);
 
-    cout<<"BUFFER IS "<<buffer_len<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(buffer), buffer_len);
 
-    cout<<"THE ADD IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(aad), aad_len);
-
-    cout<<"THE IV IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(iv), AESGCMIVLENGTH);
-
-    cout<<"THE ENC IS "<<encrypted_len<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(encrypted), encrypted_len);
-
-    cout<<"THE TAG IS"<<endl;
-    BIO_dump_fp(stdout, reinterpret_cast<const char *>(tag), AESGCMTAGLENGTH);
     unsigned char* plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
 
     delete [] tag;
