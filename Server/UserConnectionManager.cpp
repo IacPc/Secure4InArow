@@ -440,7 +440,6 @@ bool UserConnectionManager::sharePlayersList() {
                 }
 
                 case ENDGAMEMESSAGECODE: {
-                    cout<<"HO RICEVUTO ENDGAME"<<endl;
                     if (!endGame(buffer, ret)) {
                         delete opponent;
                         return false;
@@ -1215,7 +1214,6 @@ bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
     memcpy(aad, buffer, AADLENGTH);
 
     size_t encrypted_len = buffer_len - aad_len - AESGCMTAGLENGTH;
-    cout<<"ENC LEN IS "<<buffer_len -aad_len - AESGCMTAGLENGTH<<endl;
     auto *encrypted = new unsigned char[encrypted_len];
     memcpy(encrypted, buffer+AADLENGTH, encrypted_len);
 

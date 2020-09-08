@@ -828,7 +828,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
            getline(cin, y_coordinate);
        } while (!tryParseY(&y_coordinate, coordY));
 
-       cout << "Your coordinate => X= " << (unsigned int)coordX << ",Y=" << (unsigned int)coordY << endl;
+       cout << "Adversary coordinate => X= " << (unsigned int)coordX << ",Y=" << (unsigned int)coordY << endl;
 
 
        if(!sendCoordinateMessage(coordX,coordY)){
