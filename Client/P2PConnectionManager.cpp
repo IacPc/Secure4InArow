@@ -643,10 +643,12 @@ bool P2PConnectionManager::challengeDGame(bool& win) {
         if(ret == 1){
             cout<<"You won!"<<endl;
             finish = true;
+            break;
         }
         if(ret == 2){
             cout<<"You lost!"<<endl;
             finish = true;
+            break;
         }
 
         string x_coordinate;

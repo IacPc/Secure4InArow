@@ -612,6 +612,7 @@ unsigned char *ServerConnectionManager::createEndGameMessage(size_t& len) {
     memcpy(&aadBuf[step], ivBUf,AESGCMIVLENGTH);
     step += AESGCMIVLENGTH;
     memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
+    this->counter++;
 
     strcpy((char*)plainText,this->userName->c_str());
     size_t ctLen = plainTextLen;
@@ -625,6 +626,21 @@ unsigned char *ServerConnectionManager::createEndGameMessage(size_t& len) {
     memcpy(&endGameMessageBuffer[step], cipherText, ctLen);
     step += ctLen;
     memcpy(&endGameMessageBuffer[step], tagBuf, AESGCMTAGLENGTH);
+
+    cout<<"BUFFER IS "<<endGameMessageBufferLen<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(endGameMessageBuffer), endGameMessageBufferLen);
+
+    cout<<"THE ADD IS"<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(aadBuf), aadLen);
+
+    cout<<"THE IV IS"<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(ivBUf), ivLen);
+
+    cout<<"THE ENC IS "<<ctLen<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(cipherText), ctLen);
+
+    cout<<"THE TAG IS"<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(tagBuf), AESGCMTAGLENGTH);
 
     delete [] tagBuf;
     delete [] cipherText;

@@ -440,6 +440,7 @@ bool UserConnectionManager::sharePlayersList() {
                 }
 
                 case ENDGAMEMESSAGECODE: {
+                    cout<<"HO RICEVUTO ENDGAME"<<endl;
                     if (!endGame(buffer, ret)) {
                         delete opponent;
                         return false;
@@ -1188,15 +1189,13 @@ bool UserConnectionManager::sendMyKeyToChallenger(string *challenger, uint32_t p
 }
 bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
 
-    if(buffer_len <= 0){
+    if(buffer_len <= AADLENGTH + AESGCMTAGLENGTH){
         cout<<"Error in receiving endGame message"<<endl;
-        //delete [] buffer;
         return false;
     }
 
     if(buffer[0] != ENDGAMEMESSAGECODE){
         cout<<"Wrong message. End Game message expected"<<endl;
-        delete [] buffer;
         return false;
     }
 
@@ -1215,20 +1214,34 @@ bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
     auto *aad = new unsigned char[AADLENGTH];
     memcpy(aad, buffer, AADLENGTH);
 
-    size_t encrypted_len = buffer_len-AADLENGTH-AESGCMTAGLENGTH;
+    size_t encrypted_len = buffer_len - aad_len - AESGCMTAGLENGTH;
+    cout<<"ENC LEN IS "<<buffer_len -aad_len - AESGCMTAGLENGTH<<endl;
     auto *encrypted = new unsigned char[encrypted_len];
     memcpy(encrypted, buffer+AADLENGTH, encrypted_len);
 
     auto *tag = new unsigned char[AESGCMTAGLENGTH];
     memcpy(tag, &buffer[AADLENGTH+encrypted_len], AESGCMTAGLENGTH);
 
+    cout<<"BUFFER IS "<<buffer_len<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(buffer), buffer_len);
+
+    cout<<"THE ADD IS"<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(aad), aad_len);
+
+    cout<<"THE IV IS"<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(iv), AESGCMIVLENGTH);
+
+    cout<<"THE ENC IS "<<encrypted_len<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(encrypted), encrypted_len);
+
+    cout<<"THE TAG IS"<<endl;
+    BIO_dump_fp(stdout, reinterpret_cast<const char *>(tag), AESGCMTAGLENGTH);
     unsigned char* plainMessage = symmetricEncryptionManager->decryptThisMessage(encrypted, encrypted_len, aad, aad_len, tag, iv);
 
     delete [] tag;
     delete [] encrypted;
     delete [] aad;
     delete [] iv;
-    delete [] buffer;
 
     if(strcmp((const char *)(plainMessage), this->userName->c_str()) != 0){
         cout<<"Error. Username not expected"<<endl;
@@ -1236,7 +1249,6 @@ bool UserConnectionManager::endGame(unsigned char* buffer, size_t buffer_len) {
         return false;
     }
     this->busy = false;
-    delete [] plainMessage;
     return true;
 }
 void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {

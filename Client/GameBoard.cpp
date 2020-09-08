@@ -60,12 +60,10 @@ int GameBoard::insertMyMove(uint8_t x, uint8_t y) {
     }
     //check if I won
     if(gameFinished(0)) {
-        std::cout<<"You won"<<std::endl;
         return 1;
     }
     //check if I lost
     if(gameFinished(1)) {
-        std::cout<<"You lost"<<std::endl;
         return 2;
     }
     return 0;
@@ -80,12 +78,10 @@ int GameBoard::insertOpponentMove(uint8_t x, u_int8_t y) {
     }
     //check if I won
     if(gameFinished(0)) {
-        std::cout<<"You won"<<std::endl;
         return 1;
     }
     //check if I lost
     if(gameFinished(1)) {
-        std::cout<<"You lost"<<std::endl;
         return 2;
     }
     return 0;
@@ -101,7 +97,6 @@ bool GameBoard::gameFinished(int valueToCheck) {
                     this->gameMatrix[i][j + 1] == valueToCheck &&
                     this->gameMatrix[i][j + 2] == valueToCheck &&
                     this->gameMatrix[i][j + 3] == valueToCheck) {
-                    std::cout<<"HORIZONTAL LINE"<<std::endl;
                     return true;
                 }
             }
@@ -112,7 +107,6 @@ bool GameBoard::gameFinished(int valueToCheck) {
                     this->gameMatrix[i + 1][j] == valueToCheck &&
                     this->gameMatrix[i + 2][j] == valueToCheck &&
                     this->gameMatrix[i + 3][j] == valueToCheck) {
-                    std::cout<<"VERTICAL LINE"<<std::endl;
                     return true;
                 }
             }
@@ -123,7 +117,6 @@ bool GameBoard::gameFinished(int valueToCheck) {
                     this->gameMatrix[i + 1][j + 1] == valueToCheck &&
                     this->gameMatrix[i + 2][j + 2] == valueToCheck &&
                     this->gameMatrix[i + 3][j + 3] == valueToCheck) {
-                    std::cout<<"DIAGONAL FROM TOP LEFT"<<std::endl;
                     return true;
                 }
             }
@@ -134,7 +127,6 @@ bool GameBoard::gameFinished(int valueToCheck) {
                     this->gameMatrix[i + 1][j - 1] == valueToCheck &&
                     this->gameMatrix[i + 2][j - 2] == valueToCheck &&
                     this->gameMatrix[i + 3][j - 3] == valueToCheck) {
-                    std::cout<<"DIAGONAL FROM TOP RIGHT LINE"<<std::endl;
                     return true;
                 }
             }
