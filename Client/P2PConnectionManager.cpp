@@ -46,7 +46,7 @@ P2PConnectionManager::~P2PConnectionManager() {
 
 bool P2PConnectionManager::waitForHelloMessage() {
     cout<<"Waiting for challenger hello message"<<endl;
-    auto *buffer = new unsigned char[HELLOMESSAGELENGTH];
+    unsigned char buffer[HELLOMESSAGELENGTH];
     size_t ret;
 
     ret = recv(this->opponentSocket, buffer, HELLOMESSAGELENGTH, 0);
@@ -61,7 +61,6 @@ bool P2PConnectionManager::waitForHelloMessage() {
     }
     else{
         cerr<<"Wrong message!\n";
-        delete []buffer;
         return false;
     }
 
@@ -72,14 +71,13 @@ bool P2PConnectionManager::waitForHelloMessage() {
     this->opponentUsername = new string((const char*)&buffer[1 + NONCELENGTH]);
 
     cout<<"THE RECEIVED USERNAME IS: "<<this->opponentUsername->c_str()<<endl;
-    delete []buffer;
     return true;
 }
 
 bool P2PConnectionManager::sendHelloMessage() {
 
     size_t msg_len = 1 + NONCELENGTH + strlen(this->myUsername.c_str())+1;
-    auto* buffer = new unsigned char[msg_len];
+    unsigned char buffer[msg_len];
 
     buffer[0] = HELLOMSGCODE;
     RAND_bytes((unsigned char*)&this->myNonce, sizeof(this->myNonce));
@@ -130,6 +128,7 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t 
     delete [] encPayload;
     step += coordinatesBufLen;
     memcpy(&coordinateMessageBuffer[step],tagBuf,AESGCMTAGLENGTH);
+    delete [] tagBuf;
 
     return coordinateMessageBuffer;
 
@@ -260,7 +259,7 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
 
     size_t pubKeyMessageToSignLength = 1 + 2*sizeof(this->opponentNonce) + sizeof(uint16_t) + pubKeyLength;
 
-    auto* pubKeyMessageToSignBuffer = new unsigned char[pubKeyMessageToSignLength];
+    unsigned char pubKeyMessageToSignBuffer[pubKeyMessageToSignLength];
     pubKeyMessageToSignBuffer[0] = PUBKEYMESSAGECODE;
 
     size_t step = 1;
@@ -278,7 +277,6 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
     size_t signatureLength = step;
     unsigned char* signature = this->signatureManager->signTHisMessage(pubKeyMessageToSignBuffer,signatureLength);
     if(!signature) {
-        delete [] pubKeyMessageToSignBuffer;
         return nullptr;
     }
     size_t pubKeyMessageLength = step + sizeof(len_16t) + signatureLength;
@@ -292,7 +290,6 @@ unsigned char *P2PConnectionManager::createPubKeyMessage(size_t& len) {
     memcpy(&pubKeyMessageBuffer[step],signature,signatureLength);
 
     delete [] signature;
-    delete [] pubKeyMessageToSignBuffer;
 
     len = pubKeyMessageLength;
     cout<<"Creation of PubKeyMessage of size "<<len<<" finished correctly "<<endl;
@@ -401,9 +398,6 @@ bool P2PConnectionManager::waitForChallengeRConnection() {
         return false;
     }
 
-    //char buffer[INET_ADDRSTRLEN];
-    //inet_ntop( AF_INET, &this->myAddr.sin_addr, buffer, sizeof( buffer ));
-
     int len;
     len = sizeof(this->opponentAddr);
 
@@ -460,11 +454,10 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeR() {
 }
 
 bool P2PConnectionManager::waitForChallengeRPubKey() {
-    auto* buffer = new unsigned char[2048];
+    unsigned char buffer[2048];
     size_t ret = recv(this->opponentSocket ,buffer, 2048, 0);
     if(ret <= 0){
         cout<<"Error receiving the public key message"<<endl;
-        delete [] buffer;
         return false;
     }
 
@@ -475,7 +468,6 @@ bool P2PConnectionManager::waitForChallengeRPubKey() {
     }
     else{
         cout<<"Wrong message. Expected pubkey message."<<endl;
-        delete [] buffer;
         return false;
     }
 
@@ -503,7 +495,7 @@ bool P2PConnectionManager::waitForChallengeRPubKey() {
     memcpy(&pubkey_len, (buffer+pos), sizeof(pubkey_len));
     pos += sizeof(pubkey_len);
     //prelevo la pubkey
-    auto* opponentPubKey = new unsigned char[pubkey_len];
+    unsigned char opponentPubKey[pubkey_len];
     memcpy(opponentPubKey, (buffer+pos), pubkey_len);
     pos += pubkey_len;
     size_t messageToVerify_len = pos;
@@ -514,8 +506,8 @@ bool P2PConnectionManager::waitForChallengeRPubKey() {
     pos += sizeof(signature_len);
 
     //pos contiene la lunghezza del buffer fino a Yc.
-    auto *signature = new unsigned char[signature_len];
-    auto *messageToVerify = new unsigned char[messageToVerify_len];
+    unsigned char signature[signature_len];
+    unsigned char messageToVerify[messageToVerify_len];
     memcpy(messageToVerify, buffer, messageToVerify_len);
     memcpy(signature, (buffer+pos), signature_len);
 
@@ -523,23 +515,13 @@ bool P2PConnectionManager::waitForChallengeRPubKey() {
     //verifico la firma
     if(!signatureManager->verifyThisSignature(signature, signature_len, messageToVerify, ret-signature_len-2)) {
         cout<<"Signature not verified"<<endl;
-        delete [] buffer;
-        delete [] signature;
-        delete [] messageToVerify;
-        delete [] opponentPubKey;
         return false;
     }
     cout<<"Signature verified correctly"<<endl;
-    delete [] signature;
-    delete [] messageToVerify;
 
     //chiamo DH
 
     diffieHellmannManager->setPeerPubKey(opponentPubKey, pubkey_len);
-
-    cout<<"Set peer public key"<<endl;
-    delete [] opponentPubKey;
-    delete [] buffer;
 
     return true;
 
@@ -547,7 +529,7 @@ bool P2PConnectionManager::waitForChallengeRPubKey() {
 
 bool P2PConnectionManager::sendChallengeDPubKey() {
 
-    auto *buffer = new unsigned char[2048];
+    unsigned char buffer[2048];
 
     //inserisco opcode
     size_t pos = 0;
@@ -588,11 +570,9 @@ bool P2PConnectionManager::sendChallengeDPubKey() {
     size_t ret = send(this->opponentSocket, buffer, pos, 0);
     if(ret != pos){
         cout<<"Error in sending my pubkey"<<endl;
-        delete [] buffer;
         return false;
     }
 
-    delete [] buffer;
     return true;
 }
 
@@ -602,7 +582,6 @@ void P2PConnectionManager::createSessionKey() {
     size_t sharedSecret_len;
     unsigned char* sharedSecret = diffieHellmannManager->getSharedSecret(sharedSecret_len);
     auto* HashedSecret = new unsigned char[EVP_MD_size(EVP_sha256())];
-    size_t dhSecretLen = 0;
 
     SHA256(sharedSecret,sharedSecret_len,HashedSecret);
     size_t aesKeyLen = EVP_CIPHER_key_length(EVP_aes_128_gcm());
@@ -684,7 +663,6 @@ bool P2PConnectionManager::challengeDGame() {
 
 
     }
-    cout<<"HO FINITO LA PARTITA"<<endl;
     return true;
 }
 
@@ -879,12 +857,7 @@ void P2PConnectionManager::setOpponentIp(struct in_addr ip) {
     this->opponentAddr.sin_family = AF_INET;
     this->opponentAddr.sin_port = htons((unsigned short )this->serverConnectionManager->getP2PPort());
     this->opponentAddr.sin_addr = ip;
-/*
-    char buffer[INET_ADDRSTRLEN];
-    inet_ntop( AF_INET, &ip, buffer, sizeof( buffer ));
-    printf( "Opponent address:%s\n", buffer );
-    cout<<"Opponent PORT "<<ntohs(this->opponentAddr.sin_port)<<endl;
-*/
+
 }
 
 bool P2PConnectionManager::connectToChallengedUser() {

@@ -10,13 +10,15 @@
 using namespace std;
 class GameBoard {
 private:
-    int **gameMatrix;
     static const unsigned int GAMEBOARDROWS = 6;
     static const unsigned int GAMEBOARDCOLUMNS =  7;
     static const unsigned int CELLWIDTH = 5;
     const char REDPIXEL[18] =   "\e[41m     \e[0m||" ;
     const char GREENPIXEL[18] = "\e[42m     \e[0m||" ;
     const char BLACKPIXEL[17] = "\e[0m     \e[0m||" ;
+    int gameMatrix[GAMEBOARDROWS][GAMEBOARDCOLUMNS];
+
+
     int insertCoordinateInBoard(uint8_t, uint8_t, int);
     bool gameFinished(int);
 public:

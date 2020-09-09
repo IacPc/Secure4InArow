@@ -8,9 +8,7 @@
 
 GameBoard::GameBoard() {
 
-    gameMatrix = new int*[ROWSNUMBER];
     for(int i = 0; i < ROWSNUMBER; i++) {
-        gameMatrix[i] = new int[COLUMNSNUMBER];
         for(int j = 0; j < COLUMNSNUMBER; j++)
             gameMatrix[i][j] = -1;
     }
@@ -19,9 +17,10 @@ GameBoard::GameBoard() {
 
 GameBoard::~GameBoard() {
 
-    for(int i = 0; i < ROWSNUMBER; i++)
-        delete [] gameMatrix[i];
-    delete [] gameMatrix;
+    for(int i = 0; i < ROWSNUMBER; i++) {
+        for(int j = 0; j < COLUMNSNUMBER; j++)
+            gameMatrix[i][j] = -1;
+    }
 }
 
 
