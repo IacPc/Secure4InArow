@@ -55,7 +55,6 @@ CertificateManager::~CertificateManager() {
 
 bool CertificateManager::verifyCertificate(unsigned char* uchar_cert, size_t certSize) {
     int ret;
-    std::cout<<"CertificateManager.verifyCertificate: certsize="<<certSize<<endl;
     X509* cert = d2i_X509(NULL,(const unsigned char**)&uchar_cert, certSize);
     if(!cert) {
         cout<<"Certificate not deserialized"<<endl;
@@ -85,7 +84,7 @@ bool CertificateManager::verifyCertificate(unsigned char* uchar_cert, size_t cer
     }
     X509_free(cert);
     X509_STORE_CTX_free(certvfy_ctx);
-    std::cout<<"Certificate verified correctly"<<endl;
+    std::cout<<"Server certificate verified correctly"<<endl;
 
     return true;
 }

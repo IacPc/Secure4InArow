@@ -38,8 +38,6 @@ void UserConnectionManager::openNewconnectionwithClient() {
 
 bool UserConnectionManager::establishSecureConnection() {
 
-    cout<<"Starting establishing secure connection"<<endl;
-
     //wait for hello message
 
     if(!waitForHelloMessage()){
@@ -98,12 +96,8 @@ bool UserConnectionManager::waitForHelloMessage(){
         return false;
     }
 
-    cout<<"Dimensione HelloMessage: "<<ret<<endl;
-    if(buffer[0] == HELLOMSGCODE) {
-        cout << "HelloMessage opcode verified\n";
-    }
-    else{
-        cerr<<"Wrong message!\n";
+    if(buffer[0] != HELLOMSGCODE) {
+        cerr<<"Wrong message opcode, expected "<<HELLOMSGCODE<<",received "<<(unsigned int)buffer[0]<<endl;
         return false;
     }
 
@@ -235,7 +229,6 @@ bool UserConnectionManager::waitForClientPubKey() {
 
     diffieHellmannManager->setPeerPubKey(clientPubKey, pubkey_len);
 
-    cout<<"Set peer public key"<<endl;
     delete [] clientPubKey;
 
     return true;
@@ -268,8 +261,6 @@ bool UserConnectionManager::sendMyPubKey() {
     memcpy((buffer+pos), myKey, myKey_len);
     pos += myKey_len;
 
-    //delete [] myKey;
-    cout<<"now i do the signature"<<endl;
     //firmo il messaggio
     size_t signature_len = pos;
     unsigned char* signedMessage = signatureManager->signTHisMessage(buffer, signature_len);
@@ -310,6 +301,7 @@ void UserConnectionManager::createSessionKey() {
     delete [] simmetricKeyBuffer;
     delete [] HashedSecret;
     delete diffieHellmannManager;
+    diffieHellmannManager = nullptr;
 }
 
 
@@ -580,7 +572,6 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
 
     unsigned char plainMessage[pos + SIZETLENGTH];
     size_t num_players = list.size();
-    cout<<"NUMERO GIOCATORI "<<num_players<<endl;
     memcpy(plainMessage, &(num_players), SIZETLENGTH);
     memcpy(plainMessage + SIZETLENGTH, playerList, pos);
 
@@ -1227,7 +1218,8 @@ void UserConnectionManager::logout(unsigned char *buffer, size_t buffer_len) {
     auto *tag = new unsigned char[AESGCMTAGLENGTH];
     memcpy(tag, &buffer[buffer_len-AESGCMTAGLENGTH], AESGCMTAGLENGTH);
 
-    size_t encrypted_len = buffer_len-AESGCMTAGLENGTH-AADLENGTH;
+    size_t tag_len = AESGCMTAGLENGTH;
+    size_t encrypted_len = buffer_len-tag_len-aad_len;
     auto *encrypted = new unsigned char[encrypted_len];
     memcpy(encrypted, &buffer[aad_len], encrypted_len);
     

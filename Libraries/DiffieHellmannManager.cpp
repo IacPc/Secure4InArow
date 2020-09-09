@@ -82,7 +82,6 @@ DiffieHellmannManager::DiffieHellmannManager() {
         std::cout<<"ERROR IN initializing key generation"<<std::endl;
         return;
     }
-    std::cout<<"DH key generation"<<std::endl;
 
     if(1 != EVP_PKEY_keygen(DHctx, &my_dhkey)) {
         std::cout<<"ERROR in key generation"<<std::endl;

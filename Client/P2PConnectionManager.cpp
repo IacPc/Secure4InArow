@@ -34,10 +34,11 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
 }
 
 P2PConnectionManager::~P2PConnectionManager() {
-
     delete signatureManager;
     delete symmetricEncryptionManager;
-
+    delete gameBoard;
+    delete opponentUsername;
+    delete diffieHellmannManager;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,7 +113,6 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t 
     step += AESGCMIVLENGTH;
     memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
     step += sizeof(this->counter);
-    this->counter++;
 
     unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(coordinatesBuf, coordinatesBufLen,
                                                                                      aadBuf, aadLen, ivBuf, ivLen, tagBuf);
@@ -143,11 +143,11 @@ bool P2PConnectionManager::sendCoordinateMessage(uint8_t x, uint8_t y) {
     }
     int ret = send(this->opponentSocket,message,len,0);
 
-
     if(ret != len){
         cout<<"Challenge message buffer not sent"<<endl;
         return false;
     }
+    this->counter++;
 
     return true;
 
@@ -193,7 +193,9 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
     size_t aadLen = 1 +AESGCMIVLENGTH  +sizeof(this->counter);
     unsigned char aadBuf[aadLen];
 
-    auto* coordinateMessagebuf = new unsigned char[len];
+    unsigned char coordinateMessagebuf[COORDINATEMESSAGELENGTH];
+    memset(coordinateMessagebuf,0X00,COORDINATEMESSAGELENGTH);
+
     int ret = recv(this->opponentSocket,coordinateMessagebuf,len,0);
     if(ret<=0){
         cout<<"opponentn disconnected"<<endl;
@@ -203,9 +205,8 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
         cout<<"Error in receiving coordinate message"<<endl;
         return false;
     }
-    if(coordinateMessagebuf[0] != COORDINATEMESSAGECODE){
+    if(coordinateMessagebuf[0] !=COORDINATEMESSAGECODE){
         cout<<"wrong message,expected coordinate message"<<endl;
-        delete [] coordinateMessagebuf;
         return false;
     }
 
@@ -215,9 +216,9 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
     if(!isFirstMessage){
         if (this->counter != receivedCounter) {
             cout << "Wrong counter, expected " << this->counter << ", received " << receivedCounter << endl;
-            delete[] coordinateMessagebuf;
             return false;
         }
+
     }else{
         this->counter= receivedCounter;
     }
@@ -243,7 +244,9 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
     x =(uint8_t) clearText[0];
     y =(uint8_t) clearText[1];
 
-    cout<<"The received coordinates are: X = "<<(unsigned int)x<<", Y = "<<(unsigned int)y<<endl;
+    cout<<"The received coordinates are: ROW = "<<(unsigned int)x<<", COLUMN = "<<(unsigned int)y<<endl;
+
+    memset(coordinateMessagebuf,0X00,COORDINATEMESSAGELENGTH);
 
     if(x<1 || x>6 || y<1 || y>7){
         cout<<"NOT VALID coordinates!"<<endl;
@@ -593,6 +596,7 @@ void P2PConnectionManager::createSessionKey() {
     delete [] simmetricKeyBuffer;
     delete [] HashedSecret;
     delete diffieHellmannManager;
+    diffieHellmannManager = nullptr;
 }
 
 bool P2PConnectionManager::challengeDGame() {
@@ -628,18 +632,18 @@ bool P2PConnectionManager::challengeDGame() {
         x = y = 0;
         do {
             x_coordinate.clear();
-            cout << "Type the coordinate x: choose a number between 1 and 6" << endl;
+            cout << "Type the row number: choose a number between 1 and 6" << endl;
             getline(cin, x_coordinate);
         } while (!tryParseX(&x_coordinate, x));
 
         string y_coordinate;
         do {
             y_coordinate.clear();
-            cout << "Type the coordinate y: choose a number between 1 and 7" << endl;
+            cout << "Type the column number: choose a number between 1 and 7" << endl;
             getline(cin, y_coordinate);
         } while (!tryParseY(&y_coordinate, y));
 
-        cout << "Your coordinate => X= " << (unsigned int)x << ",Y=" << (unsigned int)y << endl;
+        cout << "Your coordinate => ROW= " << (unsigned int)x << ",COLUMN=" << (unsigned int)y << endl;
         if(!sendCoordinateMessage(x, y)){
             cout<<"Error: Coordinate message has not been sent"<<endl;
             return false;
@@ -768,6 +772,7 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeD() {
     SHA256(dhSecret,dhSecretLen,HashedSecret);
 
     delete diffieHellmannManager;
+    diffieHellmannManager = nullptr;
 
     auto* simmetricKeyBuffer = new unsigned char[EVP_CIPHER_key_length(EVP_aes_128_gcm())];
     memcpy(&simmetricKeyBuffer[0],&HashedSecret[0],EVP_CIPHER_key_length(EVP_aes_128_gcm()));
@@ -779,8 +784,6 @@ bool P2PConnectionManager::establishSecureConnectionWithChallengeD() {
                                                                       EVP_CIPHER_key_length(EVP_aes_128_gcm()));
 
     delete [] simmetricKeyBuffer;
-
-    cout<<"Secure connection with challenged established"<<endl;
 
     return true;
 }
@@ -799,17 +802,17 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
 
        do {
            x_coordinate.clear();
-           cout << "Type the coordinate x: choose a number between 1 and 6" << endl;
+           cout << "Type the row number: choose a number between 1 and 6" << endl;
            getline(cin, x_coordinate);
        } while (!tryParseX(&x_coordinate, coordX));
 
        do {
            y_coordinate.clear();
-           cout << "Type the coordinate y: choose a number between 1 and 7" << endl;
+           cout << "Type the column number: choose a number between 1 and 7" << endl;
            getline(cin, y_coordinate);
        } while (!tryParseY(&y_coordinate, coordY));
 
-       cout << "Adversary coordinate => X= " << (unsigned int)coordX << ",Y=" << (unsigned int)coordY << endl;
+       cout << "Adversary coordinate => ROW= " << (unsigned int)coordX << ",COLUMN=" << (unsigned int)coordY << endl;
 
 
        if(!sendCoordinateMessage(coordX,coordY)){
@@ -853,7 +856,6 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
 }
 
 void P2PConnectionManager::setOpponentIp(struct in_addr ip) {
-
     this->opponentAddr.sin_family = AF_INET;
     this->opponentAddr.sin_port = htons((unsigned short )this->serverConnectionManager->getP2PPort());
     this->opponentAddr.sin_addr = ip;

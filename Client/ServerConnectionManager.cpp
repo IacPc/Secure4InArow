@@ -8,7 +8,6 @@
 ServerConnectionManager::ServerConnectionManager(const char *server_addr, int port, string* user) {
 
     userName = new std::string(user->c_str());
-    std::cout<<"username created successfully"<<endl;
     //create new socket
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -23,7 +22,7 @@ ServerConnectionManager::ServerConnectionManager(const char *server_addr, int po
 
     RAND_poll();
 
-    cout<<"ServerConnectionManager created successfully"<<endl;
+    cout<<this->userName->c_str()<<" ServerConnectionManager created successfully"<<endl;
 
 }
 
@@ -96,10 +95,8 @@ void ServerConnectionManager::enterThegame() {
                 t.join();
 
             }else{
-                this->sendLogOutMessage();
                 delete challenger;
-                return;
-
+                continue;
             }
 
         }
@@ -222,13 +219,12 @@ bool ServerConnectionManager::secureTheConnection(){
     this->signatureManager = new SignatureManager(path);
     this->signatureManager->setPubkey(serverPubkey);
     this->diffieHellmannManager = new DiffieHellmannManager();
-    cout<<"SCM DH OK"<<endl;
     //send the readiness msg
     if(!sendMyPubKey()){
         cerr<<"Error during sending my pubkey\n";
         return false;
     }
-    std::cout<<"Pubkey message sent correctly!"<<std::endl;
+    std::cout<<"DH Pubkey message sent correctly!"<<std::endl;
 
     //wait for keys message
     if(!waitForPeerPubkey()){
@@ -354,7 +350,6 @@ unsigned char *ServerConnectionManager::createPubKeyMessage(size_t& len) {
     delete [] pubKeyMessageToSignBuffer;
 
     len = pubKeyMessageLength;
-    cout<<"Creation of PubKeyMessage of size "<<len<<" finished correctly "<<endl;
 
     return pubKeyMessageBuffer;
 }
@@ -422,16 +417,14 @@ bool ServerConnectionManager::waitForPeerPubkey() {
         cout<<"Uncorrect signature"<<endl;
         return false;
     }
-    cout<<"Signature verified correctly"<<endl;
+    cout<<"opponent pubkey signature verified correctly"<<endl;
     size_t pubKeyPosition = 1 +2*sizeof(this->serverNonce)+ sizeof(recvPubKeyLen);
 
 
     unsigned char peerpubkeyBuf[recvPubKeyLen];
     memcpy(peerpubkeyBuf,&peerPubKeyMessageBuffer[pubKeyPosition],recvPubKeyLen);
     size_t len = recvPubKeyLen;
-    cout<<"Set peer pubkey"<<endl;
     this->diffieHellmannManager->setPeerPubKey(peerpubkeyBuf,len);
-    cout<<"Peer pubkey set correctly"<<endl;
     return true;
 }
 
@@ -466,7 +459,6 @@ unsigned char *ServerConnectionManager::createPlayersListRequestMessage(size_t &
     delete [] tag;
     step += AESGCMTAGLENGTH;
     len = step;
-    std::cout<<"playersListMessageBuffer created correctly"<<endl;
     return playersListMessageBuffer;
 }
 
@@ -530,7 +522,6 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
         cout<<"error in decrypting Player list"<<endl;
         return false;
     }
-    cout<<" Player list decrypted correctly"<<endl;
 
     uint16_t playersNumb;
     memcpy(&playersNumb,decryptedPlayersList,sizeof(uint16_t));
@@ -544,7 +535,6 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
 
     size_t step = 0;
     char* players = (char*)&decryptedPlayersList[sizeof(playersNumb)];
-    cout<<"There are "<<playersNumb<<"players On line"<<endl;
 
     for(std::size_t i = 0; i < playersNumb && step<cipherTextLen;i++){
         string* toInsert = new std::string(players);
@@ -554,7 +544,6 @@ bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
     }
     pc= playerList;
     delete [] decryptedPlayersList;
-    cout<<"Player list received correctly"<<endl;
 
     return true;
 }
@@ -617,7 +606,6 @@ unsigned char *ServerConnectionManager::createEndGameMessage(size_t& len) {
     memcpy(&aadBuf[step], ivBUf,AESGCMIVLENGTH);
     step += AESGCMIVLENGTH;
     memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
-    this->counter++;
 
     strcpy((char*)plainText,this->userName->c_str());
     size_t ctLen = plainTextLen;
@@ -649,6 +637,7 @@ bool ServerConnectionManager::sendLogOutMessage() {
         cout<<"error in sending LogOutMessage"<<endl;
         return false;
     }
+    this->counter++;
     cout<<"Logout message sent correctly"<<endl;
     return true;
 }
@@ -666,6 +655,8 @@ bool ServerConnectionManager::sendEndGameMessage() {
         cout<<"error in sending endGameMessage"<<endl;
         return false;
     }
+    this->counter++;
+
     cout<<"Endgame message sent correctly"<<endl;
 
     return true;
@@ -684,10 +675,10 @@ bool ServerConnectionManager::waitForOpponentCredentials(EVP_PKEY** pubkey,struc
     if(ret <= 0){
         cout<<"ERROR in receiving opponent credentials message"<<endl;
         return false;
-    }else
-        cout<<"received "<<ret<< " bytes as opponent credentials"<<endl;
+    }
+
     if(msgReceivingBuf[0]!= OPPONENTKEYMESSAGECODE ){
-        cout<<"wrong opcode "<<endl;
+        cout<<"wrong opcode,expected "<<OPPONENTKEYMESSAGECODE<<"received "<<(unsigned int)msgReceivingBuf[0]<<endl;
         return false;
     }
     uint32_t receivedCounter;
@@ -797,6 +788,7 @@ std::string* ServerConnectionManager::waitForChallengeRequest() {
     return challengerName;
 
 }
+
 unsigned char *ServerConnectionManager::createCHallengedReadyMessage(size_t& len) {
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
     unsigned char aadBuf[aadLen];
@@ -1065,6 +1057,7 @@ int ServerConnectionManager::getP2PPort() {
 void ServerConnectionManager::setP2Pport(uint32_t port){
     this->P2Pport = port;
 }
+
 uint32_t ServerConnectionManager::getServerPort(){
     return this->serverAddr.sin_port;
 }

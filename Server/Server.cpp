@@ -36,7 +36,7 @@ void Server::waitForNewConnections(){
             cerr<<"The connection cannot be accepted\n";
             continue;
         }else
-            cout<<"Connection successful\n";
+            cout<<"Connection with new client strted successful\n";
 
         UserConnectionManager *ucm = new UserConnectionManager(this, client_addr, connFd);
         std::thread t(&UserConnectionManager::openNewconnectionwithClient, ucm);
@@ -68,7 +68,6 @@ bool Server::insertUserConnectionInMap(string user, UserConnectionManager* ucm) 
     usersConnectedMap.insert({user, ucm});
 
     if(checkUserPresence(user)) {
-        cout << "Insert: Elements in map: \nKeys: ";
         for (auto x = usersConnectedMap.begin(); x != usersConnectedMap.end(); ++x)
             cout <<x->first<<" ";
         cout << endl;
@@ -143,7 +142,6 @@ unsigned char* Server::geti2dCertificate(int &len) {
     unsigned char *buffer = NULL;
     int cert_size = i2d_X509(cacert, &buffer);
     X509_free(cacert);
-    cout<<"Server: Certificate length: "<<cert_size<<endl;
     len = cert_size;
     if(cert_size < 0){
         cerr<<"Error during certificate serialization\n";
