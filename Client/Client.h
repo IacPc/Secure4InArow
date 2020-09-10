@@ -16,7 +16,6 @@ private:
 
     string *userName;
     ServerConnectionManager* serverConnectionManager;
-    //OpponentConnectionManager *opponentConnectionManager;
 
 public:
     Client(string* server_addr, int port, string* user);

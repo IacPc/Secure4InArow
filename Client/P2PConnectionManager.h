@@ -17,7 +17,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <stdexcept>
 #include <cstdio>
@@ -43,21 +42,22 @@ private:
     uint32_t counter;
 
     bool waitForChallengeRConnection();
+    bool connectToChallengedUser();
     bool establishSecureConnectionWithChallengeR();
     bool establishSecureConnectionWithChallengeD();
-    bool sendCoordinateMessage(uint8_t, uint8_t);
     bool waitForHelloMessage();         //valido per entrambi
     bool sendHelloMessage();            //valido per entrambi
     bool waitForChallengeRPubKey();
     bool sendChallengeDPubKey();
-    bool waitForCoordinateMessage(uint8_t&,uint8_t&,bool);
     bool tryParseX(std::string* , uint8_t& );
     bool tryParseY(std::string* , uint8_t& );
     bool challengeDGame();
-    void createSessionKey();
-    bool connectToChallengedUser();
     bool sendMyPubKey();
     bool waitForPeerPubkey();
+    bool sendCoordinateMessage(uint8_t, uint8_t);
+    bool waitForCoordinateMessage(uint8_t&,uint8_t&,bool);
+
+    void createSessionKey();
 
     unsigned char* createCoordinateMessage(uint8_t,uint8_t);
     unsigned char* createPubKeyMessage(size_t&);

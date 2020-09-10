@@ -10,7 +10,7 @@ Client::Client(string* server_addr, int port, string* user){
     std::cout<<"Creating ServerConnectionManager"<<endl;
     serverConnectionManager =  new ServerConnectionManager((const char*)server_addr_cstr, port, user);
     userName = new std::string(user->c_str());
-    delete server_addr_cstr;
+    delete [] server_addr_cstr;
     cout<<"Client created successfully\n";
 
 }

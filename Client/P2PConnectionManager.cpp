@@ -335,13 +335,14 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
 
     //SET p2pPort for the challenged
     string *port_input = new string();
-    bool valid;
+    bool valid = true;
     uint32_t input_port;
 
     uint32_t serverPort = htons(serverConnectionManager->getServerPort());
+
     do{
         valid = true;
-        cout<<"Insert a port for the P2P communication"<<endl;
+        cout<<"Insert a port for the P2P communication "<<endl;
         getline(std::cin, *port_input);
         valid = tryParse(port_input, input_port);
         if((input_port > 65535) || (input_port < 2000) || (input_port == serverPort )) {
