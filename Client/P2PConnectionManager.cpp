@@ -385,7 +385,7 @@ void P2PConnectionManager::startTheGameAsChallengeD() {
     }
     cout << "Secure connection has been established. The game can start. " << endl;
     cout << "Wait for the challenger's first move" << endl;
-    gameBoard = new GameBoard();
+    gameBoard = new GameBoard(this->myUsername.c_str(),this->opponentUsername->c_str());
     if (!challengeDGame())
         cout<<"Error during the match. The game cannot be finished"<<endl;
 
@@ -793,7 +793,7 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
        return;
    }
    cout<<"established secure connection with challenged"<<endl;
-   gameBoard = new GameBoard();
+   gameBoard = new GameBoard(this->myUsername.c_str(),this->opponentUsername->c_str());
    uint8_t coordX,coordY;
    RAND_bytes((unsigned char*)&this->counter,sizeof(this->counter));
    string x_coordinate,y_coordinate;

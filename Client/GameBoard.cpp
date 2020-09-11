@@ -3,15 +3,16 @@
 //
 
 #include "GameBoard.h"
-#include "../Libraries/Constant.h"
-#include <iostream>
 
-GameBoard::GameBoard() {
+
+GameBoard::GameBoard(const char* me,const char* other) {
 
     for(int i = 0; i < ROWSNUMBER; i++) {
         for(int j = 0; j < COLUMNSNUMBER; j++)
             gameMatrix[i][j] = -1;
     }
+    this->myUserName.append(me);
+    this->opponentUserName.append(other);
 
 }
 
@@ -143,6 +144,10 @@ std::ostream &operator<<(std::ostream &out,const GameBoard& g) {
     unsigned int index = 0;
     unsigned int nextPos = g.CELLWIDTH-1;
     unsigned int totalNumberOfequals = (g.CELLWIDTH +2)* g.GAMEBOARDCOLUMNS +2;
+
+
+    string header( "echo -e You:\e[42m   \e[0m  " +  g.opponentUserName + ":\e[41m   \e[0m ");
+    system(header.c_str());
 
     for(int j = 0;j < totalNumberOfequals;j++){
         if(j == nextPos){
