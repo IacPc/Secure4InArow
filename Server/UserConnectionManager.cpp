@@ -469,10 +469,8 @@ bool UserConnectionManager::waitForPlayersRequest(unsigned char*buffer, size_t b
         return false;
     }
 
-    if(buffer[0] == LISTREQUESTMESSAGE){
-        cout<<"Players list request message verified"<<endl;
-    }else{
-        cout<<"Wrong message"<<endl;
+    if(buffer[0] != LISTREQUESTMESSAGE) {
+        cout << "Wrong message" << endl;
         return false;
     }
 
@@ -511,10 +509,10 @@ bool UserConnectionManager::waitForPlayersRequest(unsigned char*buffer, size_t b
 
 
     unsigned char* plaintext = symmetricEncryptionManager->decryptThisMessage(encryptedData, encrypted_len, AAD, aad_len, tag, iv);
-    if(plaintext)
-        cout<<"LISTREQUESTMESSAGE decrypted correctly "<<endl;
-    else
+    if(!plaintext) {
+        cout << "Error decrypting List Request Message " << endl;
         return false;
+    }
 
 
     if(strcmp((const char*)plaintext, userName->c_str())!= 0){

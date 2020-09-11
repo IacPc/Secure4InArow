@@ -22,8 +22,6 @@ P2PConnectionManager::P2PConnectionManager(EVP_PKEY *opponentKey, ServerConnecti
     signatureManager = new SignatureManager(&prvkPath);
     signatureManager->setPubkey(opponentKey);
 
-    //signatureManager = new SignatureManager(opponentKey,srvcnm->getPrvKey());
-
     memset(&this->opponentAddr,0X00,sizeof(struct sockaddr_in));
 
     RAND_poll();
@@ -327,6 +325,8 @@ bool tryParse(std::string* input, unsigned int& output) {
     } catch (std::invalid_argument) {
         return false;
     }
+    if((temp > 65535) || (temp < 2000))
+        return false;
     output = temp;
     return true;
 }
@@ -334,24 +334,23 @@ bool tryParse(std::string* input, unsigned int& output) {
 void P2PConnectionManager::startTheGameAsChallengeD() {
 
     //SET p2pPort for the challenged
-    string *port_input = new string();
-    bool valid = true;
+    string port_input;
+    bool valid = false;
     uint32_t input_port;
 
     uint32_t serverPort = htons(serverConnectionManager->getServerPort());
 
-    do{
+    getline(cin, port_input);
+    port_input.clear();
+    while(!valid){
         valid = true;
         cout<<"Insert a port for the P2P communication "<<endl;
-        getline(std::cin, *port_input);
-        valid = tryParse(port_input, input_port);
-        if((input_port > 65535) || (input_port < 2000) || (input_port == serverPort )) {
+        getline(cin, port_input);
+        valid = tryParse(&port_input, input_port);
+        if(!valid || input_port == serverPort )
             valid = false;
-            cout << "Error! Type a valid port number" << endl;
-            port_input->clear();
-        }
-
-    }while(!valid);
+        port_input.clear();
+    }
 
     cout<<"Port has been given"<<endl;
     serverConnectionManager->setP2Pport(htons(input_port));
