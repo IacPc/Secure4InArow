@@ -429,7 +429,8 @@ bool ServerConnectionManager::waitForPeerPubkey() {
 }
 
 unsigned char *ServerConnectionManager::createPlayersListRequestMessage(size_t & len) {
-    size_t playersListMessageLength = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 * AESBLOCKLENGTH + AESGCMTAGLENGTH;
+    size_t playersListMessageLength =
+            1 + AESGCMIVLENGTH + sizeof(this->counter) + this->userName->length() + 1 + AESGCMTAGLENGTH;
     auto * playersListMessageBuffer =  new unsigned char[playersListMessageLength];
 
     playersListMessageBuffer[0] = LISTREQUESTMESSAGE;
@@ -477,7 +478,7 @@ bool ServerConnectionManager::sendPlayersListRequest() {
 }
 
 bool ServerConnectionManager::waitForPlayers(std::vector<std::string*>*& pc) {
-    size_t playersListMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 + MAXUSERNAMELENGTH*MAXPLAYERSONLINE + AESGCMTAGLENGTH + AESBLOCKLENGTH;
+    size_t playersListMessageLen = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2 + MAXUSERNAMELENGTH*MAXPLAYERSONLINE + AESGCMTAGLENGTH;
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
     unsigned char aadBuf[aadLen];
     unsigned char ivBuf[AESGCMIVLENGTH];
@@ -740,7 +741,7 @@ std::string* ServerConnectionManager::waitForChallengeRequest() {
     uint32_t receivedCounter;
     size_t ivLength = AESGCMIVLENGTH;
     unsigned char ivBuf[AESGCMIVLENGTH];
-    unsigned char cipherText[2*AESBLOCKLENGTH];
+    unsigned char cipherText[MAXUSERNAMELENGTH];
     size_t tagLen = AESGCMTAGLENGTH;
     unsigned char tagBuf[AESGCMTAGLENGTH];
     size_t aadLen = 1 +AESGCMIVLENGTH  +sizeof(this->counter);
@@ -991,7 +992,7 @@ bool ServerConnectionManager::tryParsePlayerChoice(std::string* input, unsigned 
 
 bool ServerConnectionManager::waitForChallengedResponseMessage() {
 
-    size_t challengedResponseMessageLength = 1 + AESGCMIVLENGTH + sizeof(this->counter) + 2* AESBLOCKLENGTH + AESGCMTAGLENGTH;
+    size_t challengedResponseMessageLength = 1 + AESGCMIVLENGTH + sizeof(this->counter) + MAXUSERNAMELENGTH + AESGCMTAGLENGTH;
     unsigned char challengedResponseMessageBuf[challengedResponseMessageLength];
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(uint32_t);
     unsigned char aadBuf[aadLen];

@@ -40,12 +40,7 @@ int GameBoard::insertCoordinateInBoard(uint8_t x, uint8_t y, int value) {
     }
 
     gameMatrix[x][y] = value;
-/*
-    for(int i = 0; i < ROWSNUMBER; i++) {
-        for (int j = 0; j < COLUMNSNUMBER; j++)
-            std::cout << gameMatrix[i][j]<< "  ";
-        std::cout<<std::endl;
-    }*/
+
     return 0;
 
 }
@@ -146,7 +141,7 @@ std::ostream &operator<<(std::ostream &out,const GameBoard& g) {
     unsigned int totalNumberOfequals = (g.CELLWIDTH +2)* g.GAMEBOARDCOLUMNS +2;
 
 
-    string header( "echo -e You:\e[42m   \e[0m  " +  g.opponentUserName + ":\e[41m   \e[0m ");
+    string header( "echo You:\e[42m   \e[0m  " +  g.opponentUserName + ":\e[41m   \e[0m ");
     system(header.c_str());
 
     for(int j = 0;j < totalNumberOfequals;j++){

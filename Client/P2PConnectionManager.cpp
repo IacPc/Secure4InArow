@@ -185,7 +185,7 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
     size_t len = COORDINATEMESSAGELENGTH;
     size_t ivLength = AESGCMIVLENGTH;
     unsigned char ivBuf[AESGCMIVLENGTH];
-    unsigned char cipherText[AESBLOCKLENGTH];
+    unsigned char cipherText[2*sizeof(uint8_t)];
     size_t tagLen = AESGCMTAGLENGTH;
     unsigned char tagBuf[AESGCMTAGLENGTH];
     size_t aadLen = 1 +AESGCMIVLENGTH  +sizeof(this->counter);
