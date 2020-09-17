@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////
 #define HELLOMESSAGELENGTH MAXUSERNAMELENGTH + NONCELENGTH + 1
 #define MAXPLAYERSONLINE 5
-#define COORDINATEMESSAGELENGTH AADLENGTH + AESBLOCKLENGTH + AESGCMTAGLENGTH
+#define COORDINATEMESSAGELENGTH AADLENGTH + 1 + AESGCMTAGLENGTH
 ////////////////////////////////////////////////////////////////////
 //                      MESSAGE OPCODE                          ////
 ////////////////////////////////////////////////////////////////////

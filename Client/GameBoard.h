@@ -17,16 +17,17 @@ private:
     const char REDPIXEL[18] =   "\e[41m     \e[0m||" ;
     const char GREENPIXEL[18] = "\e[42m     \e[0m||" ;
     const char BLACKPIXEL[17] = "\e[0m     \e[0m||" ;
+    //uint8_t firstFreeCellInColumn[COLUMNSNUMBER];
     int gameMatrix[GAMEBOARDROWS][GAMEBOARDCOLUMNS];
     string myUserName;
     string opponentUserName;
-
-    int insertCoordinateInBoard(uint8_t, uint8_t, int);
+    int getFirstFreeCellInColumn(uint8_t column);
+    int insertCoordinateInBoard(uint8_t, int);
     bool gameFinished(int);
 public:
     GameBoard(const char*,const char*);
-    int insertOpponentMove(uint8_t, uint8_t);
-    int insertMyMove(uint8_t, uint8_t);
+    int insertOpponentMove( uint8_t);
+    int insertMyMove(uint8_t);
     friend std::ostream & operator << (std::ostream &out,const GameBoard &g);
     ~GameBoard();
 

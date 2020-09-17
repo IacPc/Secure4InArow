@@ -326,7 +326,6 @@ bool UserConnectionManager::sharePlayersList() {
 
         size_t ret = recv(userSocket, buffer, 4096, 0);
         if (ret <= 0) {
-            cout << "Error in receiving sharePlayersList message" << endl;
             server->removeUser(this->userName);
             return false;
         }

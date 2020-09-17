@@ -92,7 +92,7 @@ bool P2PConnectionManager::sendHelloMessage() {
     return true;
 }
 
-unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t y) {
+unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t column) {
     const size_t aadLen = 1 + AESGCMIVLENGTH + sizeof(this->counter);
     unsigned char aadBuf[aadLen];
     size_t ivLen = AESGCMIVLENGTH;
@@ -100,10 +100,10 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t 
     unsigned char ivBuf[ivLen];
     auto* tagBuf = new unsigned char[AESGCMTAGLENGTH];
 
-    size_t coordinatesBufLen = 2 * sizeof(uint8_t);
-    unsigned char coordinatesBuf[2];
-    coordinatesBuf[0] = x;
-    coordinatesBuf[1] = y;
+    size_t coordinatesBufLen = sizeof(uint8_t);
+    unsigned char coordinatesBuf;
+    coordinatesBuf = column;
+
     aadBuf[0] = COORDINATEMESSAGECODE;
     RAND_bytes(ivBuf,AESGCMIVLENGTH);
     size_t step = 1 ;
@@ -112,7 +112,7 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t 
     memcpy(&aadBuf[step],&this->counter,sizeof(this->counter));
     step += sizeof(this->counter);
 
-    unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(coordinatesBuf, coordinatesBufLen,
+    unsigned char* encPayload = this->symmetricEncryptionManager->encryptThisMessage(&coordinatesBuf, coordinatesBufLen,
                                                                                      aadBuf, aadLen, ivBuf, ivLen, tagBuf);
 
     if(!encPayload){
@@ -132,9 +132,9 @@ unsigned char *P2PConnectionManager::createCoordinateMessage(uint8_t x, uint8_t 
 
 }
 
-bool P2PConnectionManager::sendCoordinateMessage(uint8_t x, uint8_t y) {
+bool P2PConnectionManager::sendCoordinateMessage(uint8_t column) {
     size_t len = COORDINATEMESSAGELENGTH;
-    unsigned char* message = this->createCoordinateMessage(x, y);
+    unsigned char* message = this->createCoordinateMessage(column);
     if(!message){
         cout<<"Challenge message buffer not allocated"<<endl;
         return false;
@@ -181,7 +181,7 @@ bool P2PConnectionManager::tryParseX(std::string * input, uint8_t& output) {
     }
 }
 
-bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool isFirstMessage) {
+bool P2PConnectionManager::waitForCoordinateMessage(uint8_t& column, bool isFirstMessage) {
     size_t len = COORDINATEMESSAGELENGTH;
     size_t ivLength = AESGCMIVLENGTH;
     unsigned char ivBuf[AESGCMIVLENGTH];
@@ -227,7 +227,7 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
     memcpy(ivBuf, &coordinateMessagebuf[step],ivLength);
     memcpy(aadBuf,coordinateMessagebuf,aadLen);
     step += ivLength +sizeof(receivedCounter);
-    size_t cipherTextLen = 2;
+    size_t cipherTextLen = sizeof(uint8_t);
     memcpy(cipherText,&coordinateMessagebuf[step],cipherTextLen);
     step += cipherTextLen;
     memcpy(tagBuf,&coordinateMessagebuf[step],tagLen);
@@ -235,19 +235,15 @@ bool P2PConnectionManager::waitForCoordinateMessage(uint8_t & x,uint8_t& y,bool 
     size_t plainTextLen = cipherTextLen;
     unsigned char* clearText = this->symmetricEncryptionManager->decryptThisMessage(cipherText,plainTextLen,aadBuf,
                                                                                     aadLen,tagBuf,ivBuf);
-    if(!clearText){
-        cout<<"error in decrypting coordinate message"<<endl;
-        return false;
-    }
-    x =(uint8_t) clearText[0];
-    y =(uint8_t) clearText[1];
 
-    cout<<"The received coordinates are: ROW = "<<(unsigned int)x<<", COLUMN = "<<(unsigned int)y<<endl;
+    column =(uint8_t) clearText[0];
+
+    cout << "The received coordinate is COLUMN = " << (unsigned int)column << endl;
 
     memset(coordinateMessagebuf,0X00,COORDINATEMESSAGELENGTH);
 
-    if(x<1 || x>6 || y<1 || y>7){
-        cout<<"NOT VALID coordinates!"<<endl;
+    if(column < 1 || column > 7){
+        cout<<"NOT VALID column!"<<endl;
         return false;
     }
 
@@ -608,12 +604,12 @@ bool P2PConnectionManager::challengeDGame() {
     int ret = 0;
     while(!finish){
 
-        if(!waitForCoordinateMessage(x, y,isFirstMEssage)) {
+        if(!waitForCoordinateMessage(y,isFirstMEssage)) {
             cout << "Error: Coordinate message has not been received correctly" << endl;
             return false;
         }
         isFirstMEssage = false;
-        ret = gameBoard->insertOpponentMove(x, y);
+        ret = gameBoard->insertOpponentMove( y);
         cout<<*gameBoard;
         if(ret == -1)
             return false;
@@ -628,30 +624,27 @@ bool P2PConnectionManager::challengeDGame() {
             continue;
         }
 
-        string x_coordinate;
         x = y = 0;
-        do {
-            x_coordinate.clear();
-            cout << "Type the row number: choose a number between 1 and 6" << endl;
-            getline(cin, x_coordinate);
-        } while (!tryParseX(&x_coordinate, x));
 
         string y_coordinate;
-        do {
-            y_coordinate.clear();
-            cout << "Type the column number: choose a number between 1 and 7" << endl;
-            getline(cin, y_coordinate);
-        } while (!tryParseY(&y_coordinate, y));
+        do{
+            do {
+                y_coordinate.clear();
+                cout << "Type the column number: choose a number between 1 and 7" << endl;
+                getline(cin, y_coordinate);
+            } while (!tryParseY(&y_coordinate, y));
 
-        cout << "Your coordinate => ROW= " << (unsigned int)x << ",COLUMN=" << (unsigned int)y << endl;
-        if(!sendCoordinateMessage(x, y)){
+            cout << "Your coordinate => COLUMN=" << (unsigned int) y << endl;
+            ret = gameBoard->insertMyMove(y);
+        }while(ret == -2);
+
+        cout<<*gameBoard;
+
+        if(!sendCoordinateMessage(y)){
             cout<<"Error: Coordinate message has not been sent"<<endl;
             return false;
         }
 
-        ret = gameBoard->insertMyMove(x, y);
-        cout<<*gameBoard;
-
         if(ret == -1)
             return false;
         if(ret == 1){
@@ -664,7 +657,7 @@ bool P2PConnectionManager::challengeDGame() {
         }
 
 
-
+        cout<<"coordinate message sent correctly, waiting for the next move.."<<endl;
 
     }
     return true;
@@ -800,26 +793,23 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
     int ret = 0;
     while (true){
 
-       do {
-           x_coordinate.clear();
-           cout << "Type the row number: choose a number between 1 and 6" << endl;
-           getline(cin, x_coordinate);
-       } while (!tryParseX(&x_coordinate, coordX));
+        do{
+            do {
+                y_coordinate.clear();
+                cout << "Type the column number: choose a number between 1 and 7" << endl;
+                getline(cin, y_coordinate);
+            } while (!tryParseY(&y_coordinate, coordY));
 
-       do {
-           y_coordinate.clear();
-           cout << "Type the column number: choose a number between 1 and 7" << endl;
-           getline(cin, y_coordinate);
-       } while (!tryParseY(&y_coordinate, coordY));
-
-       cout << "Adversary coordinate => ROW= " << (unsigned int)coordX << ",COLUMN=" << (unsigned int)coordY << endl;
+            cout << "Adversary coordinate => COLUMN=" << (unsigned int) coordY << endl;
 
 
-       if(!sendCoordinateMessage(coordX,coordY)){
-           cout<<"error in sending coordinate"<<endl;
-           return;
-       }
-       ret = gameBoard->insertMyMove(coordX, coordY);
+            ret = gameBoard->insertMyMove(coordY);
+        }while(ret ==-2);
+
+        if (!sendCoordinateMessage(coordY)) {
+            cout << "error in sending coordinate" << endl;
+            return;
+        }
        cout<<*gameBoard;
        if(ret == -1)
             return;
@@ -833,11 +823,11 @@ void P2PConnectionManager::startTheGameAsChallengeR() {
        }
        cout << "coordinate message sent correctly, waiting for the next move.." << endl;
        coordX = coordY = 0;
-       if(!this->waitForCoordinateMessage(coordX,coordY,false)){
+       if(!this->waitForCoordinateMessage(coordY,false)){
            cout<<"error in receiving coordinate"<<endl;
            return;
        }
-        ret = gameBoard->insertOpponentMove(coordX, coordY);
+        ret = gameBoard->insertOpponentMove(coordY);
         cout<<*gameBoard;
         if(ret == -1)
             return;

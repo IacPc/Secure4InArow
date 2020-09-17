@@ -54,12 +54,12 @@ private:
     bool challengeDGame();
     bool sendMyPubKey();
     bool waitForPeerPubkey();
-    bool sendCoordinateMessage(uint8_t, uint8_t);
-    bool waitForCoordinateMessage(uint8_t&,uint8_t&,bool);
+    bool sendCoordinateMessage(uint8_t);
+    bool waitForCoordinateMessage(uint8_t&,bool);
 
     void createSessionKey();
 
-    unsigned char* createCoordinateMessage(uint8_t,uint8_t);
+    unsigned char* createCoordinateMessage(uint8_t);
     unsigned char* createPubKeyMessage(size_t&);
 
 public:

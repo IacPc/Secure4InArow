@@ -25,30 +25,37 @@ GameBoard::~GameBoard() {
 }
 
 
-int GameBoard::insertCoordinateInBoard(uint8_t x, uint8_t y, int value) {
+int GameBoard::insertCoordinateInBoard(uint8_t column, int value) {
 
-    if(x < 1 || x > 6 || y < 1 || y > 7) {
+    if(column < 1 || column > 7) {
         std::cout << "Error! Coordinate not valid" << std::endl;
         return -1;
     }
-    x--;
-    y--;
+    column--;
 
-    if(gameMatrix[x][y] != -1){
+
+    //obtain first free cell in column
+    int row = this->getFirstFreeCellInColumn(column);
+
+    if(row < 0) {
+        std::cout<<"Error! That colum is full!"<<std::endl;
+        return -2;
+    }
+
+    if(gameMatrix[row][column] != -1){
         std::cout<<"Error! That position was not empty!"<<std::endl;
         return -1;
     }
 
-    gameMatrix[x][y] = value;
-
+    gameMatrix[row][column] = value;
     return 0;
 
 }
 
-int GameBoard::insertMyMove(uint8_t x, uint8_t y) {
+int GameBoard::insertMyMove(uint8_t y) {
 
-    int ret = insertCoordinateInBoard(x, y, 0);
-
+    int ret = insertCoordinateInBoard(y, 0);
+    if(ret ==-2) return ret;
     if(ret == -1) {
         std::cout<<"Some error occured"<<std::endl;
         return ret;
@@ -64,13 +71,14 @@ int GameBoard::insertMyMove(uint8_t x, uint8_t y) {
     return 0;
 }
 
-int GameBoard::insertOpponentMove(uint8_t x, u_int8_t y) {
-    int ret = insertCoordinateInBoard(x, y, 1);
+int GameBoard::insertOpponentMove( uint8_t y) {
+    int ret = insertCoordinateInBoard(y, 1);
 
     if(ret == -1) {
         std::cout<<"Some error occured"<<std::endl;
         return ret;
     }
+
     //check if I won
     if(gameFinished(0)) {
         return 1;
@@ -176,7 +184,7 @@ std::ostream &operator<<(std::ostream &out,const GameBoard& g) {
         system(rowColors.c_str());
 
         string temp(rowColors);
-        temp.replace(temp.end()-1,temp.end(),std::to_string(i+1));
+        temp.replace(temp.end()-1,temp.end(),std::to_string(COLUMNSNUMBER-(i+1)));
         temp.append("\"");
 
         system(temp.c_str());
@@ -193,6 +201,14 @@ std::ostream &operator<<(std::ostream &out,const GameBoard& g) {
 
     }
     return out;
+}
+
+int GameBoard::getFirstFreeCellInColumn(uint8_t column) {
+    for(int row = 5; row >= 0; row--){
+        if(this->gameMatrix[row][column] == -1)
+            return row;
+    }
+    return -1;
 }
 
 
