@@ -1,0 +1,4 @@
+/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Client.dir
+/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/CMakeFiles/Server.dir

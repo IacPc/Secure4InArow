@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="all"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Client">
+				<Option output="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Client" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
+					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 Client"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Client/fast">
+				<Option output="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Client" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
+					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 Client/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Server">
+				<Option output="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Server" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
+					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 Server"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Server/fast">
+				<Option output="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Server" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/lauralemmi/openssl-1.1.1a/include"/>
+					<Add directory="/usr/local/Cellar/openssl@1.1/1.1.1d/include"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 Server/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/iacopo/Scrivania/FOC/Secure4InArow/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/CertificateManager.cpp">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/CertificateManager.h">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/Client.cpp">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/Client.h">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/ClientMain.cpp">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/GameBoard.cpp">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/GameBoard.h">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/P2PConnectionManager.cpp">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/P2PConnectionManager.h">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/ServerConnectionManager.cpp">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Client/ServerConnectionManager.h">
+			<Option target="Client"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/Constant.h">
+			<Option target="Client"/>
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/DiffieHellmannManager.cpp">
+			<Option target="Client"/>
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/DiffieHellmannManager.h">
+			<Option target="Client"/>
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SignatureManager.cpp">
+			<Option target="Client"/>
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SignatureManager.h">
+			<Option target="Client"/>
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SymmetricEncryptionManager.cpp">
+			<Option target="Client"/>
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/SymmetricEncryptionManager.h">
+			<Option target="Client"/>
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Server/Server.cpp">
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Server/Server.h">
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Server/ServerMain.cpp">
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Server/UserConnectionManager.cpp">
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/Server/UserConnectionManager.h">
+			<Option target="Server"/>
+		</Unit>
+		<Unit filename="/home/iacopo/Scrivania/FOC/Secure4InArow/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

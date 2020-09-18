@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/iacopo/Scrivania/FOC/Secure4InArow/Client/GameBoard.cpp
+GameBoard.h
+/home/iacopo/Scrivania/FOC/Secure4InArow/Client/GameBoard.h
+
+/home/iacopo/Scrivania/FOC/Secure4InArow/Client/GameBoard.h
+cstdint
+-
+iostream
+-
+../Libraries/Constant.h
+/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/Constant.h
+
+/home/iacopo/Scrivania/FOC/Secure4InArow/Libraries/Constant.h
+
