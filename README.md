@@ -23,7 +23,7 @@ each move a 6X7 grid is printed to terminal with all the moves done until that m
 
 ## Installation of the program
 The project can be imported and executed using the Clion IDE or the cmake environment.
-Private key file password coincides to the file name itself(aka Alice_prvkey.pem file 
+Private key file password coincides with the file name itself(aka Alice_prvkey.pem file 
 password is "Alice_prvkey.pem")
 
 ## Contributors
