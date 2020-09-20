@@ -7,11 +7,11 @@ communications.
 Especially when the client application starts, Server and Client
 First authenticate with their public keys: in this scenario anyone who wants to play must ask first
 to the server administrator to register his public key, and only after that he(or she) can use it to
-authenticate himself.
+authenticate him(her)self.
 Server public key is certified by SimpleAuthority CA, for this reason every
 player has the burden to check the validity of said public key.
 Once done all the verifications, those keys are used together with a 2048-bits DH public key to
-compute a shared secret hence a symmetric key to encrypt and authenticate all the exchanged
+compute a shared secret hence and a symmetric key to encrypt and authenticate all the exchanged
 messages.
 After the authentication and negotiation phases a newly joined user can see other available users
 logged to the server and he (or she) can challenge one of them, the latter can either accept or

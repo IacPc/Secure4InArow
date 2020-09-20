@@ -549,7 +549,7 @@ unsigned char* UserConnectionManager::createPlayerListMsg(vector<string> list, s
 
 
     //prendo la lista dei giocatori e quanti e li metto nel buffer del messaggio in chiaro
-    auto* playerList = (unsigned char*)malloc(MAXUSERNAMELENGTH * list.size());
+    auto* playerList = new unsigned char[MAXUSERNAMELENGTH * list.size()];
 
     size_t pos = 0;
     for(auto & i : list){
