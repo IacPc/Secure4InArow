@@ -1,7 +1,7 @@
 # Secure4InArow
 
 ## Description
-here we present a simple implementation of the game “Four-in-a-Row”, in this
+Here we present a simple implementation of the game “Four-in-a-Row”, in this
 implementation the focus is not the user experience but the security of the overall
 communications.
 Especially when the client application starts, Server and Client
@@ -23,6 +23,8 @@ each move a 6X7 grid is printed to terminal with all the moves done until that m
 
 ## Installation of the program
 The project can be imported and executed using the Clion IDE or the cmake environment.
+Private key file password coincides with the file name itself(aka Alice_prvkey.pem file 
+password is "Alice_prvkey.pem")
 
 ## Contributors
 [Laura Lemmi](https://github.com/llemmi)      
